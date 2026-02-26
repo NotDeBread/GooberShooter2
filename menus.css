@@ -1,0 +1,444 @@
+#gameStartScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100dvw;
+    height: 100dvh;
+    z-index: 99999999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background-color: black;
+    gap: 10px;
+    transition: opacity ease-in-out 500ms;
+    opacity: 1;
+}
+
+.gameStartScreenText {
+    opacity: 0;
+}
+
+.characterTextureContainer {
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+}
+
+.characterTextureContainer img {
+    translate: 0px 0px;
+    height: 148px;
+}
+
+.menu {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100dvw;
+    height: 100dvh;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    animation: menuIn 500ms ease-in-out 1 forwards;
+}
+
+@keyframes menuIn {
+    from {
+        opacity: 0;
+    }
+}
+
+.genericMenuButton {
+    width: 150px;
+    height: 30px;
+    margin-top: 5px;
+}
+
+.genericMenuTitle {
+    font-weight: 700;
+    font-size: 1.25em;
+    margin-bottom: 50px;
+}
+
+#menuTitle1 div, #menuTitle2 div {
+    font-size: 2em;
+    font-weight: 700;
+    line-height: 1;
+}
+
+#menuTitleTwo {
+    position: absolute;
+    right: -45px;
+    top: -10px;
+    line-height: 1;
+    font-size: 5em;
+    font-weight: 700;
+    rotate: -7deg;
+    animation: twoRotate 10s ease-in-out infinite, twoScale 9s ease-in-out infinite;
+}
+
+@keyframes twoRotate {
+    from {
+        rotate: -10deg;
+    }
+    50% {
+        rotate: -5deg;
+    }
+    to {
+        rotate: -10deg;
+    }
+}
+
+@keyframes twoScale {
+    from {
+        transform: scale(0.95);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    to {
+        transform: scale(0.95);
+    }
+}
+
+.submenuTitle {
+    font-size: 1.25em;
+    margin-bottom: 25px;
+    font-weight: 700;
+}
+
+#menuButtons {
+    margin-top: 50px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#menuButtons button {
+    width: 150px;
+    height: 30px;
+    font-weight: 700;
+}
+
+/* Game settings */
+
+#gameSettingsContainer {
+    padding: 5px;
+    outline: 2px solid white;
+    background-color: rgb(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    margin-bottom: 25px;
+    width: 500px;
+    height: 250px;
+}
+
+#gameSettingsTabs {
+    border-bottom: 1px solid rgb(255,255,255,0.25);
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+}
+
+.gameSettingsGamemodeButton {
+    width: 100%;
+    border: 1px solid white;
+}
+
+.gameSettingsGamemodeButton div {
+    line-height: 1;
+    color: grey;
+    font-size: 0.8em;
+    margin-bottom: 5px;
+}
+
+#gameSettingsChallenges {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+}
+
+.gameSettingsChallenge {
+    width: 50px;
+    height: 50px;
+    outline: 1px solid grey;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.gameSettingsChallenge img {
+    width: 32px;
+    height: 32px;
+}
+
+.gameSettingsChallenge:hover {
+    background-color: white;
+}
+
+.gameSettingsChallenge:hover img {
+    filter: invert();
+}
+
+/* Character select */
+
+#characterSelectContainer, #characterCustomizationContainer {
+    padding: 5px;
+    outline: 1px solid white;
+    display: flex;
+    gap: 5px;
+    width: 635px;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    background-color: rgb(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+}
+
+.characterSelectCharacterBox {
+    outline: 1px solid grey;
+    width: 75px;
+    height: 75px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    cursor: pointer;
+    user-select: none;
+}
+
+.characterSelectCharacterBox:hover {
+    outline: 1px solid white;
+}
+
+.characterSelectCharacterBox img {
+    width: 54px;
+    height: 54px;
+    transition: scale var(--bouncy) 250ms;
+}
+
+.characterSelectCharacterBox:active img {
+    scale: 0.9;
+}
+
+#characterCustomizationContainer {
+    flex-direction: row;
+    flex-wrap: unset;
+    justify-content: space-between;
+}
+
+#characterCustomizationContainer section {
+    width: 225px;
+}
+
+.ccScrollableContainer {
+    padding: 5px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.ccCosmetic, .ccSkin {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    outline: 1px solid grey;
+    cursor: pointer;
+}
+
+.ccCosmetic img {
+    width: 32px;
+}
+
+.ccSkin img {
+    width: 36px;
+}
+
+#ccCharacterContainer {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#ccCharacter {
+    position: absolute;
+}
+
+#ccCosmeticsBack, #ccCosmeticsFront {
+    width: 288px;
+    height: 288px;
+    position: absolute;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.ccCosmeticContainer {
+    width: 288px;
+    height: 288px;
+    position: absolute;
+}
+
+.ccCosmeticContainer img {
+    height: 288px;
+    translate: -1168px 0px;
+}
+
+.ccRangeContainer {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    width: calc(100% - 10px);
+    padding: 0px 5px;
+}
+
+.ccRangeContainer div {
+    width: 125px;
+}
+
+.ccRangeContainer input {
+    height: 5px;
+    width: 100%;
+}
+
+#ccLayerButtons {
+    display: flex;
+    gap: 5px;
+    padding: 5px;
+}
+
+#ccLayerButtons button {
+    width: 50px;
+}
+
+/* Character stats */
+
+#selectedCharacterContainer {
+    padding: 5px;
+    outline: 1px solid white;
+    display: flex;
+    justify-content: space-between;
+    background-color: rgb(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    position: relative;
+}
+
+#selectedCharacterContainerTab {
+    position: absolute;
+    right: -26px;
+    height: 102px;
+    width: 25px;
+    top: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgb(0,0,0,0.5);
+    outline: 1px solid white;
+    user-select: none;
+    cursor: pointer;
+}
+
+#selectedCharacterContainerTab:hover {
+    background-color: white;
+    color: black;
+}
+
+#selectedCharacterContainerTab:active {
+    background-color: rgb(200,200,200);
+}
+
+#selectedCharacterContainerTabLabel {
+    rotate: 90deg;
+}
+
+#selectedCharacterName {
+    font-weight: 700;
+    font-size: 1.5em;
+}
+
+#characterStatsName {
+    white-space: nowrap;
+    font-size: 1.25em;
+    font-weight: 700;
+}
+
+#selectedCharacterTags {
+    display: flex;
+    gap: 5px;
+}
+
+.selectedCharacterTag {
+    background-color: grey;
+    width: fit-content;
+    padding: 0px 5px;
+    border-radius: 5px;
+    font-weight: 700;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 0px 2px 0px 0px rgb(255,255,255,0.25);
+}
+
+#characterStatsDesc {
+    font-size: 0.75em;
+    text-align: center;
+    color: grey;
+    height: 75px;
+}
+
+#characterStatsCharacter {
+    width: 96px;
+    height: 96px;
+    align-self: center;
+}
+
+#characterStatsWeaponContainer, #characterStatsCharacterContainer {
+    padding: 5px;
+    outline: 1px solid grey;
+}
+
+#characterStatsWeaponTitleContainer {
+    display: flex;
+    gap: 5px;
+    justify-content: space-between;
+}
+
+#characterStatsWeaponImg {
+    height: 24px;
+}
+
+#characterStatsWeaponDescContainer {
+    text-align: right;
+    line-height: 1;
+}
+
+#characterStatsWeaponDesc {
+    font-size: 0.75em;
+    color: grey;
+} 
+
+.characterStatsStat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    opacity: 0;
+    animation: weaponStatIn 500ms ease-out delay 1 forwards;
+}
+
+.characterStatsStat img {
+    width: 16px;
+    height: 16px;
+}
+
+@keyframes statIn {
+    from {
+        translate: 10px 0px;
+    }
+    to {
+        opacity: 1;
+    }
+}

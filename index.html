@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="generic.css">
+    <link rel="stylesheet" href="game.css">
+    <link rel="stylesheet" href="menus.css">
+    <title id="pageTitle">Goober Shooter 2 - Main Menu</title>
+</head>
+<body>
+    <div id="gameStartScreen">
+        <div class="gameStartScreenText">A game made by</div><br>
+        <div style="font-size: 1.5em; font-weight: 700;" class="gameStartScreenText">DeBread</div>
+        <img src="graphics/characters/fellaPortrait.png" width="72" style="transition: opacity ease-in-out 500ms; opacity: 0;">
+    </div>
+
+
+    <div id="tooltip">
+        <div id="tooltipHeader">
+            <span id="tooltipTitle">Tooltip Title</span>
+            <div class="coolLine"></div>
+            <span id="tooltipRarity">COMMON</span>
+        </div>
+        <div id="tooltipBody">
+            <span>This is some really really cool tooltip text that is really cool!</span>
+        </div>
+        <div id="tooltipPrice">$10</div>
+    </div>
+    <div id="promptContainer">
+        <div id="prompt">
+            <div>
+                <div id="promptHeaderContainer">
+                    <span id="promptTitle">Warning!</span>
+                    <div class="coolLine"></div>
+                </div>
+                <div id="promptBody">
+                    <span>Are you sure you want to quit? This run will not be saved.</span><br><em style="color: grey; font-size: 0.75em;">This popup can be disabled in settings.</em>
+                </div>
+            </div>
+            <div id="promptButtons">
+                <button>Go back</button>
+                <button>Please just let me leave</button>
+            </div>
+        </div>
+    </div>
+    <div id="menu-main" class="menu" style="display: flex;">
+        <div style="position: relative; translate: -25px 0px;">
+            <span id="menuTitle1">Goober</span>
+            <span id="menuTitle2">Shooter</span>
+            <div id="menuTitleTwo">2</div>
+            <span>DEMO</span>
+        </div>
+        <div id="menuButtons">
+            <button onclick="openMenu('gameSettings')">PLAY</button>
+            <button onclick="openMenu('characterSelect')">CHARACTER SELECT</button>
+            <button>SETTINGS</button>
+            <button onclick="openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}])
+            ">CREDITS</button>
+        </div>
+    </div>
+    <div id="menu-gameSettings" class="menu">
+        <div class="genericMenuTitle">GAME SETTINGS</div>
+
+        <div id="gameSettingsContainer">
+            <div id="gameSettingsTabs">
+                <button>Game</button>
+            </div>
+            <div>
+                <span>Gamemode</span>
+                <div style="display: flex;">
+                    <button class="gameSettingsGamemodeButton" id="gameSettingsGM0" onclick="selectGamemode(0)">
+                        Survival<br>
+                        <div>Survive waves of enemies as long as you can.</div>
+                    </button>
+                    <button class="gameSettingsGamemodeButton" id="gameSettingsGM1" onclick="selectGamemode(1)">
+                        Sprint<br>
+                        <div>Last through as many waves as you can before time is up.</div>
+                    </button>
+                    <button class="gameSettingsGamemodeButton" id="gameSettingsGM2" onclick="selectGamemode(2)">
+                        Sandbox<br>
+                        <div>Give yourself items, summon enemies, change player attributes, no consequences!</div>
+                    </button>
+                    <button class="gameSettingsGamemodeButton" id="gameSettingsGM3" onclick="selectGamemode(3)">
+                        Tutorial<br>
+                        <div>Learn how to play!</div>
+                    </button>
+                </div>
+                <span>Challenges</span>
+                <div id="gameSettingsChallenges">
+                    <div class="gameSettingsChallenge">
+                        <img src="graphics/challenges/high_stakes.png">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="openMenu('game'); startGame()" class="genericMenuButton">PLAY</button>
+        <button onclick="openMenu('main')" class="genericMenuButton">BACK</button>
+    </div>
+    <div id="menu-characterSelect" class="menu">
+        <div>
+            <div class="submenuTitle">CHARACTER SELECT</div>
+        </div>
+        <div style="display: flex; gap: 5px; flex-direction: column;">
+            <div id="selectedCharacterContainer">
+                <div style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="line-height: 1;">
+                        <em style="color: grey;">Selected character</em><br>
+                        <span id="selectedCharacterName">Some guy</span><br>
+                        <span id="selectedCharacterDesc" style="line-height: 1.5;">some description</span>
+                    </div>
+                    <div id="selectedCharacterTags">
+                        <div class="selectedCharacterTag">SOME TAG</div>
+                    </div>
+                </div>
+                <img src="graphics/placeholder.png" width="92" id="selectedCharacterImg">
+                <div id="selectedCharacterContainerTab" onclick="toggleCharacterCustomization()">
+                    <span id="selectedCharacterContainerTabLabel">Customize</span>
+                </div>
+            </div>
+            <div id="characterSelectContainer"></div>
+            <div id="characterCustomizationContainer">
+                <section style="border: 1px solid grey;">
+                    <div style="border-bottom: 1px solid grey; width: calc(100% - 10px); padding: 5px;">Cosmetics</div>
+                    <div id="ccCosmetics" class="ccScrollableContainer">
+                        <div class="ccCosmetic">
+                            <img src="graphics/cosmetics/tophatIcon.png">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="ccRangeContainer">
+                            <div>X-Offset</div>
+                            <input type="range" min="-10" max="10" step="1" id="ccRangeXOffset">
+                        </div>
+                        <div class="ccRangeContainer">
+                            <div>Y-Offset</div>
+                            <input type="range" min="-10" max="10" step="1" id="ccRangeYOffset">
+                        </div>
+                        <div class="ccRangeContainer">
+                            <div>Rotation</div>
+                            <input type="range" min="-180" max="180" step="9" id="ccRangeRot">
+                        </div>
+                        <div id="ccLayerButtons">
+                            <button id="ccLayerButton0" onclick="changeCCCosmeticLayer(0)">1</button>
+                            <button id="ccLayerButton1" onclick="changeCCCosmeticLayer(1)">2</button>
+                            <button id="ccLayerButton2" onclick="changeCCCosmeticLayer(2)">3</button>
+                            <button id="ccLayerButton3" onclick="changeCCCosmeticLayer(3)">4</button>
+                            <button id="ccLayerButton4" onclick="changeCCCosmeticLayer(4)">5</button>
+                        </div>
+                    </div>
+                </section>
+                <section style="display: flex; justify-content: center; align-items: center; width: fit-content;">
+                    <div id="ccCharacterContainer">
+                        <div id="ccCosmeticsBack">
+                            <div class="ccCosmeticContainer" id="ccCosmetic0Outline">
+                                <img style="opacity: 0;">
+                            </div>
+                            <div class="ccCosmeticContainer" id="ccCosmetic1Outline">
+                                <img style="opacity: 0;">
+                            </div>
+                            <div class="ccCosmeticContainer" id="ccCosmetic2Outline">
+                                <img style="opacity: 0;">
+                            </div>
+                            <div class="ccCosmeticContainer" id="ccCosmetic3Outline">
+                                <img style="opacity: 0;">
+                            </div>
+                            <div class="ccCosmeticContainer" id="ccCosmetic4Outline">
+                                <img style="opacity: 0;">
+                            </div>
+                        </div>
+
+                        <img src="graphics/characters/debreadPortrait.png" width="72" id="ccCharacter"> 
+                        
+                        <div id="ccCosmeticsFront">
+                            <div class="ccCosmeticContainer" id="ccCosmetic0">
+                                <img style="opacity: 0;">
+                            </div>
+                            <div class="ccCosmeticContainer" id="ccCosmetic1">
+                                <img style="opacity: 0;">
+                            </div>
+                            <div class="ccCosmeticContainer" id="ccCosmetic2">
+                                <img style="opacity: 0;">
+                            </div>
+                            <div class="ccCosmeticContainer" id="ccCosmetic3">
+                                <img style="opacity: 0;">
+                            </div>
+                            <div class="ccCosmeticContainer" id="ccCosmetic4">
+                                <img style="opacity: 0;">   
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section style="border: 1px solid grey;">
+                    <div style="border-bottom: 1px solid grey; width: calc(100% - 10px); padding: 5px;">Skins</div>
+                    <div id="ccSkins" class="ccScrollableContainer"></div>
+                </section>
+            </div>
+        </div>
+        <button onclick="openMenu('main')" class="genericMenuButton" style="margin-top: 25px;">Go back</button>
+    </div>
+    <div id="menu-game" class="menu">
+        <div id="gamePauseContainer">
+            <div id="gamePauseTitle"></div>
+            <div id="gamePause">
+                <div id="pauseMenu-blank" menuHeight="200"></div>
+                <div class="gamePauseMenu" id="pauseMenu-main" menuHeight="200">
+                    <button onclick="pauseGame()">Resume</button>
+                    <button onclick="openPauseMenu('settings')">Settings</button>
+                    <button onclick="openPauseMenu('run_stats')">Run Stats</button>
+                    <button style="margin-top: 25px;" 
+                        onclick="openPrompt(
+                            'Warning!',
+                            `Are you sure you want to restart?<br><em style='color: grey;'>This popup can be disabled in settings.</em>`,
+                            [
+                                {
+                                    text: 'Go back',
+                                    onclick: () => {closePrompt()}
+                                },
+                                {
+                                    text: 'Restart',
+                                    onclick: () => {
+                                        startGame()
+                                        closePrompt()
+                                        pauseGame()
+                                    }
+                                }
+                            ]
+                        )">Restart</button>
+                    <button
+                        onclick="openPrompt(
+                            'Warning!',
+                            `Are you sure you want to quit? This run will not be saved.<br><em style='color: grey;'>This popup can be disabled in settings.</em>`,
+                            [
+                                {
+                                    text: 'Go back',
+                                    onclick: () => {closePrompt()}
+                                },
+                                {
+                                    text: 'Quit',
+                                    onclick: () => {
+                                        openMenu('main')
+                                        closePrompt()
+                                        pauseGame()
+                                        e.gameActive = false
+                                    }
+                                }
+                            ]
+                        )">Quit</button>
+                </div>
+                <div class="gamePauseMenu" id="pauseMenu-settings" menuHeight="300">
+                    <button>Some setting button</button>
+                    <button onclick="openPauseMenu('main')">Back</button>
+                </div>
+                <div class="gamePauseMenu" id="pauseMenu-run_stats" menuHeight="250">
+                    <button>STATS!</button>
+                    <button onclick="openPauseMenu('main')">Back</button>
+                </div>
+            </div>
+        </div>
+        <div id="gameShopContainer">
+            <div id="gameShop">
+                <span>Shop :)</span>
+                <div id="gameShopUpgradesContainer">
+                    <!--Upgrades-->
+                    <div class="gameShopSection">
+                        <span class="gameShopHeader">ITEMS</span>
+                        <div id="gameShopUpgrades">                        
+                            <div class="shopUpgrade">
+                                <span class="shopUpgradePrice">$25</span>
+                                <img src="graphics/placeholder.png">
+                            </div>
+                        </div>
+                        <div id="gameShopUpgradesButtons">
+                            <button onclick="rerollShop()">Reroll <span id="rerollPrice">$10</span></button>
+                            <button>Banish</button>
+                        </div>
+                    </div>
+                    <!--Elixers-->
+                    <div id="gameShopElixirs" class="gameShopSection">
+                        <span class="gameShopHeader">ELIXIRS</span>
+                    </div>
+                </div>
+            </div>
+            <button id="continueButton" onclick="closeShop()">CONTINUE</button>
+        </div>
+        <div id="gameSandboxContainer">
+            <div id="gameSandbox">
+                <div id="gameSandboxTabs">
+                    <button onclick="openSandboxMenu('enemies')">Enemies</button>
+                    <button onclick="openSandboxMenu('upgrades')">Upgrades</button>
+                    <button onclick="openSandboxMenu('consumables')">Consumables</button>
+                    <button onclick="openSandboxMenu('stats')">Stats</button>
+                    <button onclick="openSandboxMenu('tools')">Tools</button>
+                    <button onclick="openSandboxMenu('powerItems')">Power Items</button>
+                </div>
+                <div id="gameInnerSandbox">
+                    <div id="sandboxMenu-enemies"></div>
+                    <div id="sandboxMenu-upgrades"></div>
+                    <div id="sandboxMenu-stats"></div>
+                    <div id="sandboxMenu-tools">
+                        <button onclick="doge('area').querySelectorAll('.enemy').forEach(enemy => {enemy.kill(100)})">Kill all enemies</button>
+                        <button onclick="player.health = player.stats.player.maxHealth; updateUI()">Heal player</button>
+                        <button onclick="spawnPortal()">Spawn portal</button>
+                        <button onclick="player = createPlayer()">Reset player</button>
+                        <!-- <button onclick="spawnWave(25)">Spawn wave 25</button> -->
+                        <div class="numInput">
+                            <button onclick="spawnWave(parseInt(0+doge('sandboxWaveInput').value))">Spawn wave</button>
+                            <input type="number" id="sandboxWaveInput" placeholder="Wave">
+                        </div>
+                        <div class="numInput">
+                            <button onclick="player.getMoney(parseInt(0+doge('sandboxGetMoneyInput').value))">Get money</button>
+                            <input type="number" id="sandboxGetMoneyInput" placeholder="Money">
+                        </div>
+                        <div class="numInput">
+                            <button onclick="player.getPower(-parseInt(0+doge('sandboxGetPowerInput').value))">Take power</button>
+                            <button onclick="player.getPower(parseInt(0+doge('sandboxGetPowerInput').value))">Get power</button>
+                            <input type="number" id="sandboxGetPowerInput" placeholder="Power">
+                        </div>
+                        <div class="numInput">
+                            <button onclick="player.damage(-parseInt(0+doge('sandboxDamageInput').value))">Heal</button>
+                            <button onclick="player.damage(parseInt(0+doge('sandboxDamageInput').value))">Damage</button>
+                            <input type="number" id="sandboxDamageInput" placeholder="Amount">
+                        </div>
+                    </div>
+                    <div id="sandboxMenu-powerItems"></div>
+                </div>
+            </div>
+        </div>
+        <div id="gameUIContainer">
+            <div id="gameDebug">
+                <span id="dbPos">Pos: [-,-]</span><br>
+                <span id="dbVel">Vel: [-,-]</span><br>
+                <span id="dbKeys">Keys: []</span><br>
+                <span id="dbCursor">CursorPos: [-,-]</span>
+                <span id="dbUpdates">Updates: 0</span><br>
+                <span id="dbTickInterval">Tick Interval: 0/0</span><br>
+                <span id="dbStatus">Status Effects: []</span><br>
+            </div>
+            <div id="performanceDebug">
+                <span id="dbFPS">-FPS</span><br>
+                <span id="dbFPSMS">-MS</span><br>
+                <span id="dbTPS">-TPS</span><br>
+                <span id="dbE">-E</span>
+            </div>
+            <div id="gameTopLeftContainer">
+                <!--Power item, bars, and status effects-->
+                <div id="gameTopLeft">
+                    <!--Power items-->
+                    <div id="powerItemContainer">
+                        <img src="graphics/powerItems/pepper.png" id="powerItem">
+                    </div>
+
+                    <!--Status bars-->
+                    <div id="gameStatusBarsContainer">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <div class="statusBar">
+                                <div class="innerStatusBar" id="healthBar" style="background-color: rgb(255,100,100);"></div>
+                            </div>
+                            <div id="healthBarNum">100</div>
+                        </div>
+                        <!-- <div style="display: flex; align-items: center; gap: 5px;">
+                            <div class="statusBar" id="staminaBarContainer">
+                                <div class="innerStatusBar" id="staminaBar" style="background-color: rgb(255, 255, 255);"></div>
+                            </div>
+                            <div id="staminaBarNum">100</div>
+                        </div> -->
+                        <div style="display: flex; align-items: center; gap: 5px; height: 10px;">
+                            <div class="statusBar" id="powerContainer" style="height: 5px;">
+                                <div class="innerStatusBar" id="powerBar" style="background-color: rgb(255, 150, 0);"></div>
+                                <div class="innerStatusBar" id="lowerPowerBar" style="background-color: rgb(255,0,0,0.25);"></div>
+                            </div>
+                            <div id="powerBarNum">100</div>
+                        </div>
+                    </div>
+
+                    <div id="statusEffectContainer"></div>
+                </div>
+                <!--Below bars and power item, money-->
+                <div>
+                    <div id="gameMoneyCount">$0</div>
+                </div>
+            </div>
+            <div id="gameStatsContainer">
+                <!-- <div class="gameStatContainer">
+                    <span class="gameStatSectionName">DAMAGE</span>
+                    <div class="gameStat">
+                        <span class="gameStatName">Some stat name</span>
+                        <span>1.1</span>
+                        <span class="gameStatChange">+0.1</span>
+                    </div>
+                </div> -->
+            </div>
+            <div id="gameScoreContainer">
+                <span id="gameScore">0000000000</span>
+                <div id="streakContainer">
+                    <span id="streakCount">x0</span>
+                    <div id="streakBar">
+                        <div id="innerStreakBar"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="gameBottomLeftContainer">
+                <div id="consumablesContainer">
+                    <img src="graphics/consumables/medicine.png" id="gameConsumable">
+                </div>
+                <div id="gameAmmoContainer">
+                    <div id="gameAmmo">
+                        <span id="gameAmmoCount">0</span>
+                        <div id="gameAmmoLines">
+                            <span id="gameAmmoLinesCurrent"></span><span id="gameAmmoLinesMax" style="opacity: 0.5;"></span>
+                        </div>
+                    </div>
+                    <div id="gameAmmoBar">
+                        <div id="gameInnerAmmoBar"></div>
+                    </div>
+                    <span id="gameWeaponName">Mater</span>
+                </div>
+            </div>
+            <div id="gameRunInfo">
+                <em>Wave</em>
+                <div style="display: flex; align-items: end; margin: 4px 0px;">
+                    <div id="gameWaveCounter">0</div>
+                    <span>/100</span>
+                </div>
+                <div id="gameWaveBar">
+                    <div id="gameInnerWaveBar"></div>
+                </div>
+                <span id="gameWaveShopCounter">0 waves until shop</span>
+            </div>
+        </div>
+
+        <!--The actual game-->
+
+        <div id="areaContainer">
+            <div id="area">
+                <div id="noticeContainer"></div>
+                <div id="player">
+                    <div class="playerCosmeticContainer">
+                        <img src="graphics/cosmetics/tophatOutline.png" id="playerCosmeticOutline">
+                    </div>
+                    <div id="playerTextureContainer">
+                        <img src="graphics/characters/fella.png" id="playerTexture">
+                    </div>
+                    <div class="playerCosmeticContainer">
+                        <img src="graphics/cosmetics/tophat.png" id="playerCosmetic">
+                    </div>
+                </div>
+                <div id="weapon">
+                    <img src="graphics/weapons/gun.png" id="weaponTexture">
+                </div>
+                <div id="meleeHitbox">
+                    <div id="innerMeleeHitbox"></div>
+                </div>
+                <div id="grazeHitbox"></div>
+            </div>
+    
+            <div id="crosshair">
+                <div id="innerCrosshair">
+                    <div class="crosshairLineV" style="top: 0px;"></div>
+                    <div class="crosshairLineV" style="bottom: 0px;"></div>
+                    <div class="crosshairLineH" style="left: 0px;"></div>
+                    <div class="crosshairLineH" style="right: 0px;"></div>
+                </div>
+            </div>
+
+            <div id="cursorBars">
+                <div class="cursorBar">
+                    <div id="cursorAmmoBar"></div>
+                </div>
+                <div class="cursorBar">
+                    <div id="cursorCooldownBar"></div>
+                </div>
+            </div>
+    
+            <div id="debugButtons">
+                <button onclick="player.lastWaveDate = -1e67">Skip wave</button>
+            </div>
+
+            <div id="tutorialist">
+                <img src="graphics/characters/tutorialistPortrait.png" width="54" style="position: absolute; z-index: 2;">
+            </div>
+            <div id="tutorialistDialogueContainer">
+                <span id="tutorialistDialogue">This is some really cool sample text!</span>
+                <img src="graphics/space.gif" width="70" id="tutorialSpace">
+                <div id="tutorialGoal">
+                    <section>
+                        <span id="tutorialGoalText">Parry enemy projectiles</span>
+                        <span id="tutorialGoalCount">0/10</span>
+                    </section>
+                    <section id="tutorialGoalProgressBar">
+                        <div id="tutorialGoalProgress"></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="DeBread.js"></script>
+    <script src="upgrades.js"></script>
+    <script src="script.js"></script>
+    <script src="menus.js"></script>
+    <script src="game.js"></script>
+    <script src="enemies.js"></script>
+
+    <!-- BG Shader -->
+    <script src="https://xemantic.github.io/shader-web-background/dist/shader-web-background.min.js"></script>
+    <script type="x-shader/x-fragment" id="image">
+    precision mediump float;
+    #define SPIN_EASE 0.8
+    #define spin_time 5.
+    #define spin_amount 0.
+    #define contrast 1.
+
+    // #define PIXEL_SIZE_FAC 700.
+
+    // default colours
+    // #define colour_1 vec4(1.0,0.3725490196,0.3333333333,1.0)
+    // #define colour_2 vec4(0.0,0.6156862745,1.0,1.0)
+    // #define colour_3 vec4(0.2156862745,0.2588235294,0.2666666667,1.0)
+
+    // dark theme colors
+    #define colour_1 vec4(0.0, 0.0, 0.0, 1.0)
+    #define colour_2 vec4(0.1, 0.1, 0.1, 1.0)
+    #define colour_3 vec4(0.15, 0.15, 0.15, 1.0)
+
+    // light theme colors
+    // #define colour_1 vec4(1, 1, 1, 1.0)
+    // #define colour_2 vec4(0.9, 0.9, 0.9, 1.0)
+    // #define colour_3 vec4(0.8, 0.8, 0.8, 1.0)
+
+    uniform vec2 iResolution;
+    uniform float iTime;
+
+    void main( )
+    {
+      // uncomment to enable pixelated bg
+      // float pixel_size = length(iResolution.xy)/PIXEL_SIZE_FAC;
+      float pixel_size = 1.0;
+      vec2 uv = (floor(gl_FragCoord.xy*(1./pixel_size))*pixel_size - 0.5*iResolution.xy)/length(iResolution.xy) - vec2(0.12, 0.);
+      
+      float uv_len = length(uv);
+      
+      float speed = (spin_time*SPIN_EASE*0.2) + 302.2;
+      float new_pixel_angle = (atan(uv.y, uv.x)) + speed - SPIN_EASE*20.*(1.*spin_amount*uv_len + (1. - 1.*spin_amount));
+      
+      vec2 mid = vec2(0.5, 0.5);
+      uv = (vec2((uv_len * cos(new_pixel_angle) + mid.x), (uv_len * sin(new_pixel_angle) + mid.y)) - mid);
+      
+      uv *= 30.;
+      speed = iTime*(2.);
+      vec2 uv2 = vec2(uv.x+uv.y);
+
+      for(int i=0; i < 5; i++) {
+        uv2 += sin(max(uv.x, uv.y)) + uv;
+        uv  += 0.5*vec2(cos(5.1123314 + 0.353*uv2.y + speed*0.131121),sin(uv2.x - 0.113*speed));
+        uv  -= 1.0*cos(uv.x + uv.y) - 1.0*sin(uv.x*0.711 - uv.y);
+      }
+      
+      float contrast_mod = (0.25*contrast + 0.5*spin_amount + 1.2);
+      float paint_res =min(2., max(0.,length(uv)*(0.035)*contrast_mod));
+      float c1p = max(0.,1. - contrast_mod*abs(1.-paint_res));
+      float c2p = max(0.,1. - contrast_mod*abs(paint_res));
+      float c3p = 1. - min(1., c1p + c2p);
+
+      // Output to screen
+      gl_FragColor = (0.3/contrast)*colour_1 + (1. - 0.3/contrast)*(colour_1*c1p + colour_2*c2p + vec4(c3p*colour_3.rgb, c3p*colour_1.a));
+    }
+  </script>
+  <script src="bgShader.js"></script></body>
+</html>

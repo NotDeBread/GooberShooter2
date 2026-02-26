@@ -1,0 +1,14 @@
+How to make a Goober Shooter 2 Character
+
+If you have Aseprite, open the 'characterTemplate.ase' file. It should have 10 frames on the timeline. If you don't see the animation timeline, click the film roll button on the bottom right.
+
+Frames 1-9 are the looking directions and frames 10 or more are the taunts.
+
+When exporting you need a character portrait image, which is a 100% scale PNG of the front facing texture, and a sprite sheet.
+The sprite sheet needs these settings:
+
+Sheet Type: By Rows
+Constraints: Fixed # of Columns, 9
+Spacing: 1
+
+Don't forget to save the .ase file and include it in your export just in case I have to make any adjustments.

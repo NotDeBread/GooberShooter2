@@ -1,0 +1,253 @@
+/*
+Z INDEX STUFF
+
+-GLOBAL-
+5: Prompt
+
+-GAME-
+1: Area
+2: Area UI
+3: Pause Container
+4: Shop
+A LOT: Debug buttons
+
+-AREA-
+2: Player
+3: Weapon
+4: Area Notice
+*/
+
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
+
+:root {
+  --bouncy: cubic-bezier(0,2,.75,1);
+}
+
+body {
+    margin: 0;
+    background-color: black;
+    color: white;
+    font-family: "Poppins", sans-serif;
+    image-rendering: pixelated;
+    overflow: hidden;
+}
+
+cb {
+    color: rgb(255, 100, 100);
+    font-weight: 700;
+}
+
+cg {
+    color: rgb(100, 255, 100);
+    font-weight: 700;
+}
+
+cp {
+    color: rgb(255,255,100);
+    font-weight: 700;
+}
+
+button {
+    background-color: transparent;
+    border: 2px solid white;
+    color: white;
+    cursor: pointer;
+    font-family: "Poppins", sans-serif;
+    transition: scale var(--bouncy) 250ms;
+}
+
+button:hover {
+    background-color: white;
+    color: black;
+    scale: 1.1;
+}
+
+button:active {
+    background-color: rgb(200,200,200);
+    color: black;
+    scale: 1;
+}
+
+input {
+    background-color: transparent;
+    outline: 2px solid white;
+    font-family: "Poppins", sans-serif;
+    border: none;
+    color: white;
+    margin: none;
+    padding: none;
+}
+
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+input[type="range"] {
+    background-color: transparent;
+    cursor: pointer;
+    outline: none;
+}
+
+input[type="range"]:hover::-moz-range-thumb {
+    height: 10px;
+}
+
+input[type="range"]::-moz-range-thumb {
+    background-color: white;
+    border: none;
+    border-radius: 0px;
+    outline: none;
+    width: 5px;
+    height: 4px;
+    transition: height cubic-bezier(0,2,.75,1) 250ms;
+}
+
+input[type="range"]::-moz-range-track {
+    border: 1px solid white;
+    background-color: transparent;
+    box-shadow: none;
+}
+
+input[type="range"]::-moz-range-progress {
+    background-color: white;
+}
+
+a {
+    color: white;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.coolLine {
+    height: 2px;
+    width: 100%;
+    background-color: rgb(255,255,255,0.25);
+}
+
+#tooltip {
+    position: absolute;
+    z-index: 10;
+    padding: 5px;
+    background-color: rgb(0,0,0,0.75);
+    backdrop-filter: blur(10px);
+    border: 2px solid white;
+    box-shadow: 0px 0px 0px 2px black;
+    min-width: 250px;
+    pointer-events: none;
+    user-select: none;
+    opacity: 0;
+}
+
+#tooltipHeader {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    gap: 4px;
+}
+
+#tooltipTitle {
+    font-size: 1.1em;
+    font-weight: 700;
+}
+
+#tooltipRarity {
+    font-size: 0.75em;
+    font-weight: 700;
+    box-shadow: inset 0px 2px rgb(255,255,255,0.25);
+    padding: 2px 8px;
+    border-radius: 2px;
+}
+
+#tooltipBody {
+    max-width: 400px;
+}
+
+#tooltipPrice {
+    text-align: right;
+    color: rgb(255,255,100);
+    font-weight: 700;
+}
+
+#promptContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100dvw;
+    height: 100dvh;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 5;
+}
+
+#prompt {
+    padding: 5px;
+    outline: 2px solid white;
+    background-color: rgb(0,0,0,0.75);
+    backdrop-filter: blur(5px);
+    width: 300px;
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    animation: promptIn 250ms var(--bouncy) 1 forwards;
+}
+
+@keyframes promptIn {
+    from {
+        scale: 0.9;
+    }
+}
+
+#promptHeaderContainer {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+#promptTitle {
+    font-size: 1.25em;
+    font-weight: 700;
+}
+
+#promptButtons {
+    display: flex;
+    gap: 5px;
+}
+
+@keyframes textFlow {
+  from {
+    translate: 0px 2px;
+  }
+  50% {
+    translate: 0px -2px;
+  }
+  to {
+    translate: 0px 2px;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    scale: 0;
+  }
+  to {
+    scale: 1;
+  }
+}
+
+@keyframes scaleOut {
+    to {
+        scale: 0;
+    }
+}
