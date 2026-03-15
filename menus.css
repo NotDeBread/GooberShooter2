@@ -132,6 +132,8 @@
     margin-bottom: 25px;
     width: 500px;
     height: 250px;
+    display: flex;
+    flex-direction: column;
 }
 
 #gameSettingsTabs {
@@ -140,8 +142,29 @@
     margin-bottom: 5px;
 }
 
+#gameSettingsBody {
+    height: 100%;
+    max-height: 100%;
+}
+
 .gameSettingsGamemodeButton {
     width: 100%;
+    border: 1px solid grey;
+    padding: 2px;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    user-select: none;
+}
+
+.gameSettingsGamemodeButton[selected="true"] {
+    background-color: white;
+    color: black;
+}
+
+.gameSettingsGamemodeButton:hover {
     border: 1px solid white;
 }
 
@@ -175,11 +198,23 @@
 }
 
 .gameSettingsChallenge:hover {
-    background-color: white;
+    outline: 1px solid white;
 }
 
-.gameSettingsChallenge:hover img {
-    filter: invert();
+#gameSettingsCharacterContainer {
+    display: flex;
+    gap: 5px;
+    padding: 5px;
+    outline: 1px solid grey;
+    line-height: 1;
+}
+
+#gameSettingsFooter {
+    border-top: 1px solid rgb(255,255,255,0.25);
+    padding-top: 5px;
+    margin-top: 5px;
+    display: flex;
+    justify-content: space-between;
 }
 
 /* Character select */
@@ -255,6 +290,10 @@
 
 .ccSkin img {
     width: 36px;
+}
+
+.ccSkin:hover, .ccCosmetic:hover {
+    outline: 1px solid white;
 }
 
 #ccCharacterContainer {
@@ -441,4 +480,36 @@
     to {
         opacity: 1;
     }
+}
+
+#settings {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.settingsSection {
+    overflow-y: auto;
+    height: 100%;
+}
+
+.settingsCheckboxContainer {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    line-height: 1;
+    margin-top: 5px; 
+}
+
+.settingsCheckboxInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.settingsCheckboxInfo span:nth-child(1) {
+    font-weight: 700;
+}
+
+.settingsCheckboxInfo span:nth-child(2) {
+    color: grey;
 }

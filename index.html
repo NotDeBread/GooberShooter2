@@ -15,7 +15,6 @@
         <img src="graphics/characters/fellaPortrait.png" width="72" style="transition: opacity ease-in-out 500ms; opacity: 0;">
     </div>
 
-
     <div id="tooltip">
         <div id="tooltipHeader">
             <span id="tooltipTitle">Tooltip Title</span>
@@ -29,7 +28,7 @@
     </div>
     <div id="promptContainer">
         <div id="prompt">
-            <div>
+            <div style="width: 100%; height: 100%;">
                 <div id="promptHeaderContainer">
                     <span id="promptTitle">Warning!</span>
                     <div class="coolLine"></div>
@@ -44,18 +43,27 @@
             </div>
         </div>
     </div>
+    <div id="notificationContainer">
+        <!-- <div class="notification">
+            <img src="graphics/placeholder.png">
+            <div>
+                <span style="font-weight: 700;">Some really really long title</span><br>
+                <span>Some really cool super long description with a lot of words to see if text wrapping works correctly</span>
+            </div>
+        </div> -->
+    </div>
     <div id="menu-main" class="menu" style="display: flex;">
         <div style="position: relative; translate: -25px 0px;">
             <span id="menuTitle1">Goober</span>
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
-            <span>DEMO</span>
+            <span style="max-width: 100px !important;">PRESENTATION <br> DEMO <a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">pre1</a></span>
         </div>
         <div id="menuButtons">
-            <button onclick="openMenu('gameSettings')">PLAY</button>
+            <button onclick="openMenu('gameSettings'); openGameSettingsMenu(0)">PLAY</button>
             <button onclick="openMenu('characterSelect')">CHARACTER SELECT</button>
-            <button>SETTINGS</button>
-            <button onclick="openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}])
+            <button onclick="openSettings()">SETTINGS</button>
+            <button onclick="openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,300])
             ">CREDITS</button>
         </div>
     </div>
@@ -64,38 +72,65 @@
 
         <div id="gameSettingsContainer">
             <div id="gameSettingsTabs">
-                <button>Game</button>
+                <button id="gameSettingsTab0" onclick="openGameSettingsMenu(0)">Gamemode</button>
+                <button id="gameSettingsTab1" onclick="openGameSettingsMenu(1)">Challenges</button>
+                <button id="gameSettingsTab2" onclick="openGameSettingsMenu(2)">Review</button>
             </div>
-            <div>
-                <span>Gamemode</span>
-                <div style="display: flex;">
-                    <button class="gameSettingsGamemodeButton" id="gameSettingsGM0" onclick="selectGamemode(0)">
-                        Survival<br>
-                        <div>Survive waves of enemies as long as you can.</div>
-                    </button>
-                    <button class="gameSettingsGamemodeButton" id="gameSettingsGM1" onclick="selectGamemode(1)">
-                        Sprint<br>
-                        <div>Last through as many waves as you can before time is up.</div>
-                    </button>
-                    <button class="gameSettingsGamemodeButton" id="gameSettingsGM2" onclick="selectGamemode(2)">
-                        Sandbox<br>
-                        <div>Give yourself items, summon enemies, change player attributes, no consequences!</div>
-                    </button>
-                    <button class="gameSettingsGamemodeButton" id="gameSettingsGM3" onclick="selectGamemode(3)">
-                        Tutorial<br>
-                        <div>Learn how to play!</div>
-                    </button>
-                </div>
-                <span>Challenges</span>
-                <div id="gameSettingsChallenges">
-                    <div class="gameSettingsChallenge">
-                        <img src="graphics/challenges/high_stakes.png">
+            <div id="gameSettingsBody">
+                <div id="gameSettingsMenu-0">    
+                    <span>Select gamemode:</span>
+                    <div style="display: flex; gap: 5px;">
+                        <div class="gameSettingsGamemodeButton" id="gameSettingsGM0" onclick="selectGamemode(0)">
+                            Survival<br>
+                            <div>Survive waves of enemies as long as you can.</div>
+                        </div>
+                        <div class="gameSettingsGamemodeButton" id="gameSettingsGM1" onclick="selectGamemode(1)" style="pointer-events: none; opacity: 0.5;">
+                            Sprint<br>
+                            <div>Last through as many waves as you can before time is up.</div>
+                        </div>
+                        <div class="gameSettingsGamemodeButton" id="gameSettingsGM2" onclick="selectGamemode(2)">
+                            Sandbox<br>
+                            <div>Give yourself items, summon enemies, change player attributes, no consequences!</div>
+                        </div>
+                        <div class="gameSettingsGamemodeButton" id="gameSettingsGM3" onclick="selectGamemode(3)">
+                            Tutorial<br>
+                            <div>Learn how to play!</div>
+                        </div>
                     </div>
+                </div>
+                <div id="gameSettingsMenu-1" style="display: none;">
+                    <span>Select challenge:</span>
+                    <div id="gameSettingsChallenges">
+                        <div class="gameSettingsChallenge">
+                            <img src="graphics/challenges/high_stakes.png">
+                        </div>
+                    </div>
+                </div>
+                <div id="gameSettingsMenu-2" style="display: none;">
+                    <span>Review</span><br>
+                    <strong>Gamemode: </strong><span id="gameSettingsSelectedGamemode">???</span><br>
+                    <strong>Challenge: </strong><span id="gameSettingsSelectedChallenge">???</span><br>
+                    <strong>Character: </strong>
+                    <div id="gameSettingsCharacterContainer">
+                        <img src="graphics/characters/fellaPortrait.png" width="36" id="gameSettingsSelectedCharacterImg">
+                        <div>
+                            <span id="gameSettingsSelectedCharacter">???</span><br>
+                            <em id="gameSettingsSelectedWeapon">???</em>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="gameSettingsFooter">
+                <div>
+                    <button onclick="openMenu('game'); startGame()">Play with previous settings</button>
+                </div>
+                <div>
+                    <button onclick="openGameSettingsMenu(currentGameSettingsMenu-1)">Back</button>
+                    <button onclick="openGameSettingsMenu(currentGameSettingsMenu+1)" id="gameSettingsNext" style="transition: width ease-in-out 500ms;">Next</button>
                 </div>
             </div>
         </div>
 
-        <button onclick="openMenu('game'); startGame()" class="genericMenuButton">PLAY</button>
         <button onclick="openMenu('main')" class="genericMenuButton">BACK</button>
     </div>
     <div id="menu-characterSelect" class="menu">
@@ -197,7 +232,7 @@
                 </section>
             </div>
         </div>
-        <button onclick="openMenu('main')" class="genericMenuButton" style="margin-top: 25px;">Go back</button>
+        <button onclick="openMenu('main')" class="genericMenuButton" style="margin-top: 25px;">BACK</button>
     </div>
     <div id="menu-game" class="menu">
         <div id="gamePauseContainer">
@@ -206,7 +241,7 @@
                 <div id="pauseMenu-blank" menuHeight="200"></div>
                 <div class="gamePauseMenu" id="pauseMenu-main" menuHeight="200">
                     <button onclick="pauseGame()">Resume</button>
-                    <button onclick="openPauseMenu('settings')">Settings</button>
+                    <button onclick="openSettings()">Settings</button>
                     <button onclick="openPauseMenu('run_stats')">Run Stats</button>
                     <button style="margin-top: 25px;" 
                         onclick="openPrompt(
@@ -248,10 +283,6 @@
                             ]
                         )">Quit</button>
                 </div>
-                <div class="gamePauseMenu" id="pauseMenu-settings" menuHeight="300">
-                    <button>Some setting button</button>
-                    <button onclick="openPauseMenu('main')">Back</button>
-                </div>
                 <div class="gamePauseMenu" id="pauseMenu-run_stats" menuHeight="250">
                     <button>STATS!</button>
                     <button onclick="openPauseMenu('main')">Back</button>
@@ -276,9 +307,12 @@
                             <button>Banish</button>
                         </div>
                     </div>
-                    <!--Elixers-->
+                    <!--Elixirs-->
                     <div id="gameShopElixirs" class="gameShopSection">
                         <span class="gameShopHeader">ELIXIRS</span>
+                        <div id="gameShopElixirs">
+                            
+                        </div>
                     </div>
                 </div>
             </div>
@@ -325,6 +359,64 @@
                     </div>
                     <div id="sandboxMenu-powerItems"></div>
                 </div>
+            </div>
+        </div>
+        <div id="gameOverContainer">
+            <div id="gameOver">
+                <span style="font-size: 1.25em; font-weight: 700;">You dead :(</span><br>
+                <div class="gameOverRow">
+                    <div class="gameOverBox" style="min-width: 250px !important;">
+                        <span class="gameOverBoxTitle">POINTS</span>
+                        <span id="go-score">0000000000</span>
+                    </div>
+                    <div class="gameOverBox">
+                        <span class="gameOverBoxTitle">WAVE</span>
+                        <span id="go-wave" style="font-size: 2em; font-weight: 700;">100</span>
+                    </div>
+                </div>
+                <div class="gameOverRow">
+                    <div class="gameOverBox">
+                        <span class="gameOverBoxTitle">ENEMIES KILLED</span>
+                        <span id="go-enemiesKilled" style="font-weight: 700;">1,000</span>
+                    </div>
+                    <div class="gameOverBox">
+                        <span class="gameOverBoxTitle">DAMAGE TAKEN</span>
+                        <span id="go-damageTaken" style="font-weight: 700;">1,000</span>
+                    </div>
+                    <div class="gameOverBox">
+                        <span class="gameOverBoxTitle">DAMAGE DELT</span>
+                        <span id="go-damageGiven" style="font-weight: 700;">1,000</span>
+                    </div>
+                </div>
+                <div class="gameOverRow">
+                    <div class="gameOverBox">
+                        <span class="gameOverBoxTitle">$ SPENT</span>
+                        <span id="go-moneySpent" style="font-weight: 700;">-</span>
+                    </div>
+                    <div class="gameOverBox">
+                        <span class="gameOverBoxTitle">REROLLS</span>
+                        <span id="go-rerolls" style="font-weight: 700;">-</span>
+                    </div>
+                    <div class="gameOverBox">
+                        <span class="gameOverBoxTitle">ITEMS</span>
+                        <span id="go-items" style="font-weight: 700;">-</span>
+                    </div>
+                    <div class="gameOverBox">
+                        <span class="gameOverBoxTitle">ACCURACY</span>
+                        <span id="go-accuracy" style="font-weight: 700;">-</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 5px; justify-content: center; margin-top: 5px;">
+                    <button onclick="startGame()">RETRY</button>
+                    <button onclick="openMenu('gameSettings')">GAME SETTINGS</button>
+                    <button onclick="openMenu('main')">MAIN MENU</button>
+                </div>
+            </div>
+        </div>
+        <div id="gameRestartContainer">
+            <span>RESTARTING...</span>
+            <div id="gameRestartBar">
+                <div id="gameInnerRestartBar"></div>
             </div>
         </div>
         <div id="gameUIContainer">
@@ -394,10 +486,20 @@
             <div id="gameScoreContainer">
                 <span id="gameScore">0000000000</span>
                 <div id="streakContainer">
-                    <span id="streakCount">x0</span>
+                    <div id="streakCount">x0</div>
                     <div id="streakBar">
                         <div id="innerStreakBar"></div>
                     </div>
+                </div>
+                <div id="gameStyleContainer">
+                    <!-- <div class="gameStyle">
+                        <div>
+                            <span>+Kill</span>
+                            <span>x2</span>
+                        </div>
+                        <div class="coolLine"></div>
+                        <span>6769420</span>
+                    </div> -->
                 </div>
             </div>
             <div id="gameBottomLeftContainer">
@@ -431,20 +533,19 @@
         </div>
 
         <!--The actual game-->
-
         <div id="areaContainer">
             <div id="area">
                 <div id="noticeContainer"></div>
                 <div id="player">
-                    <div class="playerCosmeticContainer">
+                    <!-- <div class="playerCosmeticContainer">
                         <img src="graphics/cosmetics/tophatOutline.png" id="playerCosmeticOutline">
-                    </div>
+                    </div> -->
                     <div id="playerTextureContainer">
                         <img src="graphics/characters/fella.png" id="playerTexture">
                     </div>
-                    <div class="playerCosmeticContainer">
+                    <!-- <div class="playerCosmeticContainer">
                         <img src="graphics/cosmetics/tophat.png" id="playerCosmetic">
-                    </div>
+                    </div> -->
                 </div>
                 <div id="weapon">
                     <img src="graphics/weapons/gun.png" id="weaponTexture">
@@ -453,6 +554,7 @@
                     <div id="innerMeleeHitbox"></div>
                 </div>
                 <div id="grazeHitbox"></div>
+                <div id="sandboxEnemy"></div>
             </div>
     
             <div id="crosshair">

@@ -1,40 +1,72 @@
 let gameStartTimeout
-gameStartTimeout = setTimeout(() => {
-    doge('gameStartScreen').querySelectorAll('.gameStartScreenText').forEach(div => {
-        div.style.opacity = '1'
-        applyFlowText(div, 0.75)
-    })
-    doge('gameStartScreen').querySelector('img').style.opacity = '1'
-    
+function startTitle() {
+    tracks.menu.play()
+    tracks.menu.volume = 0.00
+    tracks.menu.preservesPitch = false
+    tracks.menu.playbackRate = 0.75
+    tracks.menu.loop = true
+
+    const divs = doge('gameStartScreen').querySelectorAll('div')
+
     gameStartTimeout = setTimeout(() => {
-        doge('gameStartScreen').querySelectorAll('.gameStartScreenText').forEach(text => {
-            text.querySelectorAll('div').forEach(char => {
-                char.style.animation += `, scaleOut 0.50s ease-in-out 0ms 1 forwards`
-            })
+        doge('gameStartScreen').querySelectorAll('.gameStartScreenText').forEach(div => {
+            div.style.opacity = '1'
+            applyFlowText(div, 0.75)
         })
-        doge('gameStartScreen').querySelector('img').style.opacity = '0'
-    
+        doge('gameStartScreen').querySelector('img').style.opacity = '1'
+        
         gameStartTimeout = setTimeout(() => {
-            doge('gameStartScreen').style.opacity = 0
-            doge('gameStartScreen').style.pointerEvents = 'none'
-    
-            openMenu('main')
+            doge('gameStartScreen').querySelectorAll('.gameStartScreenText').forEach(text => {
+                text.querySelectorAll('div').forEach(char => {
+                    char.style.animation += `, scaleOut 0.50s ease-in-out 0ms 1 forwards`
+                })
+            })
+            doge('gameStartScreen').querySelector('img').style.opacity = '0'
 
+            setTimeout(() => {
+                doge('gameStartScreen').querySelector('img').style.display = 'none'
+                divs[0].innerText = 'With music by'
+                applyFlowText(divs[0], 0.75)
 
-            if(navigator.userAgent.includes('Firefox') && saveData.firstLogin) {
-                openPrompt('You\'re running Firefox','Goober Shooter 2 runs on a tick-based system using the setInterval function. On Firefox browsers this function does not have drift correction, so the game may run slower then expected.',[{text: 'I understand',onclick: closePrompt}])
-            }
-        }, 1000);
-    }, 2500);
-}, 1000);
+                divs[1].innerText = 'BBDawgs'
+                applyFlowText(divs[1], 0.75)
+
+                setTimeout(() => {
+                    doge('gameStartScreen').querySelectorAll('.gameStartScreenText').forEach(text => {
+                        text.querySelectorAll('div').forEach(char => {
+                            char.style.animation += `, scaleOut 0.50s ease-in-out 0ms 1 forwards`
+                        })
+                    })
+                    
+                    setTimeout(() => {                        
+                        gameStartTimeout = setTimeout(() => {
+                            doge('gameStartScreen').style.opacity = 0
+                            doge('gameStartScreen').style.pointerEvents = 'none'
+                    
+                            openMenu('main')
+                
+                
+                            if(navigator.userAgent.includes('Firefox') && saveData.firstLogin) {
+                                openPrompt('You\'re running Firefox','Goober Shooter 2 runs on a tick-based system using the setInterval function. On Firefox browsers this function does not have drift correction, so the game may run slower then expected.',[{text: 'I understand',onclick: closePrompt}])
+                            }
+                        }, 1000);
+                    }, 500);
+                }, 2500);   
+            }, 1000);
+        }, 2500);
+    }, 1000);
+}
 
 doge('gameStartScreen').onclick = () => {
-    doge('gameStartScreen').remove()
-    clearTimeout(gameStartTimeout)
-    openMenu('game')
-    startGame()
-
+    if(!saveData.firstLogin) {
+        doge('gameStartScreen').remove()
+        clearTimeout(gameStartTimeout)
+        openMenu('main')
     
+        tracks.menu.currentTime = 10.2
+        // startGame()
+    }
+
     if(navigator.userAgent.includes('Firefox') && saveData.firstLogin) {
         openPrompt('You\'re running Firefox','Goober Shooter 2 runs on a tick-based system using the setInterval function. On Firefox browsers this function does not have drift correction, so the game may run slower then expected.',[{text: 'I understand',onclick: closePrompt}])
     }
@@ -148,11 +180,11 @@ function openMenu(menu) {
     if(menu === 'main') {
         doge('menuTitle1').innerText = 'Goober'
         doge('menuTitle2').innerText = 'Shooter'
-
+        
         if(DeBread.randomNum(1,500) === 1) {
             doge('menuTitle1').innerText = 'Googer'
         }
-
+        
         applyFlowText(doge('menuTitle1'), 0.75)
         applyFlowText(doge('menuTitle2'), 0.75)
         if(DeBread.randomNum(1,100) === 1) {
@@ -201,6 +233,7 @@ function openMenu(menu) {
 
     if(menu === 'gameSettings') {
         renderChallenges()
+        openGameSettingsMenu(currentGameSettingsMenu)
     }
 
     if(menu === 'characterSelect') renderCharacterSelect()
@@ -216,7 +249,7 @@ function renderCharacterSelect() {
 
         const tag2 = document.createElement('div')
         tag2.classList.add('selectedCharacterTag')
-        tag2.innerText = characters[saveData.selectedCharacter].tag
+        tag2.innerHTML = characters[saveData.selectedCharacter].tag
         tag2.style.backgroundColor = characters[saveData.selectedCharacter].tagCol
         doge('selectedCharacterTags').append(tag2)
 
@@ -231,7 +264,7 @@ function renderCharacterSelect() {
 
         const tag = document.createElement('div')
         tag.classList.add('selectedCharacterTag')
-        tag.innerText = `${characters[saveData.selectedCharacter].taunts ?? '???'} taunts`
+        tag.innerHTML = `${characters[saveData.selectedCharacter].taunts ?? '???'} taunts`
         doge('selectedCharacterTags').append(tag)
     } updateSelectedCharacter()
     
@@ -274,10 +307,6 @@ function renderCharacterSelect() {
     }
 
     updateCharacterCustomization()
-}
-
-function toggleCharacterCustomization() {
-
 }
 
 let currentCosmeticLayer = 0
@@ -370,12 +399,10 @@ function updateCharacterCustomization() {
         }
     }
 
-    doge('ccRangeXOffset').onchange = updateRanges
-    doge('ccRangeXOffset').onmousemove = updateRanges
-    doge('ccRangeYOffset').onchange = updateRanges
-    doge('ccRangeYOffset').onmousemove = updateRanges
-    doge('ccRangeRot').onchange = updateRanges
-    doge('ccRangeRot').onmousemove = updateRanges
+    for(const x of ['ccRangeXOffset','ccRangeYOffset','ccRangeRot']) {
+        doge(x).onchange = updateRanges
+        doge(x).onmousemove = updateRanges
+    }
     
     function updateRanges() {
         const posValues = [doge('ccRangeXOffset').value, doge('ccRangeYOffset').value]
@@ -418,12 +445,189 @@ function updateCharacterCustomizationCharacter() {
     doge('ccCharacter').src = `graphics/characters/${playerSrc}Portrait.png`
 }
 
+const gamemodeNames = [
+    'Survival',
+    'Sprint',
+    'Sandbox',
+    'Tutorial'
+]
+
+let currentGameSettingsMenu = 0
+function openGameSettingsMenu(id) {
+    currentGameSettingsMenu = Math.min(Math.max(id,0),doge('gameSettingsTabs').children.length-1)
+    for(let i = 0; i < doge('gameSettingsTabs').children.length; i++) {
+        if(i === currentGameSettingsMenu) {
+            doge(`gameSettingsMenu-${i}`).style.display = 'unset'
+            doge(`gameSettingsTab${i}`).style.backgroundColor = 'white'
+            doge(`gameSettingsTab${i}`).style.color = 'black'
+        } else {
+            doge(`gameSettingsMenu-${i}`).style.display = 'none'
+            doge(`gameSettingsTab${i}`).style.backgroundColor = 'transparent'
+            doge(`gameSettingsTab${i}`).style.color = 'white'
+        }
+    }
+
+    if(id === doge('gameSettingsTabs').children.length-1) {
+        doge('gameSettingsNext').innerText = 'PLAY'
+        doge('gameSettingsNext').style.width = '100px'
+        doge('gameSettingsNext').onclick = () => {
+            openMenu('game') 
+            startGame()
+        }
+    } else {
+        doge('gameSettingsNext').innerText = 'Next'
+        doge('gameSettingsNext').style.width = '75px'
+        doge('gameSettingsNext').onclick = () => {
+            openGameSettingsMenu(currentGameSettingsMenu+1)
+        }
+
+    }
+
+    if(currentGameSettingsMenu === 2) {
+        const character = characters[saveData.selectedCharacter]
+        doge('gameSettingsSelectedGamemode').innerText = gamemodeNames[saveData.gameSettings.gamemode]
+        doge('gameSettingsSelectedCharacter').innerText = characters[saveData.selectedCharacter].name
+        doge('gameSettingsSelectedWeapon').innerText = characters[saveData.selectedCharacter].weapon.name
+        doge('gameSettingsSelectedCharacterImg').src = `graphics/characters/${saveData.selectedCharacter}Portrait.png`
+
+        doge('gameSettingsSelectedChallenge').innerText = challenges[saveData.selectedChallenge].name
+
+        doge('gameSettingsSelectedChallenge').onmouseenter = () => {
+            const buttonRect = doge('gameSettingsSelectedChallenge').getBoundingClientRect()
+            tooltip([buttonRect.left + doge('gameSettingsSelectedChallenge').offsetWidth / 2, buttonRect.top + doge('gameSettingsSelectedChallenge').offsetHeight + 12], challenges[saveData.selectedChallenge].name, 'CHALLENGE', challenges[saveData.selectedChallenge].desc, undefined, '#661b2f')
+        }
+
+        doge('gameSettingsSelectedChallenge').onmouseleave = () => {
+            doge('tooltip').style.opacity = '0'
+        }
+
+        //janky as hell
+        const rect = doge('gameSettingsCharacterContainer').getBoundingClientRect()
+        let tooltipWidth = '300px'
+        if(character.pros || character.cons || character.info) {
+            tooltipWidth = '500px'
+        }
+
+        doge('gameSettingsCharacterContainer').onmouseenter = () => {
+            tooltip([rect.left + doge('gameSettingsCharacterContainer').offsetWidth / 2,rect.bottom + 25],characters[saveData.selectedCharacter].name, characters[saveData.selectedCharacter].tag, 
+                `
+                <div style="width: ${tooltipWidth}; margin-top: 5px;">
+                    ${characters[saveData.selectedCharacter].desc}
+                    <div style="display: flex; gap: 5px; width: 100%;">
+                        <div id="characterStatsCharacterContainer" style="height: 100%; width: 100%;">
+                            <em style="color: grey; font-size: 0.75em;">CHARACTER</em>
+                            <div id="characterStatsCharacterStats"></div>
+                        </div>
+                        <div id="characterStatsWeaponContainer" style="height: 100%; width: 100%;">
+                            <em style="color: grey; font-size: 0.75em;">WEAPON</em>
+                            <div id="characterStatsWeaponTitleContainer">
+                                <img src="graphics/weapons/sniper.png" id="characterStatsWeaponImg">
+                                <span id="characterStatsWeaponName">Sniper</span>
+                            </div>
+                            <div id="characterStatsWeaponDescContainer">
+                                <em id="characterStatsWeaponDesc">Long range doodad bla bla more text</em>
+                            </div>
+                            <div id="characterStatsWeaponStats"></div>
+                        </div>
+                    </div>
+                </div>
+                `
+            , undefined, character.tagCol)
+
+        doge('tooltipBody').style.maxWidth = tooltipWidth
+
+        doge('characterStatsWeaponName').innerText = character.weapon.name
+        doge('characterStatsWeaponDesc').innerText = character.weapon.desc
+        doge('characterStatsWeaponImg').src = `graphics/weapons/${character.weapon.name.toLowerCase().replaceAll(' ','_')}.png`
+
+        doge('characterStatsWeaponStats').innerHTML = ''
+        doge('characterStatsCharacterStats').innerHTML = ''
+        let statAnimDelay = 0
+
+        if(!character.info && !character.pros) {
+            doge('characterStatsCharacterContainer').style.display = 'none'
+        } else {
+            doge('characterStatsCharacterContainer').style.display = ''
+            
+            if(character.pros) {
+                for(let i = 0; i < character.pros.length; i++) {
+                    const stat = document.createElement('div')
+                    stat.classList.add('characterStatsStat')
+                    stat.style.animation = `statIn 500ms ease-out ${statAnimDelay}ms 1 forwards`
+                    stat.innerHTML = `
+                    <img src="graphics/arrowup.png">
+                    <span>${character.pros[i]}</span>
+                    `
+                    
+                    doge('characterStatsCharacterStats').append(stat)
+                    
+                    statAnimDelay += 50
+                }
+            }
+
+            if(character.cons) {
+                for(let i = 0; i < character.cons.length; i++) {
+                    const stat = document.createElement('div')
+                    stat.classList.add('characterStatsStat')
+                    stat.style.animation = `statIn 500ms ease-out ${statAnimDelay}ms 1 forwards`
+                    stat.innerHTML = `
+                    <img src="graphics/arrowdown.png">
+                    <span>${character.cons[i]}</span>
+                    `
+                    
+                    doge('characterStatsCharacterStats').append(stat)
+                    
+                    statAnimDelay += 50
+                }
+            }
+
+            if(character.info) {
+                const span = document.createElement('span')
+                span.innerHTML = character.info
+        
+                doge('characterStatsCharacterStats').append(span)
+            }
+        }
+        for(let i = 0; i < character.weapon.pros.length; i++) {
+            const stat = document.createElement('div')
+            stat.classList.add('characterStatsStat')
+            stat.style.animation = `statIn 500ms ease-out ${statAnimDelay}ms 1 forwards`
+            stat.innerHTML = `
+                <img src="graphics/arrowup.png">
+                <span>${character.weapon.pros[i]}</span>
+            `
+
+            doge('characterStatsWeaponStats').append(stat)
+
+            statAnimDelay += 50
+        }
+        for(let i = 0; i < character.weapon.cons.length; i++) {
+            const stat = document.createElement('div')
+            stat.classList.add('characterStatsStat')
+            stat.style.animation = `statIn 500ms ease-out ${statAnimDelay}ms 1 forwards`
+            stat.innerHTML = `
+                <img src="graphics/arrowdown.png">
+                <span>${character.weapon.cons[i]}</span>
+            `
+
+            doge('characterStatsWeaponStats').append(stat)
+
+            statAnimDelay += 50
+        }
+        }
+
+        doge('gameSettingsCharacterContainer').onmouseleave = () => {
+            doge('tooltip').style.opacity = '0'
+        }
+    }
+} openGameSettingsMenu(currentGameSettingsMenu)
+
 function selectGamemode(gm) {
     for(let i = 0; i <= 3; i++) {
         if(i !== gm) {
-            doge(`gameSettingsGM${i}`).style.opacity = '0.25'
+            doge(`gameSettingsGM${i}`).setAttribute('selected','false')
         } else {
-            doge(`gameSettingsGM${i}`).style.opacity = '1'
+            doge(`gameSettingsGM${i}`).setAttribute('selected','true')
         }
     }
     saveData.gameSettings.gamemode = gm
@@ -439,6 +643,11 @@ function renderChallenges() {
 
         doge('gameSettingsChallenges').append(button)
 
+        if(saveData.selectedChallenge === key) {
+            button.style.backgroundColor = 'white'
+            button.querySelector('img').style.filter = 'invert()'
+        }
+
         button.onmouseenter = () => {
             const buttonRect = button.getBoundingClientRect()
             tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], challenges[key].name, 'CHALLENGE', challenges[key].desc, undefined, '#661b2f')
@@ -450,6 +659,16 @@ function renderChallenges() {
 
         button.onclick = () => {
             saveData.selectedChallenge = key
+
+            doge('gameSettingsChallenges').querySelectorAll('div').forEach(div => {
+                if(div === button) {
+                    div.style.backgroundColor = 'white'
+                    div.querySelector('img').style.filter = 'invert()'
+                } else {
+                    div.style.backgroundColor = 'transparent'
+                    div.querySelector('img').style.filter = 'unset'
+                }
+            })
         }
     }
 }
@@ -460,5 +679,65 @@ const creditsHTML = `
         <span>By <a href="https://debread.space/" target="_blank">DeBread</a></span>
     </div>
     <span>Idea help: <a href="https://yeen.town/@Chalkllate" target="blank">Jake</a>, <a>Redjive2</a></span><br>
-    <span>Texture help: <a>Plonk</a>(Ashton Character)</span>
+    <span>Texture help: <a href="https://plinkel.neocities.org/">Plonk</a>(Ashton Character)</span>
 `
+
+const settingsHTML = `
+    <div id="settings">
+        <div style="display: flex; gap: 5px; padding-bottom: 5px; border-bottom: 1px solid grey; height: 24px;">
+            <button onclick="openSettingsMenu('general')">General</button>
+            <button onclick="openSettingsMenu('audio')">Audio</button>
+            <button onclick="openSettingsMenu('display')">Display</button>
+        </div>
+        <div class="settingsSection" id="settingsSection-general">
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-particles"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Particles</span>
+                    <span>Enhances graphics using particles.</span>
+                </div>
+            </div>
+        </div>
+        <div class="settingsSection" id="settingsSection-audio">
+            <span>Audio settings 🔥</span>
+        </div>
+        <div class="settingsSection" id="settingsSection-display">
+            <span>Display settings 🔥</span>
+        </div>
+    </div>
+`
+
+function openSettings() {
+    openPrompt('Settings', settingsHTML, [{text: "Close", onclick: () => {closePrompt()}}], [300, 400])
+    openSettingsMenu('general')
+
+    doge('prompt').querySelectorAll('.genericCheckbox').forEach(checkbox => {
+        const setting = checkbox.id.replace('scb-','')
+        //Set to current values
+        checkbox.checked = saveData.settings[setting]
+        checkbox.setAttribute('checked', checkbox.checked) //idk either //edit after two years; i actually do know now but im too lazy to fix it, most of this is ripped straight from Goober Shooter 1
+
+        //On click stuff
+        checkbox.onclick = () => {
+            checkbox.checked = !checkbox.checked
+            checkbox.setAttribute('checked', checkbox.checked)
+            saveData.settings[setting] = checkbox.checked
+
+            if(checkbox.checked) {
+                DeBread.playSound('audio/checkboxCheck.mp3')
+            } else {
+                DeBread.playSound('audio/checkboxUncheck.mp3')
+            }
+        }
+    })
+}
+
+function openSettingsMenu(menu) {
+    if(doge('settings')) {
+        doge('settings').querySelectorAll('.settingsSection').forEach(section => {
+            section.style.display = 'none'
+        })
+
+        doge(`settingsSection-${menu}`).style.display = 'unset'
+    }
+}

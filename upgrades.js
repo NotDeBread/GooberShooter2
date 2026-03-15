@@ -26,15 +26,15 @@ function fixStats() {
     }
 }
 
-function modifyStat(stat, modifier, reverse) {
-    const startingValue = player.stats[stat[0]][stat[1]]
-
+function modifyStat(stat, modifier) {
+    const startingValue = player.stats[stat[0]][stat[1]] * (player.stats[stat[0]][stat[1]+"Mult"] ?? 1)
     eval('player.stats[stat[0]][stat[1]]' + modifier)
+
     fixStats()
 
-    doge(`${stat[0]}-${stat[1]}`).innerText = DeBread.round(player.stats[stat[0]][stat[1]],2)
+    doge(`${stat[0]}-${stat[1]}`).innerText = DeBread.round(player.stats[stat[0]][stat[1]] * (player.stats[stat[0]][stat[1]+"Mult"] ?? 1),2)
 
-    const change = player.stats[stat[0]][stat[1]] - startingValue
+    const change = player.stats[stat[0]][stat[1]] * (player.stats[stat[0]][stat[1]+"Mult"] ?? 1) - startingValue
     const changeElem = doge(`${stat[0]}-${stat[1]}Change`)
 
     if(change > 0) {
@@ -531,7 +531,11 @@ const upgrades = [
             `,
             
             apply: () => {
-                modifyStat(['bullet','explosionSize'], '+=10')
+                if(player.stats.bullet.explosionSize === 0) {
+                    modifyStat(['bullet','explosionSize'], '+=110')
+                } else {
+                    modifyStat(['bullet','explosionSize'], '+=10')
+                }
             }
         },
         magnetic_ammo: {
@@ -698,6 +702,52 @@ const upgrades = [
                 modifyStat(stats[DeBread.randomNum(0,stats.length-1)],'*=0.75')
             }
         },
+        red_mushroom: {
+            name: 'Red Mushroom',
+            desc: `
+                Multiplies a random damage stat by <cg>1.25</cg><br>
+                Multiplies a random cooldown stat by <cb>1.25</cb><br>
+            `,
+    
+            apply: () => {
+                const damageStats = [
+                    ['bullet','damage'],
+                    ['melee','damage'],
+                    ['player','contactDamage']
+                ]
+                modifyStat(damageStats[DeBread.randomNum(0,damageStats.length-1)],'*=1.25')
+
+                const cooldownStats = [
+                    ['bullet','shotCooldown'],
+                    ['ammo','reloadSpeed'],
+                    ['melee','cooldown']
+                ]
+                modifyStat(cooldownStats[DeBread.randomNum(0,cooldownStats.length-1)],'*=1.25')
+            }
+        },
+        blue_mushroom: {
+            name: 'Blue Mushroom',
+            desc: `
+                Multiplies a random cooldown stat by <cg>0.75</cg><br>
+                Multiplies a random damage stat by <cb>0.75</cb><br>
+            `,
+    
+            apply: () => {
+                const damageStats = [
+                    ['bullet','damage'],
+                    ['melee','damage'],
+                    ['player','contactDamage']
+                ]
+                modifyStat(damageStats[DeBread.randomNum(0,damageStats.length-1)],'*=0.75')
+
+                const cooldownStats = [
+                    ['bullet','shotCooldown'],
+                    ['ammo','reloadSpeed'],
+                    ['melee','cooldown']
+                ]
+                modifyStat(cooldownStats[DeBread.randomNum(0,cooldownStats.length-1)],'*=0.75')
+            }
+        },
     },
     {
         black_hole: {
@@ -774,6 +824,16 @@ const upgrades = [
             
             apply: () => {
                 modifyStat(['bullet','randDmgMult'], '+=1')
+            }
+        },
+        broken_hourglass: {
+            name: 'Broken Hourglass',
+            desc: `
+                Enemies become <cg>+10%</cg> slower.
+            `,
+            
+            apply: () => {
+                modifyStat(['enemy','speedMult'], '*=0.9')
             }
         },
     },
@@ -868,6 +928,23 @@ const upgrades = [
                 player.stats.bullet.multishot = DeBread.round(player.stats.bullet.multishot)
             }
         },
+        soap: {
+            name: 'Soap',
+            desc: `
+                Enables charging rounds, dealing up to <cg>x10</cg> damage.
+            `,
+            
+            apply: () => {
+                modifyStat(['ammo','chargeShot'], '=true')
+                modifyStat(['ammo','chargeMultCap'], '+=10')
+
+                if(player.stats.ammo.chargeTime === 0) {
+                    modifyStat(['ammo','chargeTime'], '=100')
+                } else {
+                    modifyStat(['ammo','chargeTime'], '*=0.75')
+                }
+            }
+        },
     },
     {
         sog: {
@@ -886,8 +963,8 @@ const upgrades = [
             rarity: 5,
             desc: `
                 Dont use this<br>
-                <cb>This will literally soft-lock your game so watch out</cb>
-            `,
+                <em style="color: grey; font-size: 0.75em;">By plinkel</em>
+                `,
 
             apply: () => {
                 window.alert('you did this.')
@@ -1032,7 +1109,7 @@ const powerItems = [
             name: 'Mater',
             desc: `
                 Uses <cp>25</cp> POWER<br>
-                Throws a tomato at your cursor, spawning a poison field that deals <cg>100%</cg> of your damage for 10 ticks.
+                Throws a tomato at your cursor, spawning a poison field that deals <cg>100%</cg> of your damage over 10 ticks.
                 `,
             charge: 25,
 
@@ -1259,22 +1336,36 @@ const powerItems = [
                 addStyles(coin, {
                     width: '50px',
                     height: '50px',
-                    outline: '1px solid red',
+                    // outline: '1px solid red',
                     position: 'absolute',
                     left: coin.pos[0]+'px',
                     top: coin.pos[1]+'px',
                     translate: '-50% -50%',
                     display: 'flex',
                     justifyContent: 'center',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    zIndex: 5,
                 })
-                coin.innerHTML = '<img src="graphics/throwableCoin.png" width=16>'
+                coin.innerHTML = '<img src="graphics/throwableCoin.gif" width=16>'
 
                 coin.move = () => {
+                    const texture = coin.querySelector('img')
+
+                    coin.movementAngle = Math.atan2(
+                        coin.pos[1] - (coin.pos[1] + Math.sin(coin.angle) * coin.speed + coin.grav),
+                        coin.pos[0] - (coin.pos[0] + Math.cos(coin.angle) * coin.speed)
+                    )
+
+                    texture.style.rotate = coin.movementAngle + 'rad'
+
                     coin.pos[0] += Math.cos(coin.angle) * coin.speed 
                     coin.pos[1] += Math.sin(coin.angle) * coin.speed + coin.grav
                     coin.speed /= 1.05
                     coin.grav += 0.25
+
+                    if(e.gameUpdates % 2 === 0) {
+                        createParticles([...coin.pos], 1, 8, [0, 5], 250, 'ease-out', {backgroundColor: 'yellow', zIndex: 4})
+                    }
 
                     addStyles(coin, {
                         left: coin.pos[0]+'px',
@@ -1328,7 +1419,26 @@ const powerItems = [
                             bullet.damage *= 2
                             bullet.speed = 25
 
-                            // createParticles()
+                            const flashEffect = document.createElement('div')
+                            addStyles(flashEffect, {
+                                position: 'absolute',
+                                translate: '-50% -50%',
+                                width: '20px',
+                                height: '20px',
+                                backgroundColor: 'red',
+                                left: coin.pos[0]+'px',
+                                top: coin.pos[1]+'px',  
+                                borderRadius: '50%',
+                                backgroundColor: 'yellow',
+                                animation: 'coinHitEffect 250ms ease-out 1 forwards'
+                            })
+
+                            doge('area').append(flashEffect)
+
+                            setTimeout(() => {
+                                flashEffect.remove()
+                            }, 250)
+
                             coin.remove()
                         }
                     })
@@ -1415,35 +1525,148 @@ const powerItems = [
             name: 'Dash',
             desc: `
                 Uses <cp>30</cp> POWER<br>
-                Dashes towards your cursor<br>
                 <em style="color: grey;">During this dash:</em><br>
-                <cg>+100</cg> Contact damage<br>
+                Dashes towards your cursor.<br>
+                <cg>+10</cg> Contact damage<br>
                 Immunity
-                .
             `,
-            charge: 0,
+            charge: 30,
 
             use: () => {
                 const angle = Math.atan2(e.relCursorPos[1] - player.centerPos[1], e.relCursorPos[0] - player.centerPos[0])
 
-                modifyStat(['player','contactDamage'], '+=100')
+                modifyStat(['player','contactDamage'], '+=10')
                 player.immune = true
                 player.statusEffects.push({
                     end: () => {
-                        modifyStat(['player','contactDamage'], '-=100')
+                        modifyStat(['player','contactDamage'], '-=10')
                         player.immune = false
                     },
                     class: 'dash',
-                    duration: (1000 / e.gameUpdateInterval) * 1,
-                    maxDuration: (1000 / e.gameUpdateInterval) * 1
+                    duration: (1000 / e.gameUpdateInterval) * 0.75,
+                    maxDuration: (1000 / e.gameUpdateInterval) * 0.75
                 })
 
                 player.dirVels.push({angle: angle, speed: 25, div: 1.1})
+            }
+        },
+        perfume: {
+            name: 'Perfume',
+            desc: `
+                Uses <cp>75</cp> POWER<br>
+                The closest enemy to the player <em>(This is below 10 credits)</em> becomes friendly.
+            `,
+            charge: 75,
+
+            use: () => {
+                const closestEnemy = getClosest(player.elem, '.enemy[tame="false"]').elem
+                closestEnemy.tame()
             }
         }
     },
     {},
 ]
+
+const elixirs = {
+    strength: {
+        name: 'Strength Elixir',
+        desc: `
+            <cg>+0.5</cg> Damage multiplier<br>
+            <cg>+0.5</cg> Melee damage multiplier
+        `,
+        baseCost: 100,
+        costIncrease: 1.25,
+        buyLimit: Infinity,
+
+        apply: () => {
+            modifyStat(['bullet','damageMult'], '+=0.5')
+            modifyStat(['melee','damageMult'], '+=0.5')
+        }
+    },
+    fighter: {
+        name: 'Fighter Elixir',
+        desc: `
+            <cg>+1.25</cg> Melee damage multiplier
+        `,
+        baseCost: 100,
+        costIncrease: 1.25,
+        buyLimit: Infinity,
+
+        apply: () => {
+            modifyStat(['melee','damageMult'], '+=1.25')
+        }
+    },
+    gunslinger: {
+        name: 'Gunslinger Elixir',
+        desc: `
+            <cg>+1.25</cg> Damage multiplier
+        `,
+        baseCost: 100,
+        costIncrease: 1.25,
+        buyLimit: Infinity,
+
+        apply: () => {
+            modifyStat(['bullet','damageMult'], '+=1.25')
+        }
+    },
+    haste: {
+        name: 'Haste Elixir',
+        desc: `
+            <cg>+0.5</cg> Speed
+            <cg>+5%</cg> Reload speed
+            <cg>-5%</cg> Shot cooldown
+            <cg>-5%</cg> Melee cooldown
+        `,
+        baseCost: 250,
+        costIncrease: 1.25,
+        buyLimit: Infinity,
+
+        apply: () => {
+            modifyStat(['misc','areaSize'], '+=10')
+            updateArea()
+        }
+    },
+    greed: {
+        name: 'Greed Elixir',
+        desc: `
+            <cg>+0.25</cg> Coin drop multiplier
+        `,
+        baseCost: 100,
+        costIncrease: 2,
+        buyLimit: Infinity,
+
+        apply: () => {
+            modifyStat(['enemy','moneyMult'], '+=0.25')
+        }
+    },
+    space: {
+        name: 'Space Elixir',
+        desc: `
+            <cg>+10</cg> Area size
+        `,
+        baseCost: 100,
+        costIncrease: 2,
+        buyLimit: 10,
+
+        apply: () => {
+            modifyStat(['misc','areaSize'], '+=10')
+            updateArea()
+        }
+    },
+    consumer: {
+        name: 'Consumer Elixir',
+        desc: `
+            <cg>+1</cg> Shop upgrade slot
+        `,
+        baseCost: 250,
+        costIncrease: 5,
+        buyLimit: 3,
+
+        apply: () => {
+            modifyStat(['shop','upgrades'], '+=1')
+        }
+    },
+}
 
 const rarities = [
     {name: 'COMMON', color: 'grey'},
@@ -1561,6 +1784,9 @@ function createShopUpgrades(upgradeList) {
                 updateUI()
 
                 player.getMoney(-upgrade.price)
+                
+                player.gameOverStats.items++
+                player.gameOverStats.moneySpent += upgrade.price
 
                 if(player.tutorial.stage === 17) {
                     player.tutorial.goalValue++
@@ -1580,11 +1806,28 @@ function createShopUpgrades(upgradeList) {
     }
 }
 
+function createElixirs() {
+    let elixirs = []
+
+    let elixirAttempts = 0
+    while(elixirs.length < player.stats.shop.elixirs || elixirAttempts < 1000) {
+        const randomElixir = elixirs[Object.keys(elixirs)[DeBread.randomNum(0,Object.keys(elixirs).length-1)]]
+        
+        elixirs.push(randomElixir)
+
+        elixirAttempts++
+    }
+
+    return elixirs
+}
+
 function rerollShop() {
     if(player.rerolls > 0) {
         player.rerolls--
         doge('rerollPrice').innerText = `(${player.rerolls})`
         createShopUpgrades()
+
+        player.gameOverStats.rerolls++
     }
 }
 

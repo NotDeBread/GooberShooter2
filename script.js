@@ -17,8 +17,12 @@ const saveData = {
 
     selectedChallenge: 'none',
 
+    settings: {
+        particles: true,
+    },
+
     gameSettings: {
-        gamemode: 2,
+        gamemode: 0,
     },
 
     cosmetics: [
@@ -99,7 +103,7 @@ addStyles(popupTextBase, {
     filter: 'drop-shadow(0px 0px 5px black)',
     animation: 'popupMove 2s ease-out 1 forwards',
     color: 'transparent',
-    zIndex: 5,
+    zIndex: 10,
 })
 function createPopupText(text, pos) {
     const popup = popupTextBase.cloneNode()
@@ -126,7 +130,7 @@ particleBase.classList.add('particle')
 let particleCount = 0
 
 function createParticles(pos, count, size, dis, duration, timingFunction, styles) {
-    if(particleCount <= 50) {
+    if(particleCount <= 50 && saveData.settings.particles) {
         for(let i = 0; i < count; i++) {
             const particle = particleBase.cloneNode()
             particle.style.setProperty('--particleDuration',duration + 'ms')
@@ -226,7 +230,7 @@ function openPrompt(title, body, buttons, size) {
         doge('prompt').style.width = size[0] + 'px'
         doge('prompt').style.height = size[1] + 'px'
     } else {
-        doge('prompt').style.width = '500px'
+        doge('prompt').style.width = '300px'
         doge('prompt').style.height = '200px'
     }
 
@@ -531,6 +535,10 @@ const weaponPresets = {
         apply: () => {
             modifyStat(['bullet','speed'], '=5')
             modifyStat(['bullet','damage'], '=6.1')
+
+            modifyStat(['ammo','chargeShot'], '=true')
+            modifyStat(['ammo','chargeTime'], '=100')
+            modifyStat(['ammo','chargeMultCap'], '=10')
         }
     },
     staff: {
@@ -584,7 +592,7 @@ const weaponPresets = {
             modifyStat(['bullet','spin'], '=20')
         }
     },
-    onmirifle: {
+    omnirifle: {
         name: 'Omnirifle',
         desc: 'Projectiles shot by this weapon get a weak version of every bullet effect.',
         textureSize: [8,16],
@@ -613,7 +621,7 @@ const weaponPresets = {
             modifyStat(['bullet','split'], '=2')
             modifyStat(['bullet','bounces'], '=1')
             modifyStat(['bullet','drillTicks'], '=2')
-            modifyStat(['bullet','explosionSize'], '=0.1')
+            modifyStat(['bullet','explosionSize'], '=50')
             modifyStat(['bullet','heal'], '=0.1')
             modifyStat(['bullet','electricChainLength'], '=1')
             modifyStat(['bullet','electricChainReach'], '=10')
@@ -772,7 +780,7 @@ const characters = {
         name: 'Sasha',
         desc: 'the chomnpner',
         taunts: 1,
-        tag: 'German and Shepherd',
+        tag: 'German, Shepherd',
         tagCol: '#53463a',
 
         info: `Starts with the 'Tennis Ball' Power Item <br>${powerItems[1].tennis_ball.desc}`,
@@ -802,14 +810,14 @@ const characters = {
 
         weapon: weaponPresets.gun
     },
-    erix: {
-        name: 'erix',
-        desc: 'use this one if you wanna be really swag',
-        tag: 'Cat',
-        tagCol: 'hotpink',
+    // erix: {
+    //     name: 'erix',
+    //     desc: 'use this one if you wanna be really swag',
+    //     tag: 'Cat',
+    //     tagCol: 'hotpink',
 
-        weapon: weaponPresets.gun
-    },
+    //     weapon: weaponPresets.gun
+    // },
     walf: {
         name: 'Walf',
         desc: '',
@@ -853,6 +861,7 @@ const characters = {
         name: 'Crow',
         desc: '',
         tag: 'Crow',
+        tagCol: '#0c0026',
 
         weapon: weaponPresets.meatCleaver
     },
@@ -871,7 +880,7 @@ const characters = {
     },
     dottr: {
         name: 'Dottr',
-        desc: 'taco bell 🤤',
+        desc: 'taco bel 🤤',
         taunts: 1,
         tag: 'Raccoon',
         tagCol: '#a16e97',
@@ -879,6 +888,14 @@ const characters = {
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
+        ],
+
+        skins: [
+            {
+                name: 'Hair',
+                src: 'dottr_hair',
+
+            },
         ],
 
         applyStats: () => {
@@ -1011,14 +1028,14 @@ const characters = {
 
     //     weapon: weaponPresets.gun
     // },
-    // skywalkr: {
-    //     name: 'Skywalkr',
-    //     desc: 'this game is pissing me off',
-    //     tag: 'the&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsporiginal',
-    //     tagCol: 'rgb(107, 106, 52)',
+    skywalkr: {
+        name: 'Skywalkr',
+        desc: 'this game is pissing me off',
+        tag: 'the&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsporiginal',
+        tagCol: 'rgb(107, 106, 52)',
 
-    //     weapon: weaponPresets.mounted_machine_gun
-    // },
+        weapon: weaponPresets.mounted_machine_gun
+    },
     meringue: {
         name: 'Meringue',
         desc: '',
@@ -1067,19 +1084,19 @@ const characters = {
 
     //     weapon: weaponPresets.gun
     // },
-    cindy: {
-        name: 'Cindy',
-        desc: 'Autistic as fuck',
-        taunts: 1,
-        tag: 'Cat',
-        tagCol: '#64afff',
+    // cindy: {
+    //     name: 'Cindy',
+    //     desc: 'Autistic as fuck',
+    //     taunts: 1,
+    //     tag: 'Cat',
+    //     tagCol: '#64afff',
 
-        tagList: [
-            {text: 'GS2',col: '#775db9'}
-        ],
+    //     tagList: [
+    //         {text: 'GS2',col: '#775db9'}
+    //     ],
 
-        weapon: weaponPresets.gun
-    },
+    //     weapon: weaponPresets.gun
+    // },
     tutorialist: {
         name: 'The Tutorialist',
         desc: '',
@@ -1091,7 +1108,7 @@ const characters = {
             {text: 'GS2',col: '#775db9'}
         ],
 
-        weapon: weaponPresets.onmirifle
+        weapon: weaponPresets.omnirifle
     }
 }
 
@@ -1245,6 +1262,7 @@ const challenges = {
         desc: `
             <cg>+50</cg> Luck<br>
             <cg>+1</cg> Shop slot<br>
+            <cg>+2</cg> Shop rerolls<br>
             <cp>+$1,000</cp><br>
             Shop opens immediately<br>
             <cb>+50</cb> Enemy level
@@ -1253,15 +1271,16 @@ const challenges = {
         apply: () => {
             modifyStat(['shop','luck'], '+=50')
             modifyStat(['shop','upgrades'], '+=1'),
+            modifyStat(['shop','rerolls'], '+=2'),
             player.getMoney(1000)
             modifyStat(['enemy','levelIncrease'], '+=50')
-
             openShop()
         }
     },
     poverty: {
         name: 'Poverty',
         desc: `
+            <cs>1.25x</cs> Score multiplier<br>
             Enemies no longer drop money or increase level.<br>
             <cp>+$250</cp>
             <br>
@@ -1269,6 +1288,7 @@ const challenges = {
         `,
 
         apply: () => {
+            player.scoreMult = 1.25
             player.getMoney(250)
             modifyStat(['enemy','levelIncrease'], '=-50')
             modifyStat(['enemy','moneyMult'], '=0')
@@ -1277,10 +1297,12 @@ const challenges = {
     itemless: {
         name: 'Itemless',
         desc: `
+            <cs>5x</cs> Score multiplier<br>
             Items no longer appear in the shop.
         `,
 
         apply: () => {
+            player.scoreMult = 5
             modifyStat(['shop','upgrades'], '=0')
         }
     },
@@ -1303,4 +1325,85 @@ const challenges = {
             Hitting an enemy with a projectile heals <cb>25</cb>HP to the enemy
         `
     }
+}
+
+//Music stuff
+
+const tracks = {
+    menu: new Audio('audio/music/menu.ogg'),
+    game: new Audio('audio/music/game.ogg'),
+    gameCombat: new Audio('audio/music/gameCombat.ogg')
+}
+const totalTracks = Object.keys(tracks).length
+let loadedTracks = 0
+
+for(const key in tracks) {
+    const track = tracks[key]
+    track.onloadeddata = () => {
+        loadedTracks++
+        console.log(`${loadedTracks}/${totalTracks} Tracks loaded!`)
+
+        if(loadedTracks === totalTracks) {
+            startTitle()
+        }
+    }
+
+    track.onerror = () => {
+        loadedTracks++
+        
+        if(loadedTracks === totalTracks) {
+            startTitle()
+        }
+        throw Error(`Track ${key} failed to load! Proceeding anyways...`)
+    }
+}
+
+function createNotification(title, desc, img, timeout = 5000, onclick) {
+    const div = document.createElement('div')
+    div.classList.add('notification')
+    div.innerHTML = `
+        <img src="graphics/placeholder.png">
+        <div>
+            <span style="font-weight: 700;">${title}</span><br>
+            <span>${desc}</span>
+        </div>
+    `
+
+    if(img) {
+        div.querySelector('img').src = img
+    } else {
+        div.querySelector('img').remove()
+    }
+
+    doge('notificationContainer').append(div)
+
+    div.timeout = setTimeout(() => {
+        div.style.opacity = '0'
+        div.style.pointerEvents = 'none'
+        setTimeout(() => {
+            div.remove()
+        }, 1000);
+    }, timeout);
+
+    div.onclick = () => {
+        div.remove()
+        clearTimeout(div.timeout)
+
+        if(onclick) {
+            onclick()
+        }
+    }
+}
+
+window.onerror = ev => {
+    createNotification(
+        'Whoops!',
+        'An unexpected error occured. Click this notification to copy error to clipboard...', 
+        undefined, 
+        30000, 
+        () => {
+            navigator.clipboard.writeText(ev)
+            createNotification('Error copied to clipboard!',ev,undefined,2500)
+        }
+    )
 }

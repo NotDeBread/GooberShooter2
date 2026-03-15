@@ -318,7 +318,7 @@ enemyBase.innerHTML = `
             <div class="innerEnemyHealthBar"></div>
         </div>
     </div>
-    <span style="position: absolute;"></span>
+    <span style="position: absolute; color: white; mix-blend-mode: difference; font-weight: 700;"></span>
 `
 addStyles(enemyBase, {
     opacity: 0.25,
@@ -380,6 +380,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
     enemy.target = player
     enemy.elem = enemy
     enemy.friendly = false
+    enemy.setAttribute('tame','false')
 
     enemy.damage = (amount, silent) => {
         if(enemy.active) {
@@ -405,9 +406,14 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
             if(enemy.health <= 0) {enemy.kill(amount)}
 
             enemy.damageTaken += amount
+            player.gameOverStats.damageGiven += amount
 
             if(enemy.health === Infinity) {
                 enemy.querySelector('span').innerText = formatNumber(DeBread.round(enemy.damageTaken))
+            }
+
+            if(amount > 0) {
+                player.comboStrength++
             }
         }
     }
@@ -415,6 +421,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
     enemy.kill = (endingDamage) => {
         if(enemy.alive) {
             enemy.alive = false
+            player.gameOverStats.enemiesKilled++
             createParticles([enemy.pos[0] + enemy.size / 2, enemy.pos[1] + enemy.size / 2], 10, enemy.size / 2, [0,100], 500, 'ease-out',{backgroundColor: data.color})
             let coins = Math.round(data.credits * player.stats.enemy.moneyMult)
             if(data.credits === Infinity || data.poor) {
@@ -525,6 +532,9 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
                 player.tutorial.goalValue++
                 updateTutorialGoal()
             }
+
+            getCombo()
+            getStyle(styles.kill)
         }
     }
 
@@ -586,7 +596,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
                 enemy.pos[1] -= Math.sin(angle) * (enemy.speed * player.stats.enemy.speedMult + overlap)
                 
                 if(data.meleeDamage && e.gameUpdates - enemy.lastHitDate >= 25) {
-                    enemy.target.damage(data.meleeDamage)
+                    enemy.target.damage(data.meleeDamage * (1 + level / 2))
                     enemy.lastHitDate = e.gameUpdates
                 }
             } else if(enemy.target) {
@@ -743,6 +753,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
     enemy.tame = () => {
         enemy.friendly = true
         healthBar.style.backgroundColor = 'lime'
+        enemy.setAttribute('tame','true')
     }
 
     if(data.poisonField) {
@@ -756,12 +767,6 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
 
     doge('area').append(enemy)
     enemy.size = enemy.offsetWidth
-
-    // enemy.addEventListener('mousedown', ev => {
-    //     if(e.keysDown.includes('f')) {
-    //         enemy.tame()
-    //     }
-    // })
 }
 
 function spawnWave(wave) {
@@ -781,4 +786,6 @@ function spawnWave(wave) {
             spawnEnemy([DeBread.randomNum(0,doge('area').offsetWidth-enemies[key].size),DeBread.randomNum(0,doge('area').offsetWidth-enemies[key].size)],enemies[key],enemyLevel, DeBread.randomNum(1000, 2000))
         }
     }
+
+    player.comboStrength += 25
 }

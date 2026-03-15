@@ -11,7 +11,7 @@
 #gamePauseContainer {
     background-color: rgb(0,0,0,0);
     backdrop-filter: blur(0px);
-    z-index: 3;
+    z-index: 11;
     pointer-events: none;
     transition: 
         backdrop-filter ease-in-out 500ms,
@@ -184,6 +184,96 @@
 
 #gameShopUpgradesButtons button:hover span {
     color: black;
+}
+
+#gameOverContainer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100dvw;
+    height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+#gameOver {
+    padding: 5px;
+    outline: 2px solid white;
+    background-color: rgba(0,0,0);
+}
+
+.gameOverRow {
+    display: flex;
+    gap: 5px;
+    width: 400px;
+    margin-bottom: 5px;
+}
+
+.gameOverBox {
+    border: 1px solid grey;
+    position: relative;
+    padding: 10px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.gameOverBoxTitle {
+    position: absolute;
+    top: -5px;
+    left: 5px;
+    background-color: black;
+    height: 10px;
+    display: flex;
+    align-items: center;
+    padding: 0px 5px;
+    font-size: 0.75em;
+    font-weight: 900;
+    color: grey;
+    white-space: nowrap;
+}
+
+#go-score {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 2em;
+    font-weight: 700;
+}
+
+#gameRestartContainer {
+    position: fixed;
+    bottom: 25px;
+    left: 0;
+    width: 100dvw;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 1.5em;
+    font-weight: 700;
+    z-index: 10;
+    filter: drop-shadow(0px 0px 5px black);
+    translate: 0px 100px;
+    transition: translate ease-in-out 250ms;
+}
+
+#gameRestartBar {
+    width: 500px;
+    height: 10px;
+    outline: 1px solid white;
+    border-radius: 5px;
+    background-color: rgb(0,0,0,0.75);
+    display: flex;
+    justify-content: center;
+}
+
+#gameInnerRestartBar {
+    height: 100%;
+    width: 50%;
+    border-radius: 5px;
+    background-color: white;
+    transition: width linear 20ms;
 }
 
 #gameUIContainer {
@@ -392,6 +482,7 @@
     width: 1px;
     z-index: 5;
     pointer-events: none;
+    z-index: 9;
 }
 
 #innerCrosshair {
@@ -424,6 +515,7 @@
     display: flex;
     flex-direction: column;
     position: absolute;
+    z-index: 9;
     opacity: 0.75;
     border: 1px solid white;
 }
@@ -783,10 +875,20 @@
     font-family: 'Roboto Mono', monospace;
 }
 
+@keyframes streakCountPulse {
+    from {
+        scale: 1.25;
+    }
+}
+
 #streakContainer {
     display: flex;
     gap: 10px;
     align-items: center;
+}
+
+#streakCount {
+    font-weight: 700;
 }
 
 #streakBar {
@@ -796,10 +898,52 @@
     background-color: black;
 }
 
+@keyframes streakBarScared {
+  from {
+    translate: 0px -2px;
+  }
+  to {
+    translate: 0px 2px;
+  }
+}
+
 #innerStreakBar {
     height: 100%;
     width: 50%;
     background-color: white;
+    transition: width linear 20ms;
+}
+
+#gameStyleContainer {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    width: 250px;
+    height: 250px;
+    mask-image: linear-gradient(to top, rgba(0, 0, 0, 0), 35%, rgba(0, 0, 0, 1));
+}
+
+.gameStyle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    line-height: 1;
+    min-height: 20px;
+    animation: gameStyleIn 250ms ease-in-out 1 forwards;
+}
+
+@keyframes gameStyleIn {
+    from {
+        min-height: 0;
+        height: 0;
+        opacity: 0;
+    }
+    to {
+        min-height: 20px;
+        height: 20px;
+    }
 }
 
 #gameRunInfo {
@@ -941,6 +1085,13 @@
     }
 }
 
+#sandboxEnemy {
+    position: absolute;
+    aspect-ratio: 1 / 1;
+    translate: -50% -50%;
+    border-radius: 5px;
+}
+
 .bullet {
     z-index: 1;
     position: absolute;
@@ -1050,6 +1201,13 @@
     to {
         opacity: 0;
         scale: var(--explosionEffectScale);
+    }
+}
+
+@keyframes coinHitEffect {
+    to {
+        scale: 10;
+        opacity: 0;
     }
 }
 

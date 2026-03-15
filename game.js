@@ -11,6 +11,7 @@ function createPlayer() {
         dirVels: [],
 
         lastDustParticle: 0,
+        restartProgress: 0,
         
         wave: 1,
         lastWaveDate: 10000000,
@@ -25,8 +26,13 @@ function createPlayer() {
         immune: false,
 
         health: 100,
-        power: 100,
+        power: 0,
         rerolls: 0,
+
+        score: 0,
+        combo: 1,
+        comboStrength: 100,
+        scoreMult: 1,
 
         money: 10,
 
@@ -51,126 +57,147 @@ function createPlayer() {
             goal: 0,
             goalValue: 0,
         },
+
+        bulletsShot: 0,
+        bulletsHit: 0,
+
+        gameOverStats: {
+            enemiesKilled: 0,
+            damageTaken: 0,
+            damageGiven: 0,
+            moneySpent: 0,
+            rerolls: 0,
+            items: 0,
+            accuracy: 0,
+        },
         
         stats: {
             player: {
-                immunityTime: 0,
-                speed: 5,
-                speedStep: 2.5,
-                size: 36,
+                immunityTime: 0, //How long (in ticks) the player becomes immune after being hit.
+                speed: 5, //The max speed the player can move.
+                speedStep: 2.5, //The amount the player velocity changes every tick to reach the target speed value.
+                size: 36, //Player size. (in pixels)
 
-                maxHealth: 100,
-                pickupRange: 0,
-                waveInterval: 15000,
+                maxHealth: 100, //Max player health.
+                pickupRange: 0, //How strong pickups are attracted towards the player.
+                waveInterval: 15000, //How long (in milliseconds) between each wave spawning.
 
                 socksDamage: 0,
                 thirdEye: 0,
                 passiveAbilityMult: 1,
                 
-                grazeSize: 2,
-                grazeCooldown: 5,
+                grazeSize: 2, //How big (in player sizes) the graze hitbox is.
+                grazeCooldown: 5, //How long (in ticks) between each graze tick.
 
-                parryHeal: 0,
-                parryPoisonDmg: 0,
-                parryPoisonTicks: 0,
-                parryPoisonSize: 0,
+                parryHeal: 0, //How much the player heals after performing a parry.
+                parryPoisonDmg: 0, //How much damage (as a percent of the player damage) a poison field (from a parried bullet) deals every poison field tick.
+                parryPoisonTicks: 0, //How many times a poison field (from a parried bullet) attempts to damage an enemy before destroying.
+                parryPoisonSize: 0, //How big (in pixels) the parried poison fields are.
 
-                contactDamage: 0,
+                contactDamage: 0, //How much damage the player deals to colliding enemies every tick.
 
-                explosiveHitChance: 0,
-                explosiveHitDamage: 0,
+                explosiveHitChance: 0, //The chance of creating an explosion when the player is hit. (1 = 1% chance)
+                explosiveHitDamage: 0, //How much damage the explosion created from getting hit by an enemy deals. (as a percent of player damage) (1 = 100% of player damage)
 
-                explosiveHeal: 0,
+                explosiveHeal: 0, //How much HP the player heals when getting hit by an explosion.
+
+                weaponContactDamage: 0, //How much damage every tick the players weapon deals to enemies that are colliding with it.
             },
 
             shop: {
-                upgrades: 3,
-                luck: 0,
-                rerolls: 1,
+                upgrades: 3, //How many upgrades appear in the shop.
+                elixirs: 3, //How many elixirs appear in the shop.
+                luck: 0, //Increases the chance of higher quality items appearing in the shop.
+                rerolls: 1, //How many times the player can reroll the shop.
             },
 
             bullet: {
-                speed: 10,
-                damage: 5,
-                size: 8,
-                shotCooldown: 75,
-                lastShotDate: 0,
-                range: 100,
+                speed: 10, //How much (in pixels) the bullet travels every tick.
+                damage: 5, //How much damage a bullet deals when colliding with an enemy. This also influences other player attacks.
+                damageMult: 1, //Multiplies damage stat.
+                size: 8, //How large (in pixels) bullets are.
+                shotCooldown: 75, //The minimum amount of time (in ticks) between being availble to fire a projectile. 
+                lastShotDate: 0, //Ignore this
+                range: 100, //The amount of ticks a bullet is alive before being destroyed.
                 
-                critChance: 0,
-                critDamageMult: 1.25,
+                critChance: 0, //The percent chance of a bullet dealing critical damage. (1 = 1% chance)
+                critDamageMult: 1.25, //The amount that the bullet damage is multiplied by when it is considered a crit.
 
-                split: 0,
-                splits: 1,
+                split: 0, //The amount of projectiles projectiles split into.
+                splits: 1, //The amount of times that a bullet can split.
 
-                bounces: 0,
+                bounces: 0, //The amount of times a bullet can bounce off of a wall before destroying.
                 
-                drillTicks: 1, //Default 1
+                drillTicks: 1, //The amount of times a bullet can hit an enemy before being destroyed.
                 
-                explosionSize: 0,
+                explosionSize: 0, //The size (in pixels) of the explosion a bullet creates when being destroyed.
 
-                heal: 0,
+                heal: 0, //The amount of HP a bullet heals the player when hitting an enemy.
 
-                electricChainLength: 0,
-                electricChainReach: 0,
+                electricChainLength: 0, //The amount of enemies electicity can chain between.
+                electricChainReach: 0, //The distance that electricity can reach.
 
-                knockback: 1,
+                knockback: 1, //The amount (in pixels) an enemy gets knocked back when getting hit by a bullet.
 
-                multishot: 1,
+                multishot: 1, //The amount of bullets shot at once when pressing left click.
 
                 tameChance: 0,
                 tameCredits: 0,
 
-                poisonFieldChance: 0,
-                poisonFieldSize: 0,
-                poisonFieldDmgPercent: 0,
-                poisonFieldTicks: 0,
-                poisonFieldColor: [255,0,0],
+                poisonFieldChance: 0, //The chance of a bullet creating a poison field when destroyed. (1 = 1% chance)
+                poisonFieldSize: 0, //The size of the poison field created by a bullet.
+                poisonFieldDmgPercent: 0, //The percent of player damage the poison field deals to enemies.
+                poisonFieldTicks: 0, //How many times the poison field (from bullet) attempts to damage an enemy before destroying.
+                poisonFieldColor: [255,0,0], //The color of the poison field created by a bullet.
 
-                recoil: 0,
-                accuracy: 10,
+                recoil: 0, //The amount (in pixels) that the player gets knocked back when firing their weapon.
+                accuracy: 10, //How much the bullet target can deviate from the crosshair. (Higher = lower accuracy)
 
-                magnetStrength: 0,
+                magnetStrength: 0, //How much bullets gravitate towards the nearest enemy. (Higher = stronger) (Magnetic ammo increases by 0.2)
 
-                randDmgMult: 1,
+                randDmgMult: 1, //How much a bullets damage is multiplied by between 1 and this value.
 
-                grow: 0,
+                grow: 0, //How much a bullets size and damage is multiplied by every tick. (This value is added by 1, 0.25 grow = 1.25x)
 
-                thornDamage: 0,
+                thornDamage: 0, //How much damage the player takes when firing a bullet.
 
-                spin: 0,
+                spin: 0, //How many degrees bullets rotate every tick.
             },
             melee: {
-                damage: 20,
-                cooldown: 75,
-                size: 50,
+                damage: 20, //How much damage is dealt to enemies within the players melee hitbox.
+                damageMult: 1, //Multiplies damage stat.
+                cooldown: 75, //How long (in ticks) it takes to recharge the cooldown.
+                size: 50, //How large (in pixels) the melee hitbox is.
 
-                explosionPower: 0,
-                heal: 0,
+                explosionPower: 0, //How big and powerful the explosion created by meleeing an enemy is.
+                heal: 0, //How much the player heals when meleeing an enemy.
             },
             ammo: {
-                current: 10,
-                max: 10,
+                current: 10, //Ignore this
+                max: 10, //The max ammount of ammo the player can hold.
                 
-                reloadSpeed: 750,
-                reloadDate: 0,
-                isReloading: false,
+                reloadSpeed: 750, //How long (in milliseconds) it takes to reload the weapon.
+                reloadDate: 0, //Ignore this
+                isReloading: false, //Ignore this
 
-                autoFire: false,
-                stationaryFire: false,
+                autoFire: false, //Determines whether or not bullet automatically fire when holding left-click.
+                stationaryFire: false, //Determines if the player has to be stationary to fire projectiles.
 
-                garandReload: false,
+                garandReload: false, //Determines if the player can only reload when at 0 ammo.
 
-                chargeShot: false,
-                chargeTime: 100,
-                chargeMultCap: 10,
+                chargeShot: false, //Determines if the player can hold left click to fire stronger projectiles.
+                chargeTime: 0, //How long (in ticks) it takes to deal maximum damage with a charge shot.
+                chargeMultCap: 0, //The max amount the bullet damage is multiplied by when firing a max charge shot.
 
-                penetratingRounds: false,
+                penetratingRounds: false, //Determines whether or not extra damage from a bullet hitting an enemy prevents it from destroying.
             },
             enemy: {
-                levelIncrease: 0,
-                speedMult: 1,
-                moneyMult: 1,
+                levelIncrease: 0, //How many levels enemies are offset by.
+                speedMult: 1, //How much enemy speed is multiplied by. This also effects shot and melee cooldowns.
+                moneyMult: 1, //How much the amount of money an enemy drops is multiplied by.
+            },
+            misc: {
+                areaSize: 500,
             }
         },
         
@@ -189,6 +216,11 @@ function createPlayer() {
             bullet.bounces = player.stats.bullet.bounces
 
             bullet.spin = 0
+
+            bullet.hasHitEnemy = false
+
+            //Apply damage multiplier
+            bullet.damage *= player.stats.bullet.damageMult
 
             //Additional crit mults for crit chance above 100%
             for(let i = 0; i < Math.floor(player.stats.bullet.critChance / 100); i++) {
@@ -269,6 +301,10 @@ function createPlayer() {
                             }
                         )
                     }
+                }
+
+                if(bullet.hasHitEnemy) {
+                    player.bulletsHit++
                 }
 
                 bullet.remove()
@@ -372,11 +408,13 @@ function createPlayer() {
                     if(isColliding(bullet, enemy) && enemy.active && !enemy.friendly) {
                         player.damage(-player.stats.bullet.heal)
                         bullet.drillTicks++
-                        
+                        bullet.hasHitEnemy = true
+
                         if(DeBread.round(bullet.damage) > 0) {
                             const popup = createPopupText(DeBread.round(bullet.damage), [bullet.pos[0],bullet.pos[1]])
                             if(bullet.isCrit) {
                                 popup.style.color = 'yellow'
+                                popup.innerText += '!'
                             } else {
                                 popup.style.color = 'white'
                             }
@@ -396,7 +434,18 @@ function createPlayer() {
                         }
 
                         enemy.damage(bullet.damage)
+                        if(bullet.isCrit) {
+                            getStyle(styles.crit)
+                        }
                         
+                        if(bullet.damage > enemy.maxHealth) {
+                            getStyle(styles.overkill)
+                        }
+
+                        for(let i = 0; i < player.stats.bullet.bounces - bullet.bounces; i++) {
+                            getStyle(styles.ricochet)
+                        }
+
                         if(player.stats.bullet.electricChainLength > 0) {
                             let enemiesHit = [enemy]
                             let currentEnemy = enemy
@@ -464,7 +513,7 @@ function createPlayer() {
 
                     bullet.angle += delta * 0.1 * player.stats.bullet.magnetStrength
                     if(player.stats.bullet.spin > 0) {
-                        bullet.spin = bullet.spin + 'deg'
+                        bullet.style.rotate = bullet.spin + 'deg'
                     } else {
                         bullet.style.rotate = bullet.angle + 'rad'
                     }
@@ -479,7 +528,8 @@ function createPlayer() {
         },
 
         damage: (amount, light) => {
-            if((e.gameUpdates - player.lastHitDate) * e.gameUpdateInterval >= player.stats.player.immunityTime || !player.immune) {
+            if(e.gameUpdates - player.lastHitDate >= player.stats.player.immunityTime || !player.immune) {
+                const startAmount = player.health
                 if(player.health - amount < 1 && player.health > 1) {
                     player.health = 1
                 } else {
@@ -487,8 +537,9 @@ function createPlayer() {
                 }
                 if(player.health <= 0) player.health = 0
                 if(player.health >= player.stats.player.maxHealth) player.health = player.stats.player.maxHealth
-        
+                
                 if(amount > 0) {
+                    player.gameOverStats.damageTaken += -(player.health - startAmount)
                     player.lastHitDate = e.gameUpdates
 
                     player.elem.style.animation = 'none'
@@ -504,8 +555,11 @@ function createPlayer() {
                     if(DeBread.randomNum(1,100) < player.stats.player.explosiveHitChance) {
                         createExplosion([...player.centerPos],player.stats.player.size * 2, player.stats.bullet.damage * player.stats.player.explosiveHitDamage, 100, true)
                     }
+
+                    player.combo = Math.round(player.combo / 2)
+                    player.comboStrength /= 2
                 }
-        
+
                 doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'       
 
                 //Health bar num
@@ -534,17 +588,13 @@ function createPlayer() {
 
             if(player.health <= 0) player.kill()
 
-            if(player.health / player.stats.player.maxHealth <= 0.25) {
-                doge('area').style.boxShadow = 'inset 0px 0px 25px red'
-            } else {
-                doge('area').style.boxShadow = 'inset 0px 0px 0px red'
-            }
+            updateArea()
         },
 
         kill: () => {
-            if(player.alive) {
-                player.elem.style.opacity = 0
-                doge('weapon').style.opacity = 0   
+            if(player.alive && saveData.gameSettings.gamemode < 2) {
+                player.elem.style.opacity = '0'
+                doge('weapon').style.opacity = '0'
                 createParticles(player.centerPos, 10, 25, [25,50], 2500, 'ease-out', {backgroundColor: 'red'})
                 DeBread.easeShake(doge('area'), 25, 2, 0.05)
         
@@ -558,12 +608,43 @@ function createPlayer() {
                         if(i === 49) {
                             e.gameActive = false
                             e.gameUpdateInterval = 20
+
+                            player.gameOverStats.accuracy = DeBread.round(player.bulletsHit / player.bulletsShot * 100, 2) + '%'
+                            player.gameOverStats.damageGiven = DeBread.round(player.gameOverStats.damageGiven)
+                            player.gameOverStats.damageTaken = DeBread.round(player.gameOverStats.damageTaken)
+
+                            doge('gameOverContainer').style.display = 'flex'
+
+                            for(const key in player.gameOverStats) {
+                                doge(`go-${key}`).innerText = player.gameOverStats[key]
+                            }
+
+                            let displayedScore = 0
+                            let displayedWave = 0
+                            for(let i = 0; i < 100; i++) {
+                                setTimeout(() => {
+                                    const scoreDifference = player.score - displayedScore
+                                    displayedScore += scoreDifference * 0.1
+
+                                    doge('go-score').innerText = DeBread.round(displayedScore).toString().padStart(10,0)
+
+                                    const waveDifference = player.wave - 1 - displayedWave
+                                    displayedWave += waveDifference * 0.1
+
+                                    doge('go-wave').innerText = DeBread.round(displayedWave).toString()
+
+                                    if(i === 99) {
+                                        doge('go-score').innerText = DeBread.round(player.score).toString().padStart(10,0)
+                                        doge('go-wave').innerText = DeBread.round(player.wave - 1).toString()
+                                    }
+                                }, 25 * i);
+                            }
                         }
                     }, i * 100);
                 }
+                player.alive = false
             }
 
-            player.alive = false
         },
 
         melee: () => {
@@ -571,8 +652,10 @@ function createPlayer() {
                 doge('meleeHitbox').style.animation = 'meleeHitboxHit 500ms ease-out 1 forwards'
                 doge('area').querySelectorAll('.enemy').forEach(enemy => {
                     if(isColliding(doge('meleeHitbox'), enemy) && enemy.active) {
-                        enemy.damage(player.stats.melee.damage)
+                        enemy.damage(player.stats.melee.damage * player.stats.melee.damageMult)
                         player.damage(-player.stats.melee.heal)
+
+                        getStyle(styles.punch)
 
                         if(player.stats.melee.explosionPower) {
                             createExplosion([...doge('meleeHitbox').pos], 50 + player.stats.melee.explosionPower, player.stats.melee.damage, 10, true)
@@ -590,6 +673,13 @@ function createPlayer() {
                     if(isColliding(doge('meleeHitbox'), projectile)) {
                         player.damage(-player.stats.player.parryHeal)
                         player.getPower(5)
+
+                        if(projectile.parried) {
+                            getStyle(styles.counterParry)
+                        } else {
+                            getStyle(styles.parry)
+                        }
+                        getCombo()
 
                         projectile.angle = Math.atan2(projectile.pos[1] - e.relCursorPos[1], projectile.pos[0] - e.relCursorPos[0])
                         projectile.speed *= 3
@@ -795,6 +885,9 @@ function createPlayer() {
                     doge('area').querySelectorAll('.enemy').forEach(enemy => {
                         if(isColliding(player.elem, enemy)) {
                             enemy.damage(player.stats.player.contactDamage)
+                            if(!enemy.alive) {
+                                getStyle(styles.trampled)
+                            }
                         }
                     })
                 }
@@ -807,13 +900,16 @@ function createPlayer() {
 let player = createPlayer()
 
 function startGame() {
+    doge('gameOverContainer').style.display = 'none'
+
     e.gameActive = true
     e.gameUpdates = 0
     player.pos[0] = doge('area').offsetWidth / 2 - player.elem.offsetWidth / 2
     player.pos[1] = doge('area').offsetHeight / 2 - player.elem.offsetWidth / 2
 
     player = createPlayer()
-
+    player.elem.style.opacity = '1'
+    doge('weapon').style.opacity = '1'
     player.characterWeapon = characters[saveData.selectedCharacter].weapon
     doge('gameWeaponName').innerText = characters[saveData.selectedCharacter].weapon.name
 
@@ -821,8 +917,12 @@ function startGame() {
     doge('area').querySelectorAll('.pickup').forEach(pickup => {pickup.remove()})
     doge('area').querySelectorAll('.bullet').forEach(bullet => {bullet.remove()})
     doge('area').querySelectorAll('.enemyProjectile').forEach(bullet => {bullet.remove()})
+    
+    doge('gameWaveCounter').innerText = '0'
+    doge('gameStyleContainer').innerHTML = ''
 
     renderStats()
+    updateArea()
     if(saveData.gameSettings.gamemode === 3) {
         modifyStat(['melee','size'], '=0')
         modifyStat(['melee','damage'],'=0')
@@ -941,6 +1041,8 @@ const weapons = {
                         if(player.health > 1) {
                             player.damage(player.stats.bullet.thornDamage, true)
                         }
+
+                        player.bulletsShot++
                     } else break
                 }
                 updateUI()
@@ -1127,6 +1229,17 @@ function updateUI() {
         
 } updateUI()
 
+function updateArea() {
+    doge('area').style.width = player.stats.misc.areaSize + 'px'
+    doge('area').style.height = player.stats.misc.areaSize + 'px'
+
+    if(player.health / player.stats.player.maxHealth <= 0.25) {
+        doge('area').style.boxShadow = 'inset 0px 0px 25px red'
+    } else {
+        doge('area').style.boxShadow = 'inset 0px 0px 0px red'
+    }
+}
+
 let lastTickDate = 0
 const updateInterval = DeBread.createInterval(() => {
     const allEnemies = doge('area').querySelectorAll('.enemy')
@@ -1304,6 +1417,10 @@ const updateInterval = DeBread.createInterval(() => {
                     }
                 }
             }
+
+            if(isColliding(enemy, doge('weapon')) && player.stats.player.weaponContactDamage > 0) {
+                enemy.damage(player.stats.player.weaponContactDamage)
+            }
         })
 
         doge('area').querySelectorAll('.enemyProjectile').forEach(projectile => {
@@ -1343,13 +1460,14 @@ const updateInterval = DeBread.createInterval(() => {
 
             if(isColliding(doge('grazeHitbox'), projectile) && e.gameUpdates - player.lastGrazeDate >= player.stats.player.grazeCooldown && player.power < 100) {
                 player.getPower(1)
+                getStyle(styles.grazed)
                 doge('grazeHitbox').style.animation = 'none'
                 requestAnimationFrame(() => {
                     doge('grazeHitbox').style.animation = 'grazeHitboxFlash 250ms ease-out 1 forwards'
                 })
 
                 player.lastGrazeDate = e.gameUpdates
-                DeBread.playSound('audio/graze.wav',0.1,1 + player.power / 200)
+                DeBread.playSound('audio/graze.wav',0.1,1 + Math.max(player.power / 200, 0))
             }
 
             if(isColliding(doge('meleeHitbox'), projectile) && e.gameUpdates - player.lastMeleeDate >= player.stats.melee.cooldown) {
@@ -1424,31 +1542,6 @@ const updateInterval = DeBread.createInterval(() => {
         })
     }
 
-    //Physics Objects
-    // doge('area').querySelectorAll('.physObj').forEach(obj => {
-    //     if(isColliding(player.elem, obj)) {
-    //         const playerC = [...player.centerPos]
-    //         const objC = [...obj.pos]
-    //         const dis = [
-    //             Math.abs(playerC[0] - objC[0]), 
-    //             Math.abs(playerC[1] - objC[1])
-    //         ]
-    //         const overlaps = [
-    //             player.elem.offsetWidth + obj.offsetWidth - dis[0],
-    //             player.elem.offsetHeight + obj.offsetHeight - dis[1]
-    //         ]
-    //         if (overlaps[0] > 0 && overlaps[1] > 0) {
-    //             if (overlaps[0] < overlaps[1]) {
-    //                 // Resolve horizontally
-    //                 obj.pos[0] += dis[0] > 0 ? overlaps[0] : -overlaps[0]
-    //             } else {
-    //                 // Resolve vertically
-    //                 obj.pos[1] += dis[1] > 0 ? overlaps[1] : -overlaps[1]
-    //             }
-    //         }
-    //     }
-    // })
-
     //Cursor
     addStyles(doge('crosshair'), {
         left: e.cursorPos[0]+'px',
@@ -1518,6 +1611,9 @@ const updateInterval = DeBread.createInterval(() => {
                     let enemyHit = false
                     if(isColliding(enemy, field) && e.gameUpdates - field.lastTick >= field.tickRate && enemy.active) {
                         enemy.damage(field.damage)
+                        if(!enemy.alive) {
+                            getStyle(styles.poisoned)
+                        }
 
                         const popup = createPopupText(DeBread.round(field.damage), [enemy.pos[0] + enemy.size / 2, enemy.pos[1] + enemy.size / 2])
                         addStyles(popup, {
@@ -1627,11 +1723,68 @@ const updateInterval = DeBread.createInterval(() => {
             player.createBullet(bulletPos, enemyAngle + offset)
         }
     }
+
+    if(player.comboStrength > 0) {
+        if(allEnemies.length > 0) {
+            player.comboStrength -= 0.5 + (player.combo / 100)
+        }
+    } else {
+        if(player.combo > 1) {
+            player.combo = Math.round(player.combo / 2)
+            player.comboStrength = 100
+            doge('streakCount').innerText = 'x' + player.combo
+            DeBread.shake(doge('streakCount'), 10, 5, 5, 200)
+        }
+    }
+
+    if(player.comboStrength > 100) {
+        player.comboStrength = 100
+    }
+
+    doge('innerStreakBar').style.width = player.comboStrength + '%'
+    if(player.comboStrength < 20 && player.comboStrength > 0) {
+        doge('streakContainer').style.animation = 'streakBarScared 100ms cubic-bezier(.5, 0.05, 1, .5) infinite alternate'
+    } else {
+        doge('streakContainer').style.animation = ''
+    }
+
+    //Sandbox Enemy
+        
+    if(sandBoxEnemy) {
+        doge('sandboxEnemy').style.opacity = '0.25'
+        doge('sandboxEnemy').style.left = e.relCursorPos[0]+'px'
+        doge('sandboxEnemy').style.top = e.relCursorPos[1]+'px'
+        doge('sandboxEnemy').style.width = sandBoxEnemy.size + 'px'
+        doge('sandboxEnemy').style.backgroundColor = sandBoxEnemy.color
+    } else {
+        doge('sandboxEnemy').style.opacity = '0'
+    }
     
     //Power item stuff
     document.querySelectorAll('.thrownCoin, .thrownBottle, .tennisBall').forEach(elem => {
         elem.move(allEnemies)
     })
+
+    //Restart
+    const lastRestartProgress = player.restartProgress
+    if(e.keysDown.includes('r') && e.keysDown.includes('shift') && e.gameUpdates >= 20) {
+        player.restartProgress++
+        doge('gameInnerRestartBar').style.width = player.restartProgress / 50 * 100 + '%'
+
+        if(player.restartProgress >= 50) {
+            startGame()
+        }
+    } else {
+        player.restartProgress = 0
+    }
+
+    if(player.restartProgress > lastRestartProgress) {
+        console.log('opening!')
+        doge('gameRestartContainer').style.translate = '0px 0px'
+    } else if(player.restartProgress < lastRestartProgress) {
+        console.log('close')
+        doge('gameRestartContainer').style.translate = '0px 100px'
+    }
     
     //Debug stuff
     doge('dbPos').innerText = `
@@ -1688,7 +1841,7 @@ document.addEventListener('mouseup', ev => {
         e.mouseDown[0] = false
 
         if(e.gameActive && !e.gamePaused) {
-            if(player.stats.ammo.chargeShot) {
+            if(player.stats.ammo.chargeShot && !isHoveringOnSandbox) {
                 let chargeProgress = Math.min((e.gameUpdates - player.chargeStartDate) / player.stats.ammo.chargeTime, 1)
                 player.chargeDmgMult = 1 + chargeProgress * player.stats.ammo.chargeMultCap
                 
@@ -1819,6 +1972,10 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer) {
             popup.style.color = 'red'
             popup.style.fontSize = Math.min(Math.max(dmg * distanceEffect / 5, 15), 50) + 'px'
             doge('area').append(popup)
+
+            if(!enemy.alive) {
+                getStyle(styles.exploded)
+            }
         }
 
         if(distance / 2 < size && distanceEffect > 0) {
@@ -1873,7 +2030,7 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer) {
 
         if(distance < size) {
             if(player.stats.player.explosiveHeal > 0) {
-                player.damage(-dmg * distanceEffect)
+                player.damage(-player.stats.player.explosiveHeal * distanceEffect)
             } else {
                 player.damage(dmg * distanceEffect)
             }
@@ -1968,12 +2125,108 @@ const pickups = {
     },
 }
 
-// for(let i = 0; i < 2000; i++) {
-//     pickups.coin([DeBread.randomNum(500,500), DeBread.randomNum(500,500)], DeBread.randomNum(0,5), DeBread.randomNum(10,10))
-// }
+const styles = {
+    kill: {
+        text: 'Kill',
+        baseAmnt: 100,
+        comboBoost: 25,
+    },
+    parry: {
+        text: 'Parry',
+        baseAmnt: 500,
+        comboBoost: 75,
+    },
+    counterParry: {
+        text: 'Counter Parry',
+        baseAmnt: 2500,
+        comboBoost: 100,
+    },
+    punch: {
+        text: 'Punched',
+        baseAmnt: 50,
+        comboBoost: 5,
+    },
+    exploded: {
+        text: 'Exploded',
+        baseAmnt: 75,
+        comboBoost: 5,
+    },
+    crit: {
+        text: 'Crit',
+        baseAmnt: 5,
+        comboBoost: 1,
+    },
+    ricochet: {
+        text: 'Ricochet',
+        baseAmnt: 125,
+        comboBoost: 1,
+    },
+    overkill: {
+        text: 'Overkill',
+        baseAmnt: 750,
+        comboBoost: 5,
+    },
+    poisoned: {
+        text: 'Poisoned',
+        baseAmnt: 250,
+        comboBoost: 5,
+    },
+    trampled: {
+        text: 'Trampled',
+        baseAmnt: 300,
+        comboBoost: 5,
+    },
+    grazed: {
+        text: 'Grazed',
+        baseAmnt: 15,
+        comboBoost: 5,
+    }
+}
 
-//Do stuff on init
-doge('weaponTexture').style.width = weapons[player.weapon].textureSize[0] * 2 + 'px'
+function getStyle(style) {
+    let lastStyle = doge('gameStyleContainer').children[doge('gameStyleContainer').children.length-1] ?? ''
+    if(lastStyle.styleType === style) {
+        lastStyle.querySelector('#gameStyleCombo').innerHTML = parseInt(lastStyle.querySelector('#gameStyleCombo').innerHTML.replace('x','')) + 1
+        lastStyle.querySelector('#gameStylePoints').innerHTML = parseInt(lastStyle.querySelector('#gameStylePoints').innerHTML) + style.baseAmnt * player.combo * player.scoreMult
+    } else {
+        const div = document.createElement('div')
+        div.classList.add('gameStyle')
+        div.innerHTML = `
+            <div>
+                <span style="font-weight: 700;">+${style.text}</span>
+                <span>x</span>
+                <span id="gameStyleCombo">1</span>
+            </div>
+            <div class="coolLine"></div>
+            <span id="gameStylePoints">${style.baseAmnt * player.combo * player.scoreMult}</span>
+        `
+        div.styleType = style
+    
+        doge('gameStyleContainer').append(div)
+    }
+
+
+    for(let i = 0; i < 10; i++) {
+        setTimeout(() => {
+            player.score += (style.baseAmnt * player.combo * player.scoreMult) / 10
+
+            if(style.comboBoost) {
+                player.comboStrength += style.comboBoost / 10
+            }
+
+            doge('gameScore').innerText = DeBread.round(player.score).toString().padStart(10,0)
+        }, 25 * i);
+    }
+}
+
+function getCombo() {
+    player.combo++
+    doge('streakCount').style.animation = ''
+    doge('streakCount').innerText = 'x' + player.combo
+    requestAnimationFrame(() => {
+        doge('streakCount').style.animation = 'streakCountPulse 500ms ease-out 1 forwards'
+    })
+}
 
 function pauseGame(state) {
     DeBread.pauseInterval(1)
@@ -2248,6 +2501,7 @@ function openSandboxMenu(menu) {
                     modifyStat([statSection, key], `=${value}`)
 
                     updateUI()
+                    updateArea()
                 }
             }
 
@@ -2406,6 +2660,7 @@ const tutorial = [
         run: () => {
             modifyStat(['melee','size'], '=50')
             modifyStat(['melee','damage'], '=20')
+            modifyStat(['melee','cooldown'],'=25')
         }
     },
     {
@@ -2432,6 +2687,7 @@ const tutorial = [
         text: 'Okay, let\'s move away from gameplay and focus on the <strong>Shop</strong>.',
         run: () => {
             doge('area').querySelectorAll('.enemy').forEach(enemy => {enemy.kill()})
+            modifyStat(['melee','cooldown'],'=75')
         }
     },
     {
