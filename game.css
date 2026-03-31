@@ -1181,6 +1181,7 @@
     position: absolute;
     z-index: 4;
     pointer-events: none;
+    translate: -50% -50%;
     transition: left linear 100ms, top linear 100ms, scale ease-in-out 500ms;
 }
 

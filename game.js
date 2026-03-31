@@ -14,7 +14,7 @@ function createPlayer() {
         restartProgress: 0,
         
         wave: 1,
-        lastWaveDate: -15000,
+        lastWaveDate: -676,
         wavesPaused: false,
         perfectWave: true,
 
@@ -893,18 +893,24 @@ function createPlayer() {
                 //Weapon position
         
                 const angle = Math.atan2(e.cursorPos[1] - player.rectPos[1] - player.elem.offsetHeight / 2, e.cursorPos[0] - player.rectPos[0] - player.elem.offsetWidth / 2)
-                const cursorDisance = Math.sqrt(Math.pow(player.rectPos[0] + player.elem.offsetWidth / 2 - e.cursorPos[0], 2)+Math.pow(player.rectPos[1] + player.elem.offsetHeight / 2 - e.cursorPos[1], 2))
-        
                 const weapon = weapons[player.weapon]
+                const cursorDisance = Math.sqrt(
+                    Math.pow(player.rectPos[0] + player.elem.offsetWidth / 2 - e.cursorPos[0], 2)+
+                    Math.pow(player.rectPos[1] + player.elem.offsetHeight / 2 - e.cursorPos[1], 2)
+                ) + (weapon.textureSize[0] + weapon.textureSize[1])/2
+        
         
                 doge('weapon').pos = [
-                    player.pos[0] + player.elem.offsetWidth / 2 + Math.cos(angle) * Math.min(cursorDisance / 2, 50),
-                    player.pos[1] + player.elem.offsetHeight / 2 + Math.sin(angle) * Math.min(cursorDisance / 2, 50)
+                    Math.max(Math.min(player.centerPos[0] + Math.cos(angle) * Math.min(cursorDisance / 2, 50), doge('area').offsetWidth), 0),
+                    Math.max(Math.min(player.centerPos[1] + Math.sin(angle) * Math.min(cursorDisance / 2, 50), doge('area').offsetHeight), 0)
                 ]
-                doge('weapon').style.left = Math.max(Math.min(doge('weapon').pos[0] - weapon.textureSize[0], doge('area').offsetWidth - weapon.textureSize[0] * 2), 0) + 'px'
-                doge('weapon').style.top = Math.max(Math.min(doge('weapon').pos[1] - weapon.textureSize[1], doge('area').offsetHeight - weapon.textureSize[0] * 2), 0) + 'px'
-                
-                doge('meleeHitbox').pos = doge('weapon').pos
+
+                addStyles(doge('weapon'), {
+                    left: doge('weapon').pos[0]+'px',
+                    top: doge('weapon').pos[1]+'px'
+                })
+
+                doge('meleeHitbox').pos = [...doge('weapon').pos]
                 doge('meleeHitbox').style.left = doge('meleeHitbox').pos[0]+'px'
                 doge('meleeHitbox').style.top = doge('meleeHitbox').pos[1]+'px'
 
@@ -1068,13 +1074,16 @@ const weapons = {
                 !player.stats.ammo.isReloading && 
                 (e.gameUpdates - player.stats.bullet.lastShotDate) * e.gameUpdateInterval > player.stats.bullet.shotCooldown
             ) {
-                const weaponPos = [doge('weapon').getBoundingClientRect().left - doge('area').getBoundingClientRect().left, doge('weapon').getBoundingClientRect().top - doge('area').getBoundingClientRect().top]
+                const weaponPos = [ //I have to use meleeHitbox instead of weapon.pos because idk
+                    doge('meleeHitbox').getBoundingClientRect().left + doge('meleeHitbox').offsetWidth / 2 - doge('area').getBoundingClientRect().left, 
+                    doge('meleeHitbox').getBoundingClientRect().top + doge('meleeHitbox').offsetHeight / 2 - doge('area').getBoundingClientRect().top
+                ]
                 const bulletAngle = Math.atan2(
                     weaponPos[1] - DeBread.randomNum(
                         e.relCursorPos[1] - player.stats.bullet.accuracy / 2 * cursorDist, 
                         e.relCursorPos[1] + player.stats.bullet.accuracy / 2 * cursorDist
                     ), 
-                    weaponPos[0] + doge('weapon').offsetWidth / 2 - DeBread.randomNum(
+                    weaponPos[0] - DeBread.randomNum(
                         e.relCursorPos[0] - player.stats.bullet.accuracy / 2 * cursorDist, 
                         e.relCursorPos[0] + player.stats.bullet.accuracy / 2 * cursorDist
                     )
@@ -1090,7 +1099,7 @@ const weapons = {
                 for(let i = 0; i < player.stats.bullet.multishot; i++) {
                     if(player.stats.ammo.current > 0) {
                         player.dirVels.push({angle: bulletAngle, speed: player.stats.bullet.recoil, div: 1.25})
-                        const bulletPos = [weaponPos[0] + doge('weapon').offsetWidth / 2, weaponPos[1]]
+                        const bulletPos = [...weaponPos]
                         player.stats.ammo.current--
     
                         const t = (i - (DeBread.round(player.stats.bullet.multishot) - 1) / 2)

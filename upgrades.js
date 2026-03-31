@@ -2404,7 +2404,15 @@ function createShopItems(items) {
         }
 
         itemSlot.onclick = () => {
-            if(player.money >= randomItems[key].cost) {
+            let underBuyLimit = true
+
+            if(itemMeta.type === 2) {
+                if(item.tier >= item.buyLimit) {
+                    underBuyLimit = false
+                }
+            }
+
+            if(player.money >= randomItems[key].cost && underBuyLimit) {
                 if(itemMeta.type === 0) { //Items
                     item.apply()
                     itemSlot.sellOut()

@@ -18,6 +18,7 @@ const saveData = {
     selectedChallenge: 'none',
 
     settings: {
+        weaponEasing: true,
         particles: true,
         presentationMode: false,
         showGameQuitWarning: true,
@@ -281,7 +282,7 @@ const weaponPresets = {
         name: 'Shotgun',
         desc: 'Shoots multiple short range bullets.',
         ammoChar: '|',
-        textureSize: [17,7],
+        textureSize: [18,9],
 
         pros: [
             'Multi-shot',
@@ -364,9 +365,9 @@ const weaponPresets = {
     },
     piss: {
         name: 'Piss',
-        desc: 'piss description.',
+        desc: 'PISSES EVERYWHERE.',
         ammoChar: '|',
-        textureSize: [11,7],
+        textureSize: [16,12],
         bulletTexture: true,
 
         pros: [
@@ -390,7 +391,7 @@ const weaponPresets = {
             modifyStat(['bullet','poisonFieldColor'], '=[186, 161, 39]')
             modifyStat(['bullet','knockback'], '=0.1')
             
-            modifyStat(['ammo','reloadSpeed'], '=3000')
+            modifyStat(['ammo','reloadSpeed'], '=2500')
             modifyStat(['bullet','damage'], '=2.5')
             modifyStat(['ammo','autoFire'], '=true')
         }
@@ -459,7 +460,7 @@ const weaponPresets = {
     mounted_machine_gun: {
         name: 'Mounted Machine Gun',
         desc: 'A high fire-rate machine gun that can only be shot when standing still.',
-        textureSize: [25,9],
+        textureSize: [40,14],
         ammoChar: '|',
 
         pros: [
@@ -719,13 +720,13 @@ const characters = {
         taunts: 9,
         tag: 'Cat',
         tagCol: 'rgb(72, 72, 72)',
-        info: `
-            Starts with the \'Heroin\' consumable.<br>
-            <em style="color:grey;">For 5 seconds:</em><br>
-            <cg>x10</cg> Damage<br>
-            <cg>x2</cg> Speed<br>
-            After the 5 seconds, take <cb>75</cb> damage.
-            `,
+        // info: `
+        //     Starts with the \'Heroin\' consumable.<br>
+        //     <em style="color:grey;">For 5 seconds:</em><br>
+        //     <cg>x10</cg> Damage<br>
+        //     <cg>x2</cg> Speed<br>
+        //     After the 5 seconds, take <cb>75</cb> damage.
+        //     `,
 
         tagList: [
             {text: 'GS1',col: '#e0a24a'},
@@ -1437,7 +1438,7 @@ window.onerror = ev => {
         'Whoops!',
         'An unexpected error occured. Click this notification to copy error to clipboard...', 
         undefined, 
-        30000, 
+        20000, 
         () => {
             navigator.clipboard.writeText(ev)
             createNotification('Error copied to clipboard!',ev,undefined,2500)

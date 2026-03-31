@@ -45,6 +45,9 @@ function startTitle() {
                     
                             openMenu('main')
                 
+                            if(!navigator.userAgent.includes('Firefox')) {
+                                openPrompt('Browser warning','Goober Shooter 2 was made for Firefox browsers. Some issues may occur. If you notice your weapon trailing behind, you can disable <strong>Weapon easing</strong> in settings', [{text: 'I understand',onclick: closePrompt}])
+                            }
                 
                             if(navigator.userAgent.includes('Firefox') && saveData.firstLogin) {
                                 openPrompt('You\'re running Firefox','Goober Shooter 2 runs on a tick-based system using the setInterval function. On Firefox browsers this function does not have drift correction, so the game may run slower then expected.',[{text: 'I understand',onclick: closePrompt}])
@@ -69,6 +72,10 @@ doge('gameStartScreen').onclick = () => {
         // saveData.gameSettings.gamemode = 2
         // openMenu('game')
         // startGame()
+    }
+
+    if(!navigator.userAgent.includes('Firefox')) {
+        openPrompt('Browser warning','Goober Shooter 2 was made for Firefox browsers. Some issues may occur. If you notice your weapon trailing behind, you can disable <strong>Weapon easing</strong> in settings', [{text: 'I understand',onclick: closePrompt}])
     }
 
     if(navigator.userAgent.includes('Firefox') && saveData.firstLogin) {
@@ -266,10 +273,10 @@ function renderCharacterSelect() {
             doge('selectedCharacterTags').append(tag)
         }
 
-        const tag = document.createElement('div')
-        tag.classList.add('selectedCharacterTag')
-        tag.innerHTML = `${characters[saveData.selectedCharacter].taunts ?? '???'} taunts`
-        doge('selectedCharacterTags').append(tag)
+        // const tag = document.createElement('div')
+        // tag.classList.add('selectedCharacterTag')
+        // tag.innerHTML = `${characters[saveData.selectedCharacter].taunts ?? '???'} taunts`
+        // doge('selectedCharacterTags').append(tag)
     } updateSelectedCharacter()
     
 
@@ -698,8 +705,8 @@ const creditsHTML = `
         <span>By <a href="https://debread.space/" target="_blank">DeBread</a></span>
     </div>
     <span>Idea help: <a href="https://yeen.town/@Chalkllate" target="blank">Jake</a>, <a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a></span><br>
-    <span>Texture help: <a href="https://plinkel.neocities.org/">Plonk</a>(Ashton Character)</span><br>
     <span>Background Shader: From <a href="https://www.playbalatro.com/" target="_blank">Balatro</a>, rewritten by <a href="https://xemantic.github.io/shader-web-background/" target="_blank">xemantic</a></span><br>
+    <span>Addditional Textures: <a href="https://plinkel.neocities.org/">Plonk</a> (Ashton Character, Piss, Shotgun, Mounted Machine Gun)</span><br>
     <span>Additional SFX: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
     <span>Playtesters: TrueSkywalkr, Dottr</span>
 `
@@ -712,6 +719,13 @@ const settingsHTML = `
             <button onclick="openSettingsMenu('display')">Display</button>
         </div>
         <div class="settingsSection" id="settingsSection-general">
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-weaponEasing"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Weapon easing</span>
+                    <span>Makes the weapon smoothly move between postions. Disable if weapon position seems jittery or lags behind.</span>
+                </div>
+            </div>
             <div class="settingsCheckboxContainer">
                 <div class="genericCheckbox" id="scb-particles"></div>
                 <div class="settingsCheckboxInfo">
@@ -805,7 +819,7 @@ function updateSettings() {
         powerItems[0].blunt.name = 'Blunt'
         characters.jake.des = 'Good morning wag wag'
         weaponPresets.piss.name = 'Piss'
-        weaponPresets.piss.desc = 'piss description'
+        weaponPresets.piss.desc = 'PISSES EVERYWHERE.'
         characters.skywalkr.desc = 'This game is pissing me off'
     }
 
@@ -817,5 +831,13 @@ function updateSettings() {
         doge('gameDebug').style.display = 'none'
         doge('gameStatsContainer').style.display = 'none'
         doge('performanceDebug').style.display = 'none'
+    }
+
+    if(saveData.settings.weaponEasing) {
+        doge('weapon').style.transition = 'left linear 100ms, top linear 100ms, scale ease-in-out 500ms'
+        doge('meleeHitbox').style.transition = 'left linear 100ms, top linear 100ms, scale ease-in-out 500ms'
+    } else {
+        doge('weapon').style.transition = 'scale ease-in-out 500ms'
+        doge('meleeHitbox').style.transition = 'scale ease-in-out 500ms'
     }
 } updateSettings()
