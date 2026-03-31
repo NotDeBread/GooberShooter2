@@ -29,12 +29,18 @@ function createPlayer() {
         power: 0,
         rerolls: 0,
 
+        onFire: false,
+        crispiness: 0,
+
         score: 0,
         combo: 1,
         comboStrength: 100,
         scoreMult: 1,
 
         money: 10,
+        keys: 0,
+
+        bankBreakChance: 0,
 
         weapon: 'gun',
         characterWeapon: weaponPresets.gun,
@@ -50,6 +56,8 @@ function createPlayer() {
 
         lastMeleeDate: 0,
         lastGrazeDate: 0,
+
+        canUsePowerItem: true,
 
         tutorial: {
             stage: -1,
@@ -70,6 +78,15 @@ function createPlayer() {
             items: 0,
             accuracy: 0,
         },
+
+        shopWeights: [
+            90, //Item
+            5, //Power item
+            5, //Elixir
+        ],
+
+        elixirIDs: [],
+        elixirs: [],
         
         stats: {
             player: {
@@ -80,11 +97,11 @@ function createPlayer() {
 
                 maxHealth: 100, //Max player health.
                 pickupRange: 0, //How strong pickups are attracted towards the player.
-                waveInterval: 15000, //How long (in milliseconds) between each wave spawning.
 
                 socksDamage: 0,
                 thirdEye: 0,
                 passiveAbilityMult: 1,
+                powerGainMult: 1,
                 
                 grazeSize: 2, //How big (in player sizes) the graze hitbox is.
                 grazeCooldown: 5, //How long (in ticks) between each graze tick.
@@ -198,6 +215,8 @@ function createPlayer() {
             },
             misc: {
                 areaSize: 500,
+                waveInterval: 15000, //How long (in milliseconds) between each wave spawning.
+                waveMoneyMult: 1,
             }
         },
         
@@ -214,6 +233,7 @@ function createPlayer() {
             bullet.size = player.stats.bullet.size
             bullet.damage = extraData.damage ?? player.stats.bullet.damage
             bullet.bounces = player.stats.bullet.bounces
+            bullet.onFire = false
 
             bullet.spin = 0
 
@@ -257,6 +277,10 @@ function createPlayer() {
                 bullet.style.backgroundImage = `url(graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.replaceAll(' ','_').toLowerCase()}_bullet.png)`
             }
 
+            if(characters[saveData.selectedCharacter].weapon.animatedBulletTexture) {
+                bullet.style.backgroundImage = `url(graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.replaceAll(' ','_').toLowerCase()}_bullet.gif)`
+            }
+
             for(const key in extraData) {
                 bullet[key] = extraData[key]
             }
@@ -283,7 +307,7 @@ function createPlayer() {
                 }
 
                 if(player.stats.bullet.explosionSize > 0) {
-                    createExplosion(bullet.pos, player.stats.bullet.explosionSize, player.stats.bullet.damage, 25, false)
+                    createExplosion(bullet.pos, player.stats.bullet.explosionSize, player.stats.bullet.damage, player.stats.bullet.knockback * 10, false)
                 }
 
                 if(DeBread.randomNum(1,100) <= player.stats.bullet.poisonFieldChance) {
@@ -528,12 +552,23 @@ function createPlayer() {
         },
 
         damage: (amount, light) => {
+            let idolAlive = false
+            for(const enemy of elems.enemies) {
+                if(enemy.data.name === 'Idol' && enemy.active) {
+                    idolAlive = true
+                    break
+                }
+            }
             if(e.gameUpdates - player.lastHitDate >= player.stats.player.immunityTime || !player.immune) {
                 const startAmount = player.health
                 if(player.health - amount < 1 && player.health > 1) {
                     player.health = 1
                 } else {
-                    player.health -= amount
+                    if(amount > 0) {
+                        player.health -= amount
+                    } else if(!idolAlive) {
+                        player.health -= amount
+                    }
                 }
                 if(player.health <= 0) player.health = 0
                 if(player.health >= player.stats.player.maxHealth) player.health = player.stats.player.maxHealth
@@ -547,8 +582,8 @@ function createPlayer() {
                         player.elem.style.animation = 'playerHit 250ms ease-out 1 forwards'
                     }, e.gameUpdateInterval)
 
-                    if(light) {
-                        player.getPower(-(player.power / 2))
+                    if(!light) {
+                        player.getPower(-(Math.min(amount, 25)))
                     }
 
                     //Explosive Damage
@@ -565,24 +600,28 @@ function createPlayer() {
                 //Health bar num
                 doge('healthBarNum').innerHTML = ''
                 const healthNum = document.createElement('div')
-                for(let i = 0; i < Math.ceil(player.health).toString().length; i++) {
+                for(let i = 0; i < formatNumber(Math.ceil(player.health)).length; i++) {
                     const num = healthNum.cloneNode()
-                    num.innerText = Math.ceil(player.health).toString()[i]
+                    num.innerText = formatNumber(Math.ceil(player.health))[i]
                     doge('healthBarNum').append(num)
                     
                     DeBread.easeShake(num, 10, Math.min(amount / 3, 25), 0.5)
                 }
+                DeBread.easeShake(doge('healthBarContainer'), 10, Math.min(amount / 6, 25), 0.5)
 
                 player.perfectWave = false
             }
-            if(amount < 0) {
-                const popup = createPopupText('+'+DeBread.round(Math.abs(amount), 1), player.centerPos)
-                popup.style.color = 'lime'
-                popup.style.fontSize = '15px'
-                doge('area').append(popup)
 
-                if(amount <= -25) {
-                    createParticles(player.centerPos, 10, 10, [25, 50], 500, 'ease-out', {backgroundColor: 'lime',zIndex: '5'})
+            if(amount < 0) {
+                if(!idolAlive) {
+                    const popup = createPopupText('+'+DeBread.round(Math.abs(amount), 1), player.centerPos)
+                    popup.style.color = 'lime'
+                    popup.style.fontSize = '15px'
+                    doge('area').append(popup)
+    
+                    if(amount <= -25) {
+                        createParticles(player.centerPos, 10, 10, [25, 50], 500, 'ease-out', {backgroundColor: 'lime',zIndex: '5'})
+                    }
                 }
             }
 
@@ -644,13 +683,12 @@ function createPlayer() {
                 }
                 player.alive = false
             }
-
         },
 
         melee: () => {
             if(e.gameUpdates - player.lastMeleeDate >= player.stats.melee.cooldown) {
                 doge('meleeHitbox').style.animation = 'meleeHitboxHit 500ms ease-out 1 forwards'
-                doge('area').querySelectorAll('.enemy').forEach(enemy => {
+                elems.enemies.forEach(enemy => {
                     if(isColliding(doge('meleeHitbox'), enemy) && enemy.active) {
                         enemy.damage(player.stats.melee.damage * player.stats.melee.damageMult)
                         player.damage(-player.stats.melee.heal)
@@ -717,6 +755,11 @@ function createPlayer() {
                         }
                     }
                 })
+                doge('area').querySelectorAll('.supermagnet').forEach(magnet => {
+                    if(isColliding(doge('meleeHitbox'), magnet)) {
+                        magnet.destroy()
+                    }
+                })
                 if(projectileHit) {
                     DeBread.pauseInterval(1)
                     DeBread.shake(doge('area'), 10, 5, 5, 250)
@@ -731,7 +774,9 @@ function createPlayer() {
 
         getPower: (amount, ignoreAnimation) => {
             const prevAmount = player.power
-            player.power = Math.min(player.power + amount, 100)
+            let multiplier = 1
+            if(amount > 0 && !isNaN(player.stats.player.powerGainMult)) multiplier = player.stats.player.powerGainMult
+            player.power = Math.max(Math.min(player.power + amount * multiplier, 100), 0)
 
             doge('powerBarNum').innerHTML = DeBread.round(player.power)
             doge('powerBar').style.width = player.power+'%'
@@ -759,14 +804,14 @@ function createPlayer() {
         },
 
         usePowerItem: () => {
-            if(player.powerItem) {
+            if(player.powerItem && player.canUsePowerItem) {
                 let requirementPassed = true
                 if(player.powerItem.requirement) {
                     if(!player.powerItem.requirement()) {
                         requirementPassed = false
                     }
                 }
-                if(player.power >= player.powerItem.charge && requirementPassed) {
+                if(player.power >= player.powerItem.charge && requirementPassed || saveData.gameSettings.gamemode === 2) {
                     player.powerItem.use()
                     player.getPower(-player.powerItem.charge, true)
 
@@ -775,6 +820,10 @@ function createPlayer() {
                         doge('powerItem').style.animation = 'powerItemPulse 500ms ease-out 1 forwards'
                     })
 
+                    if(player.tutorial.stage === 26) {
+                        player.tutorial.goalValue++
+                        updateTutorialGoal()
+                    }
                 }
             }
         },
@@ -799,24 +848,24 @@ function createPlayer() {
                 if(player.pos[0] < 0) {
                     player.pos[0] = 0
                     player.vel[0] = 0
-                    player.dirVels = []
+                    // player.dirVels = []
                 }
 
                 if(player.pos[1] < 0) {
                     player.pos[1] = 0
                     player.vel[1] = 1
-                    player.dirVels = []
+                    // player.dirVels = []
                 }
 
                 if(player.pos[0] > doge('area').offsetWidth - player.elem.offsetWidth) {
                     player.pos[0] = doge('area').offsetWidth - player.elem.offsetWidth
                     player.vel[0] = 0
-                    player.dirVels = []
+                    // player.dirVels = []
                 }
                 if(player.pos[1] > doge('area').offsetHeight - player.elem.offsetHeight) {
                     player.pos[1] = doge('area').offsetHeight - player.elem.offsetHeight
                     player.vel[1] = 0
-                    player.dirVels = []
+                    // player.dirVels = []
                 }
 
                 //dirVels
@@ -826,7 +875,7 @@ function createPlayer() {
                     player.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
 
                     dirVel.speed /= dirVel.div
-                    if(dirVel.speed <= 0.1) {
+                    if(Math.abs(dirVel.speed) <= 0.1) {
                         player.dirVels.splice(i, 1)
                     }
                 }
@@ -882,7 +931,7 @@ function createPlayer() {
                 })
 
                 if(player.stats.player.contactDamage) {
-                    doge('area').querySelectorAll('.enemy').forEach(enemy => {
+                    elems.enemies.forEach(enemy => {
                         if(isColliding(player.elem, enemy)) {
                             enemy.damage(player.stats.player.contactDamage)
                             if(!enemy.alive) {
@@ -896,8 +945,12 @@ function createPlayer() {
 
     }
 }
-
 let player = createPlayer()
+
+const elems = {
+    enemies: [],
+    pickups: [],
+}
 
 function startGame() {
     doge('gameOverContainer').style.display = 'none'
@@ -914,15 +967,21 @@ function startGame() {
     doge('gameWeaponName').innerText = characters[saveData.selectedCharacter].weapon.name
 
     doge('area').querySelectorAll('.enemy').forEach(enemy => {enemy.remove()})
+    elems.enemies = []
     doge('area').querySelectorAll('.pickup').forEach(pickup => {pickup.remove()})
+    elems.pickups = []
     doge('area').querySelectorAll('.bullet').forEach(bullet => {bullet.remove()})
     doge('area').querySelectorAll('.enemyProjectile').forEach(bullet => {bullet.remove()})
     
     doge('gameWaveCounter').innerText = '0'
     doge('gameStyleContainer').innerHTML = ''
 
+    doge('gameShopUpgradesButtons').style.opacity = '1'
+    doge('gameShopUpgradesButtons').style.pointerEvents = 'unset'
+
     renderStats()
     updateArea()
+    updateShopTab()
     if(saveData.gameSettings.gamemode === 3) {
         modifyStat(['melee','size'], '=0')
         modifyStat(['melee','damage'],'=0')
@@ -962,9 +1021,10 @@ function startGame() {
 
     if(saveData.gameSettings.gamemode === 3) {
         doge('tutorialist').style.display = 'unset'
-        doge('tutorialistDialogue').style.display = 'unset'
+        doge('tutorialistDialogueContainer').style.display = 'flex'
         progressTutorial()
 
+        player.canUsePowerItem = false
         tutorialistInterval = setInterval(() => {
             const shadow = document.createElement('div')
             shadow.style.setProperty('--shadowX',DeBread.randomNum(-25,25)+'px')
@@ -1001,13 +1061,13 @@ const weapons = {
         textureSize: [11,7],
 
         leftClick: () => {
+            const cursorDist = Math.sqrt(Math.pow(player.centerPos[0] - e.relCursorPos[0],2) + Math.pow(player.centerPos[1] - e.relCursorPos[1],2)) / 100
             if(
                 player.stats.ammo.current > 0 && 
                 !player.stats.ammo.isReloading && 
                 (e.gameUpdates - player.stats.bullet.lastShotDate) * e.gameUpdateInterval > player.stats.bullet.shotCooldown
             ) {
                 const weaponPos = [doge('weapon').getBoundingClientRect().left - doge('area').getBoundingClientRect().left, doge('weapon').getBoundingClientRect().top - doge('area').getBoundingClientRect().top]
-                const cursorDist = Math.sqrt(Math.pow(player.centerPos[0] - e.relCursorPos[0],2) + Math.pow(player.centerPos[1] - e.relCursorPos[1],2)) / 100
                 const bulletAngle = Math.atan2(
                     weaponPos[1] - DeBread.randomNum(
                         e.relCursorPos[1] - player.stats.bullet.accuracy / 2 * cursorDist, 
@@ -1025,7 +1085,6 @@ const weapons = {
                     player.tutorial.goalValue++
                     updateTutorialGoal()
                 }
-
                 
                 for(let i = 0; i < player.stats.bullet.multishot; i++) {
                     if(player.stats.ammo.current > 0) {
@@ -1035,18 +1094,35 @@ const weapons = {
     
                         const t = (i - (DeBread.round(player.stats.bullet.multishot) - 1) / 2)
                         const offset = (t / DeBread.round(player.stats.bullet.multishot)) * Math.PI / 12
-    
+                        
                         player.createBullet(bulletPos, bulletAngle + offset)
 
+                        
                         if(player.health > 1) {
                             player.damage(player.stats.bullet.thornDamage, true)
                         }
-
+                        
                         player.bulletsShot++
                     } else break
                 }
-                updateUI()
-                player.stats.bullet.lastShotDate = e.gameUpdates
+
+                for(let i = 0; i < player.stats.bullet.multishot; i++) {
+                    document.querySelectorAll('.wisp').forEach(wisp => {
+                        const angle = Math.atan2(
+                            wisp.pos[1] - DeBread.randomNum(
+                                e.relCursorPos[1] - player.stats.bullet.accuracy / 2 * cursorDist, 
+                                e.relCursorPos[1] + player.stats.bullet.accuracy / 2 * cursorDist
+                            ), 
+                            wisp.pos[0] + doge('weapon').offsetWidth / 2 - DeBread.randomNum(
+                                e.relCursorPos[0] - player.stats.bullet.accuracy / 2 * cursorDist, 
+                                e.relCursorPos[0] + player.stats.bullet.accuracy / 2 * cursorDist
+                            ) 
+                        )
+                        player.createBullet([...wisp.pos], angle, {damage: player.stats.bullet.damage / 2})
+                    })
+                    updateUI()
+                    player.stats.bullet.lastShotDate = e.gameUpdates
+                }
             } else {
                 DeBread.playSound('audio/noAmmo.mp3', 0.5)
             }
@@ -1077,6 +1153,7 @@ const weapons = {
             }
         }
     },
+    //Weapons below are unused.
     wand: {
         name: 'Wand',
         desc: 'Stolen from some wierd cat guy... <br> Left Click: Summon Explosion',
@@ -1187,7 +1264,7 @@ function updateUI() {
     if(player.health >= player.stats.player.maxHealth) player.health = player.stats.player.maxHealth
 
     doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'
-    doge('healthBarNum').innerHTML = Math.ceil(player.health)
+    doge('healthBarNum').innerHTML = formatNumber(Math.ceil(player.health))
 
     if(player.powerItem) {
         doge('lowerPowerBar').style.width = player.powerItem.charge + '%'
@@ -1241,9 +1318,7 @@ function updateArea() {
 }
 
 let lastTickDate = 0
-const updateInterval = DeBread.createInterval(() => {
-    const allEnemies = doge('area').querySelectorAll('.enemy')
-    
+const updateInterval = DeBread.createInterval(() => {    
     //Player movement
     if(e.gameActive) {
         if(e.keysDown.includes('w') || e.keysDown.includes('arrowup')) {
@@ -1375,7 +1450,7 @@ const updateInterval = DeBread.createInterval(() => {
         }
 
         //Update bullet positions
-        doge('area').querySelectorAll('.bullet').forEach(bullet => {bullet.updatePosition(allEnemies)})
+        doge('area').querySelectorAll('.bullet').forEach(bullet => {bullet.updatePosition(elems.enemies)})
 
         //Autofire
         if(
@@ -1403,7 +1478,7 @@ const updateInterval = DeBread.createInterval(() => {
         }
 
         //Update enemies and thier projectiles
-        allEnemies.forEach(enemy => {
+        elems.enemies.forEach(enemy => {
             if((e.gameUpdates - enemy.spawnDate) * e.gameUpdateInterval > enemy.spawnTime && !enemy.active) {
                 enemy.init()
             }
@@ -1420,6 +1495,14 @@ const updateInterval = DeBread.createInterval(() => {
 
             if(isColliding(enemy, doge('weapon')) && player.stats.player.weaponContactDamage > 0) {
                 enemy.damage(player.stats.player.weaponContactDamage)
+            }
+
+            if(doge('area').querySelectorAll('.tennisBall').length > 0) {
+                doge('area').querySelectorAll('.tennisBall').forEach(ball => {
+                    if(isColliding(enemy, ball) && enemy.active) {
+                        enemy.damage(10)
+                    }
+                })
             }
         })
 
@@ -1440,7 +1523,7 @@ const updateInterval = DeBread.createInterval(() => {
             }
 
             if(projectile.canHitEnemy) {
-                allEnemies.forEach(enemy => {
+                elems.enemies.forEach(enemy => {
                     if(isColliding(enemy, projectile) && enemy.active) {
                         enemy.damage(projectile.damage)
                         projectile.destroy()
@@ -1466,6 +1549,11 @@ const updateInterval = DeBread.createInterval(() => {
                     doge('grazeHitbox').style.animation = 'grazeHitboxFlash 250ms ease-out 1 forwards'
                 })
 
+                if(player.tutorial.stage === 24 && player.tutorial.goalValue < 15) {
+                    player.tutorial.goalValue++
+                    updateTutorialGoal()
+                }
+
                 player.lastGrazeDate = e.gameUpdates
                 DeBread.playSound('audio/graze.wav',0.1,1 + Math.max(player.power / 200, 0))
             }
@@ -1484,10 +1572,34 @@ const updateInterval = DeBread.createInterval(() => {
             if(projectile.parried) {
                 createParticles(projectile.pos, 1, projectile.size, [0,5], 1000, 'ease-out', {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`})
             }
+
+            if(document.querySelectorAll('.supermagnet').length > 0) {
+                doge('area').querySelectorAll('.supermagnet').forEach(magnet => {
+                    const angle = Math.atan2(
+                        projectile.pos[1] - magnet.pos[1],
+                        projectile.pos[0] - magnet.pos[0]
+                    )
+    
+                    let delta = angle - projectile.angle
+    
+                    delta = Math.atan2(Math.sin(delta), Math.cos(delta))
+    
+                    projectile.angle += delta * 0.05
+
+                    const dis = Math.sqrt(
+                        Math.pow(projectile.pos[0] - magnet.pos[0],2) + 
+                        Math.pow(projectile.pos[1] - magnet.pos[1],2)
+                    )
+
+                    if(dis <= 100) {
+                        projectile.speed /= 1.01
+                    }
+                })
+            }
         })
 
         //Waves
-        if((e.gameUpdates - player.lastWaveDate) * e.gameUpdateInterval >= player.stats.player.waveInterval && !player.wavesPaused && saveData.gameSettings.gamemode < 2) {
+        if((e.gameUpdates - player.lastWaveDate) * e.gameUpdateInterval >= player.stats.misc.waveInterval && !player.wavesPaused && saveData.gameSettings.gamemode < 2 && player.alive) {
             spawnWave(player.wave)
             doge('gameWaveCounter').innerText = player.wave
 
@@ -1504,21 +1616,11 @@ const updateInterval = DeBread.createInterval(() => {
                 player.wavesPaused = true
             }
         }
-        doge('gameInnerWaveBar').style.width = (e.gameUpdates - player.lastWaveDate) * e.gameUpdateInterval / player.stats.player.waveInterval * 100 + '%'
+        doge('gameInnerWaveBar').style.width = (e.gameUpdates - player.lastWaveDate) * e.gameUpdateInterval / player.stats.misc.waveInterval * 100 + '%'
 
         //Pickups
         const pickups = [...doge('area').querySelectorAll('.pickup')];
         pickups.forEach(pickup => {
-            // if(e.gameUpdates - pickup.dateSpawned > 25 && e.gameUpdates % 25) {
-            //     pickups.forEach(otherPickup => {
-            //         if(pickup !== otherPickup && isColliding(pickup, otherPickup)) {
-            //             pickup.value += otherPickup.value
-
-            //             otherPickup.remove()
-            //         }
-            //     })
-            // }
-
             const distance = Math.sqrt(
                 Math.pow(pickup.pos[0] - player.centerPos[0], 2) + 
                 Math.pow(pickup.pos[1] - player.centerPos[1], 2)
@@ -1533,9 +1635,11 @@ const updateInterval = DeBread.createInterval(() => {
             pickup.pos[1] -= Math.sin(angle) / (distance / 100) * player.stats.player.pickupRange
 
             if(isColliding(player.elem, pickup)) {
-                pickup.action(pickup.value)
-                DeBread.playSound(`audio/money${DeBread.randomNum(0,3)}.mp3`,0.5, DeBread.randomNum(0.9,1.1,3), false)
-                pickup.remove()
+                if(pickup.live) {
+                    pickup.action(pickup.value)
+                    pickup.destroy()
+                    DeBread.playSound(`audio/money${DeBread.randomNum(0,3)}.mp3`,0.5, DeBread.randomNum(0.9,1.1,3), false)
+                }
             }
 
             pickup.move()
@@ -1607,7 +1711,7 @@ const updateInterval = DeBread.createInterval(() => {
                     field.lastTick = e.gameUpdates
                 }
     
-                allEnemies.forEach(enemy => {
+                elems.enemies.forEach(enemy => {
                     let enemyHit = false
                     if(isColliding(enemy, field) && e.gameUpdates - field.lastTick >= field.tickRate && enemy.active) {
                         enemy.damage(field.damage)
@@ -1655,6 +1759,76 @@ const updateInterval = DeBread.createInterval(() => {
         doge('statusEffectContainer').append(statusEffectIcon)
     }
 
+    //Fire
+    document.querySelectorAll('.fire').forEach(fire => {
+        if(isColliding(fire, player.elem)) {
+            for(const statusEffect of player.statusEffects) {
+                if(statusEffect.class === 'fire') {
+                    statusEffect.duration = statusEffect.maxDuration
+                }
+            }
+            if(!player.onFire) {                
+                player.statusEffects.push({
+                    duration: 100,
+                    maxDuration: 100,
+                    class: 'fire',
+                    
+                    end: () => {
+                        player.onFire = false;
+                    }
+                })
+                player.onFire = true
+            }
+        }
+    })
+
+    if(player.onFire) {
+        player.damage(0.1)
+        createParticles(
+            [...player.centerPos],
+            2,
+            10,
+            [25,50],
+            250,
+            'ease-out',
+            {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`, opacity: '0.5'}
+        )
+
+        player.crispiness++
+        
+        doge('playerFire').style.opacity = '0.75'
+    } else {
+        doge('playerFire').style.opacity = '0'
+        player.crispiness = 0        
+    }
+
+    //Special enemies
+    let leechAlive = false
+    for(const enemy of elems.enemies) {
+        if(enemy.data.name === 'Leech' && enemy.active) {
+            leechAlive = true
+            break
+        }
+    }
+
+    let idolAlive = false
+    for(const enemy of elems.enemies) {
+        if(enemy.data.name === 'Idol' && enemy.active) {
+            idolAlive = true
+            break
+        }
+    }
+
+    if(idolAlive) {
+        doge('healthBarContainer').style.filter = 'grayscale(1)'
+    } else {
+        doge('healthBarContainer').style.filter = ''
+    }
+
+    if(leechAlive && e.gameUpdates % 5 === 0 && player.health > 10) {
+        player.damage(1, true)
+    }
+
     //Portal
     document.querySelectorAll('.portal').forEach(portal => {
         createParticles(
@@ -1672,6 +1846,7 @@ const updateInterval = DeBread.createInterval(() => {
         if(isColliding(player.elem, portal) && !player.inPortal) {
             portal.style.width = window.innerWidth + 'px'
             portal.style.height = window.innerHeight + 'px'
+            portal.style.border = '1px solid black'
             player.elem.style.scale = '0'
             doge('weapon').style.scale = '0'
 
@@ -1680,7 +1855,27 @@ const updateInterval = DeBread.createInterval(() => {
             setTimeout(() => {
                 if(saveData.gameSettings.gamemode === 3) {
                     openShop([
-                        {id: 'rock', rarity: 0}
+                        {
+                            id: 'rock',
+                            rarity: 0,
+                            type: 0,
+                            cost: 2,
+                            data: upgrades[0].rock
+                        },
+                        {
+                            id: 'apple',
+                            rarity: 0,
+                            type: 1,
+                            cost: 6,
+                            data: powerItems[0].apple
+                        },
+                        {
+                            id: 'strength',
+                            rarity: 0,
+                            type: 2,
+                            cost: 10,
+                            data: elixirs[0].strength
+                        }
                     ])
                 } else {
                     openShop()
@@ -1695,19 +1890,18 @@ const updateInterval = DeBread.createInterval(() => {
     })
 
     //Passive items
-    if(e.gameUpdates % Math.max(DeBread.round((100 / player.stats.player.passiveAbilityMult)), 1) === 0 && player.stats.player.socksDamage > 0 && allEnemies.length > 0) {
-        const targetEnemy = allEnemies[DeBread.randomNum(0,allEnemies.length-1)]
+    if(e.gameUpdates % Math.max(DeBread.round((100 / player.stats.player.passiveAbilityMult)), 1) === 0 && player.stats.player.socksDamage > 0 && elems.enemies.length > 0) {
+        const targetEnemy = elems.enemies[DeBread.randomNum(0,elems.enemies.length-1)]
         if(targetEnemy.active) {
             createPoisonField([targetEnemy.centerPos[0], targetEnemy.centerPos[1]], 100, player.stats.bullet.damage * player.stats.player.socksDamage, 1, 10, false, [0,100,255])
         }
     }
-
     
-    if(e.gameUpdates % Math.max(DeBread.round((50 / player.stats.player.passiveAbilityMult)), 1) === 0 && allEnemies.length > 0) {
+    if(e.gameUpdates % Math.max(DeBread.round((50 / player.stats.player.passiveAbilityMult)), 1) === 0 && elems.enemies.length > 0) {
         for(let i = 0; i < player.stats.player.thirdEye; i++) {
             let closestEnemy = {elem: undefined, dist: Infinity}
     
-            allEnemies.forEach(enemy => {
+            elems.enemies.forEach(enemy => {
                 const enemyDist = Math.sqrt(Math.pow(player.centerPos[0] - enemy.centerPos[0],2) + Math.pow(player.centerPos[1] - enemy.centerPos[1],2))
                 if(enemyDist < closestEnemy.dist) {
                     closestEnemy.elem = enemy
@@ -1725,7 +1919,7 @@ const updateInterval = DeBread.createInterval(() => {
     }
 
     if(player.comboStrength > 0) {
-        if(allEnemies.length > 0) {
+        if(elems.enemies.length > 0) {
             player.comboStrength -= 0.5 + (player.combo / 100)
         }
     } else {
@@ -1760,9 +1954,9 @@ const updateInterval = DeBread.createInterval(() => {
         doge('sandboxEnemy').style.opacity = '0'
     }
     
-    //Power item stuff
-    document.querySelectorAll('.thrownCoin, .thrownBottle, .tennisBall').forEach(elem => {
-        elem.move(allEnemies)
+    //Tick stuff
+    document.querySelectorAll('.thrownCoin, .thrownBottle, .tennisBall, .wisp, .supermagnet, .fire').forEach(elem => {
+        elem.move(elems.enemies)
     })
 
     //Restart
@@ -1779,10 +1973,8 @@ const updateInterval = DeBread.createInterval(() => {
     }
 
     if(player.restartProgress > lastRestartProgress) {
-        console.log('opening!')
         doge('gameRestartContainer').style.translate = '0px 0px'
     } else if(player.restartProgress < lastRestartProgress) {
-        console.log('close')
         doge('gameRestartContainer').style.translate = '0px 100px'
     }
     
@@ -1803,6 +1995,7 @@ const updateInterval = DeBread.createInterval(() => {
     doge('dbUpdates').innerText = `Updates: ${e.gameUpdates}`
     doge('dbTickInterval').innerText = `Tick Interval: ${e.gameUpdateInterval}ms/${DeBread.round(performance.now()-lastTickDate)}ms`
     doge('dbStatus').innerText = `Status Effects: ${JSON.stringify(player.statusEffects)}`
+    doge('dbElems').innerText = `Elems: Enemies: ${elems.enemies.length} Pickups: ${(elems.pickups.length)}`
     
     e.gameUpdates++
     lastTickDate = performance.now()
@@ -1871,12 +2064,20 @@ document.addEventListener('keydown', ev => {
         if(key === 'f') {
             player.melee()
         }
+        
+        if(player.powerItem) {
+            if(key === 'q' && !player.powerItem.canUseInShop) {
+                player.usePowerItem()
+            }
+        }
+    }
 
-        if(key === 'q') {
+    if(player.powerItem) {
+        if(player.powerItem.canUseInShop && key === 'q') {
             player.usePowerItem()
         }
-
     }
+
     if(key === ' ' && !player.tutorial.goal) {
         progressTutorial()
     }
@@ -1902,6 +2103,41 @@ function getClosest(from, cls) {
     return closest
 }
 
+function createFire(pos, ticks, ignorePlayer) {
+    const fire = document.createElement('div')
+    fire.classList.add('fire')
+    addStyles(fire, {
+        position: 'absolute',
+        left: pos[0]+'px',
+        top: pos[1]+'px',
+        translate: '-50% -50%',
+        width: '64px',
+        height: '64px',
+        backgroundImage: 'url(graphics/fireLarge.gif)',
+        backgroundSize: '64px 64px',
+        opacity: '0.75',
+        zIndex: '4',
+        filter: 'blur(1px) drop-shadow(0px 0px 5px red)',
+    })
+
+    fire.ticksActive = 0
+    fire.move = () => {
+        fire.ticksActive++
+
+        if(fire.ticksActive > ticks) {
+            fire.destroy()
+        }
+    }
+
+    fire.destroy = () => {
+        fire.remove()
+        createParticles([...pos], 10, 10, [0,50], 500, 'ease-out', {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`,filter:'blur(10px)'})
+    }
+
+    doge('area').append(fire)
+    return fire
+}
+
 const explosionBase = document.createElement('div')
 addStyles(explosionBase, {
     aspectRatio: '1 / 1',
@@ -1919,9 +2155,9 @@ addStyles(explosionEffectBase, {
     animation: 'explosionEffect 500ms ease-out 1 forwards'
 })
 
-function createExplosion(pos, size, dmg, kb, ignorePlayer) {
+function createExplosion(pos, size, dmg, kb, ignorePlayer, col = [[255,255],[0,255],[0,0]]) {
     const explosion = explosionBase.cloneNode()
-    const randomColor = `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`
+    const randomColor = `rgb(${DeBread.randomNum(col[0][0],col[0][1])},${DeBread.randomNum(col[1][0],col[1][1])},${DeBread.randomNum(col[2][0],col[2][1])})`
     addStyles(explosion, {
         left: pos[0] - size / 2 + 'px',
         top: pos[1] - size / 2 + 'px',
@@ -1959,7 +2195,7 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer) {
         largeExplosionEffect.remove()
     }, 500);
 
-    doge('area').querySelectorAll('.enemy').forEach(enemy => {
+    elems.enemies.forEach(enemy => {
         const distance = Math.sqrt(
             Math.pow((pos[0]) - (enemy.pos[0] + enemy.size / 2),2) +
             Math.pow((pos[1]) - (enemy.pos[1] + enemy.size / 2),2)
@@ -1968,10 +2204,12 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer) {
 
         if(distance < size && enemy.active) {
             enemy.damage(dmg * distanceEffect)
-            const popup = createPopupText(DeBread.round(dmg * distanceEffect), [(enemy.pos[0]),(enemy.pos[1])])
-            popup.style.color = 'red'
-            popup.style.fontSize = Math.min(Math.max(dmg * distanceEffect / 5, 15), 50) + 'px'
-            doge('area').append(popup)
+            if(dmg * distanceEffect > 0) {
+                const popup = createPopupText(DeBread.round(dmg * distanceEffect), [(enemy.pos[0]),(enemy.pos[1])])
+                popup.style.color = 'red'
+                popup.style.fontSize = Math.min(Math.max(dmg * distanceEffect / 5, 15), 50) + 'px'
+                doge('area').append(popup)
+            }
 
             if(!enemy.alive) {
                 getStyle(styles.exploded)
@@ -1987,6 +2225,23 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer) {
             if(enemy.speed > 0 && enemy.active) {
                 enemy.dirVels.push({angle: kbAngle - Math.PI, speed: kb / 2, div: 1.2})
             }
+        }
+    })
+
+    elems.pickups.forEach(pickup => {
+        const distance = Math.sqrt(
+            Math.pow(pos[0] - pickup.pos[0],2) +
+            Math.pow(pos[1] - pickup.pos[1],2)
+        )
+        const distanceEffect = 1 - distance / size
+        
+        if(distance / 2 < size && distanceEffect > 0) {
+            const kbAngle = Math.atan2(
+                pos[1] - pickup.pos[1],
+                pos[0] - pickup.pos[0]
+            )
+
+            pickup.dirVels.push({angle: kbAngle - Math.PI, speed: kb / 2, div: 1.2})
         }
     })
 
@@ -2034,6 +2289,12 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer) {
             } else {
                 player.damage(dmg * distanceEffect)
             }
+
+            const kbAngle = Math.atan2(
+                pos[1] - player.centerPos[1],
+                pos[0] - player.centerPos[0]
+            )
+            player.dirVels.push({angle: kbAngle - Math.PI, speed: kb / 2, div: 1.2})
         }
     }
 }
@@ -2071,30 +2332,37 @@ function createPoisonField(pos, size, dmg, ticks, tickRate, circular = false, co
 const pickupBase = document.createElement('img')
 addStyles(pickupBase, {
     position: 'absolute',
-    width: '8px',
-    left: '8px',
+    width: '32px',
+    height: '16px',
+    left: '32px',
     translate: '-50% -50%',
-    scale: '1'
+    scale: '1',
+    transition: 'left linear 100ms, top linear 100ms'
 })
+
 function createPickup(pos, speed, texture, col, action, value) {
     const pickup = pickupBase.cloneNode()
     pickup.color = col
-    pickup.pos = pos
+    pickup.pos = [DeBread.randomNum(pos[0]-1,pos[0]+1,10),DeBread.randomNum(pos[1]-1,pos[1]+1,10)]
     pickup.speed = speed
     pickup.action = action
     pickup.value = value
     pickup.dateSpawned = e.gameUpdates
     pickup.scale = 1
+    pickup.live = true
+    pickup.dirVels = []
 
     pickup.angle = DeBread.randomNum(0,Math.PI*2,5)
+
+    elems.pickups.push(pickup)
 
     pickup.classList.add('pickup')
 
     addStyles(pickup, {
-        left: pos[0]+'px',
-        top: pos[1]+'px'
+        left: pickup.pos[0]+'px',
+        top: pickup.pos[1]+'px'
     })
-    pickup.src = `graphics/${texture}.png`
+    pickup.src = `graphics/${texture}.gif`
 
     pickup.move = () => {
         pickup.pos[0] += Math.cos(pickup.angle) * pickup.speed
@@ -2107,12 +2375,65 @@ function createPickup(pos, speed, texture, col, action, value) {
 
 
         addStyles(pickup, {
-            left: pos[0]+'px',
-            top: pos[1]+'px',
+            left: pickup.pos[0]+'px',
+            top: pickup.pos[1]+'px',
             scale: pickup.scale
         })
 
         pickup.speed /= 1.1
+
+        for(let i = 0; i < pickup.dirVels.length; i++) {
+            const dirVel = pickup.dirVels[i]
+            pickup.pos[0] += Math.cos(dirVel.angle) * dirVel.speed
+            pickup.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
+
+            dirVel.speed /= dirVel.div
+            if(dirVel.speed <= 0.1) {
+                pickup.dirVels.splice(i, 1)
+            }
+        }
+
+        elems.pickups.forEach(other => {
+            if (pickup === other) return
+
+            const dx = other.pos[0] - pickup.pos[0]
+            const dy = other.pos[1] - pickup.pos[1]
+
+            const distance = Math.sqrt(
+                Math.pow(dx,2)+
+                Math.pow(dy,2)
+            )
+
+            const r1 = pickup.offsetWidth / 2
+            const r2 = other.offsetWidth / 2
+
+            const minDist = r1 + r2
+
+            if(distance < minDist && distance > 0) {
+                const overlap = minDist - distance
+
+                const nx = dx / distance
+                const ny = dy / distance
+
+                const push = overlap / 2
+
+                pickup.pos[0] -= nx * push
+                pickup.pos[1] -= ny * push
+
+                other.pos[0] += nx * push
+                other.pos[1] += ny * push
+            }
+        })
+    }
+
+    pickup.destroy = () => {
+        pickup.live = false
+        pickup.style.animation = 'pickupOut 100ms ease-out 1 forwards'
+        createParticles([...pickup.pos], 3, 8, [5,10], 250, 'ease-out', {backgroundColor: 'white'})
+        setTimeout(() => {
+            pickup.remove()
+            elems.pickups.splice(pickups[elems.pickups.indexOf(pickup)], 1)
+        }, 100);
     }
 
     doge('area').append(pickup)
@@ -2123,6 +2444,7 @@ const pickups = {
     coin: (type, pos, speed, amount) => {
         createPickup(pos, speed, `coin${type}`, 'grey', (amount) => {player.getMoney(amount * coinValues[type])}, amount)
     },
+    
 }
 
 const styles = {
@@ -2180,6 +2502,16 @@ const styles = {
         text: 'Grazed',
         baseAmnt: 15,
         comboBoost: 5,
+    },
+    ricoshot: {
+        text: 'Ricoshot',
+        baseAmnt: 1000,
+        comboBoost: 10,
+    },
+    fragmented: {
+        text: 'Fragmented',
+        baseAmnt: 5,
+        comboBoost: 1,
     }
 }
 
@@ -2204,7 +2536,6 @@ function getStyle(style) {
     
         doge('gameStyleContainer').append(div)
     }
-
 
     for(let i = 0; i < 10; i++) {
         setTimeout(() => {
@@ -2342,7 +2673,12 @@ function openSandboxMenu(menu) {
 
             button.onmouseenter = () => {
                 const upgradeRect = button.getBoundingClientRect()
-                tooltip([upgradeRect.left + button.offsetWidth / 2, upgradeRect.top + button.offsetHeight + 12], enemy.name, 'ENEMY', enemy.desc + `<br><em>${enemy.credits} Credits</em>`, 0)
+                tooltip(
+                    [upgradeRect.left + button.offsetWidth / 2, upgradeRect.top + button.offsetHeight + 12], 
+                    enemy.name, 
+                    [{text: 'ENEMY', col: '#7f293a'}], 
+                    enemy.desc + `<br><em>${enemy.credits} Credits</em>`, 
+                )
             }
 
             button.onmouseleave = () => {doge('tooltip').style.opacity = '0'}
@@ -2373,10 +2709,12 @@ function openSandboxMenu(menu) {
         
         function updateSearch() {
             doge('sandboxMenu-upgrades').querySelectorAll('.sandboxUpgrade').forEach(button => {
-                if(!button.data.name.toLowerCase().includes(searchBar.value.toLowerCase())) {
-                    button.style.display = 'none'
-                } else {
-                    button.style.display = 'flex'
+                if(button.key !== 'error') {
+                    if(!button.data.name.toLowerCase().includes(searchBar.value.toLowerCase())) {
+                        button.style.display = 'none'
+                    } else {
+                        button.style.display = 'flex'
+                    }
                 }
             })
         }
@@ -2389,8 +2727,14 @@ function openSandboxMenu(menu) {
                 const rarity = i
                 const sandboxUpgrade = document.createElement('div')
                 sandboxUpgrade.classList.add('sandboxUpgrade')
+
+                let extension = 'png'
+                if(upgrade.animatedTexture) {
+                    extension = 'gif'
+                }
+
                 sandboxUpgrade.innerHTML = `
-                    <img src="graphics/upgrades/${key}.png">
+                    <img src="graphics/upgrades/${key}.${extension}">
                 `
 
                 sandboxUpgrade.querySelector('img').onerror = ev => {
@@ -2398,6 +2742,7 @@ function openSandboxMenu(menu) {
                 }
 
                 sandboxUpgrade.data = upgrade
+                sandboxUpgrade.key = key
                 
                 doge('sandboxMenu-upgrades').append(sandboxUpgrade)
 
@@ -2408,7 +2753,25 @@ function openSandboxMenu(menu) {
 
                 sandboxUpgrade.onmouseenter = () => {
                     const upgradeRect = sandboxUpgrade.getBoundingClientRect()
-                    tooltip([upgradeRect.left + sandboxUpgrade.offsetWidth / 2, upgradeRect.top + sandboxUpgrade.offsetHeight + 12], upgrade.name, rarity, upgrade.desc, 0)
+
+                    //literally just for the error item
+
+                    let itemName = upgrade.name
+                    if(typeof upgrade.name === 'function') {
+                        itemName = upgrade.name()
+                    }
+
+                    let itemDesc = upgrade.desc
+                    if(typeof upgrade.desc === 'function') {
+                        itemDesc = upgrade.desc()
+                    }
+
+                    tooltip(
+                        [upgradeRect.left + sandboxUpgrade.offsetWidth / 2, upgradeRect.top + sandboxUpgrade.offsetHeight + 12], 
+                        itemName, 
+                        [{text: rarities[rarity].name, col: rarities[rarity].color}], 
+                        itemDesc
+                    )
                 }
 
                 sandboxUpgrade.onmouseleave = () => {doge('tooltip').style.opacity = '0'}
@@ -2538,21 +2901,69 @@ function openSandboxMenu(menu) {
 
                 button.onmouseenter = () => {
                     const buttonRect = button.getBoundingClientRect()
-                    tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], item.name, i, item.desc, 0)
+                    tooltip(
+                        [buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], 
+                        item.name, 
+                        [
+                            {text: 'POWER ITEM', col: '#5b5a1b'},
+                            {text: rarities[i].name, col: rarities[i].color}
+                        ], 
+                        item.desc
+                    )
                 }
 
                 button.onmouseleave = () => {doge('tooltip').style.opacity = '0'}
 
-                if(item.rarity === 4) {
+                if(i === 4) {
                     button.style.animation = 'mythicBorder 5s linear infinite forwards'
                     button.querySelector('img').style.animation = 'mythicGlow 5s linear infinite forwards'
                 } else {
                     button.querySelector('img').style.filter = `drop-shadow(0px 0px 5px ${rarities[i].color})`
+                    button.style.boxShadow = `inset 0px 0px 0px 4px ${rarities[i].color}`
                 }
             }
         }
     }
-}
+
+    if(menu === 'elixirs') {
+        doge('sandboxMenu-elixirs').innerHTML = ''
+        for(const key in elixirs[0]) {
+            const elixir = elixirs[0][key]
+            const button = document.createElement('div')
+            button.classList.add('sandboxUpgrade')
+            button.innerHTML = `
+                <img src="graphics/elixirs/${key}.png" width=32>
+            `
+            
+            doge('sandboxMenu-elixirs').append(button)
+
+            button.onclick = () => {
+                elixir.apply()
+                updateUI()
+            }
+
+            let desc = elixir.desc
+            if(elixir.buyLimit < Infinity) {
+                desc += `<br><br>Maxes out at tier <cs>${roman(elixir.buyLimit)}</cs>`
+            }
+
+            button.onmouseenter = () => {
+                const buttonRect = button.getBoundingClientRect()
+                tooltip(
+                    [buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], 
+                    elixir.name, 
+                    [
+                        {text: 'ELIXIR', col: '#391b5b'},
+                        {text: rarities[0].name, col: rarities[0].color}
+                    ], 
+                    desc
+                )
+            }
+
+            button.onmouseleave = () => {doge('tooltip').style.opacity = '0'}
+        }
+    }
+} openSandboxMenu('tools')
 
 function spawnPortal() {
     if(document.querySelectorAll('.portal').length < 1) {
@@ -2590,6 +3001,69 @@ function spawnPortal() {
     }
 }
 
+//Special shop stuff
+const chests = {
+    wooden: {
+        name: 'Wooden Chest',
+        weight: 50,
+        requirement: () => {return true},
+
+        loot: [
+            {
+                name: 'Pocket change',
+                desc: '<cp>+$10</cp>',
+                weight: 20,
+
+                run: () => {
+                    player.getMoney(10)
+                }
+            },
+            {
+                name: 'Key',
+                desc: 'Used to unlock special chests',
+                weight: 10,
+
+                run: () => {
+                    player.keys++
+                }
+            },
+        ]
+    },
+    silver: {
+        name: 'Silver Chest',
+        weight: 20,
+        requirement: () => {return true},
+
+        loot: [
+            {
+                name: 'Wallet',
+                desc: '<cp>+$30</cp>',
+                weight: 20,
+
+                run: () => {
+                    player.getMoney(30)
+                }
+            },
+            {
+                name: 'Key',
+                desc: 'Used to unlock special chests',
+                weight: 20,
+
+                run: () => {
+                    player.keys++
+                }
+            },
+        ]
+    }
+}
+
+function getChest() {
+    let weightTotal = 0
+    for(const key in chests) {
+        weightTotal += chests[key].weight
+    }
+}
+
 const tutorialEnemies = {
     dummy0: {
         color: 'rgba(255, 218, 169, 1)',
@@ -2618,6 +3092,20 @@ const tutorialEnemies = {
             size: 10,
             dmg: 0,
             speed: 4,
+        },
+    },
+    dummy3: {
+        color: 'rgba(255, 218, 169, 1)',
+        credits: 0,
+        size: 50,
+        health: Infinity,
+        speed: 0,
+
+        projectile: {
+            cooldown: 1000,
+            size: 10,
+            dmg: 0,
+            speed: 5,
         },
     }
 }
@@ -2664,7 +3152,7 @@ const tutorial = [
         }
     },
     {
-        text: 'If enemies are within this box and your press <strong>F</strong> you deal melee damage.',
+        text: 'If enemies are within this box and you press <strong>F</strong>, you deal melee damage.',
     },
     {
         text: 'Try performing some melees on this dummy using the <strong>F</strong> key. <br><br><em style="color: grey">(And btw, you can move using WASD, if you haven\'t figured it out already...)</em>',
@@ -2679,14 +3167,14 @@ const tutorial = [
         goal: 'Perform parries',
         goalTarget: 3,
         run: () => {
-            doge('area').querySelectorAll('.enemy').forEach(enemy => {enemy.kill()})
+            elems.enemies.forEach(enemy => {enemy.kill()})
             spawnEnemy([400, doge('area').offsetHeight / 2 - 25], tutorialEnemies.dummy2, 0, 1000)
         }
     },
     {
         text: 'Okay, let\'s move away from gameplay and focus on the <strong>Shop</strong>.',
         run: () => {
-            doge('area').querySelectorAll('.enemy').forEach(enemy => {enemy.kill()})
+            elems.enemies.forEach(enemy => {enemy.kill()})
             modifyStat(['melee','cooldown'],'=75')
         }
     },
@@ -2719,28 +3207,47 @@ const tutorial = [
         }
     },
     {
-        text: 'This is the <strong>Shop</strong>. Enemies drop coins based on how difficult they are. You can use these coins to buy different things.'
+        text: 'This is the <strong>Shop</strong>. Waves drop coins based on how difficult they are. You can use these coins to buy different things.'
     },
     {
-        text: '<strong>Items</strong> are permanent upgrades that modify your player stats.'
+        text: '<strong>Items</strong> are permanent upgrades that modify your player stats.',
+        run: () => {
+            doge('gameShopUpgrades').children[0].style.outline = '2px solid white'
+        }
     },
     {
-        text: '<strong>Consumables</strong> are single use items that can be used during gameplay.'
-    },
-    {
-        text: '<strong>Power items</strong> are multi-use items that can take <strong>POWER</strong> to use.'
+        text: '<strong>Power items</strong> are multi-use items that can take <strong>POWER</strong> to use.',
+
+        run: () => {
+            doge('gameShopUpgrades').children[0].style.outline = '0px solid white'
+            doge('gameShopUpgrades').children[1].style.outline = '2px solid white'
+        }
     },
     {
         text: 'You can gain POWER by killing enemies, parrying enemy projectiles, or narrowly dodging enemy projectiles within your <strong>Graze Hitbox</strong>.'
     },
     {
-        text: 'Here\'s some money, try buying an item from the shop!',
-        goal: 'By an item',
-        goalTarget: 1,
-
+        text: 'But watch out though! You loose half your current <strong>POWER</strong> when getting hit by an enemy!'
+    },
+    {
+        text: '<strong>Elixirs</strong> are like items, but can be bought multiple times to increase its player stat changes.',
         run: () => {
-            player.getMoney(4)
+            doge('gameShopUpgrades').children[1].style.outline = '0px solid white'
+            doge('gameShopUpgrades').children[2].style.outline = '2px solid white'
+        }
+    },
+    {
+        text: 'You can only have up to <strong>3</strong> different elixirs in a run.',
+    },
+    {
+        text: 'Here\'s some money, try buying some items from the shop!',
+        goal: 'By items',
+        goalTarget: 3,
+        
+        run: () => {
+            player.getMoney(15)
             doge('gameShopContainer').style.pointerEvents = 'unset'
+            doge('gameShopUpgrades').children[2].style.outline = '0px solid white'
         }
     },
     {
@@ -2753,6 +3260,58 @@ const tutorial = [
                 opacity: '1',
                 pointerEvents: 'unset'
             })
+        }
+    },
+    {
+        text: 'Let\'s try to use your power item.'
+    },
+    {
+        text: 'Power items use POWER to use. You can see how much power you have by the bar underneath your health bar.'
+    },
+    {
+        text: 'As said before, you can gain POWER by parrying bullets, killing enemies, or narrowly dodging enemy projectiles within your <strong>Graze Hitbox</strong>.'
+    },
+    {
+        text: 'Try gaining power by dodging projectiles within your <strong>Graze Hitbox</strong>',
+        
+        goal: 'Graze enemy projectiles',
+        goalTarget: 15,
+
+        run: () => {
+            spawnEnemy([400, doge('area').offsetHeight / 2 - 25], tutorialEnemies.dummy3, 0, 1000)
+            player.getPower(15)
+        }
+    },
+    {
+        text: 'Nice! Now you have enough POWER to use your power item.',
+
+        run: () => {
+            elems.enemies.forEach(enemy => {enemy.kill()})
+        }
+    },
+    {
+        text: 'Use your power item by pressing <strong>Q</strong>',
+        goal: 'Use your power item',
+        goalTarget: 1,
+
+        run: () => {
+            player.canUsePowerItem = true
+            
+            if(player.power < 30) {
+                player.getPower(-9999)
+                player.getPower(30)
+            }
+        }
+    },
+    {
+        text: 'Thats about it for the basics! You\'ll learn more advanced things as you play through the game.'
+    },
+    {
+        text: 'Byeeee!!!!!',
+        run: () => {
+            player.alive = false
+            e.gameActive = false
+            openMenu('main')
         }
     }
 ]

@@ -3,4 +3,7 @@
 -Hide sandbox menu when not hovering
 -Fix inconsistencies with outline width on menus and buttons.
 -Add controller support
--Fix popup positioning
+-Fix popup text positioning
+-Limit number of notifications
+-Remake wave progression
+-Temporarily disable cosmetics

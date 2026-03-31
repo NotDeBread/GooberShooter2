@@ -19,7 +19,7 @@
         <div id="tooltipHeader">
             <span id="tooltipTitle">Tooltip Title</span>
             <div class="coolLine"></div>
-            <span id="tooltipRarity">COMMON</span>
+            <div id="tooltipTags"></div>
         </div>
         <div id="tooltipBody">
             <span>This is some really really cool tooltip text that is really cool!</span>
@@ -28,7 +28,7 @@
     </div>
     <div id="promptContainer">
         <div id="prompt">
-            <div style="width: 100%; height: 100%;">
+            <div style="height: calc(100% - 26px);">
                 <div id="promptHeaderContainer">
                     <span id="promptTitle">Warning!</span>
                     <div class="coolLine"></div>
@@ -57,14 +57,17 @@
             <span id="menuTitle1">Goober</span>
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
-            <span style="max-width: 100px !important;">PRESENTATION <br> DEMO <a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">pre1</a></span>
+            <span style="max-width: 100px !important;">PRESENTATION <br> DEMO <a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest0</a></span>
         </div>
         <div id="menuButtons">
-            <button onclick="openMenu('gameSettings'); openGameSettingsMenu(0)">PLAY</button>
+            <button onclick="openMenu('gameSettings'); openGameSettingsMenu(0)" style="height: 40px;">PLAY</button>
             <button onclick="openMenu('characterSelect')">CHARACTER SELECT</button>
             <button onclick="openSettings()">SETTINGS</button>
             <button onclick="openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,300])
             ">CREDITS</button>
+            <button onclick="window.open('https://forms.gle/zkECpXQ6iEFuKfVA8','_blank')">REPORT A BUG</button>
+            <span>⬆️</span>
+            <span style="text-align: center; width: 400px;">PLEASE do this if you encounter any bugs or other issues. I need this game to be pretty much bug free within the next week!</span>
         </div>
     </div>
     <div id="menu-gameSettings" class="menu">
@@ -150,12 +153,10 @@
                     </div>
                 </div>
                 <img src="graphics/placeholder.png" width="92" id="selectedCharacterImg">
-                <div id="selectedCharacterContainerTab" onclick="toggleCharacterCustomization()">
-                    <span id="selectedCharacterContainerTabLabel">Customize</span>
-                </div>
             </div>
             <div id="characterSelectContainer"></div>
-            <div id="characterCustomizationContainer">
+            <div id="characterCustomizationContainer" style="overflow: hidden;">
+                <div class="supercoolclassname">UNDER CONSTRUCTION<br><span style="font-size: 0.75em;">Cosmetic changes will not appear in game (skins work)</span></div>
                 <section style="border: 1px solid grey;">
                     <div style="border-bottom: 1px solid grey; width: calc(100% - 10px); padding: 5px;">Cosmetics</div>
                     <div id="ccCosmetics" class="ccScrollableContainer">
@@ -242,46 +243,62 @@
                 <div class="gamePauseMenu" id="pauseMenu-main" menuHeight="200">
                     <button onclick="pauseGame()">Resume</button>
                     <button onclick="openSettings()">Settings</button>
-                    <button onclick="openPauseMenu('run_stats')">Run Stats</button>
+                    <!-- <button onclick="openPauseMenu('run_stats')">Run Stats</button> -->
                     <button style="margin-top: 25px;" 
-                        onclick="openPrompt(
-                            'Warning!',
-                            `Are you sure you want to restart?<br><em style='color: grey;'>This popup can be disabled in settings.</em>`,
-                            [
-                                {
-                                    text: 'Go back',
-                                    onclick: () => {closePrompt()}
-                                },
-                                {
-                                    text: 'Restart',
-                                    onclick: () => {
-                                        startGame()
-                                        closePrompt()
-                                        pauseGame()
-                                    }
-                                }
-                            ]
-                        )">Restart</button>
+                        onclick="
+                            if(!saveData.settings.showGameQuitWarning) {
+                                startGame()
+                                closePrompt()
+                                pauseGame()
+                            } else {
+                                openPrompt(
+                                    'Warning!',
+                                    `Are you sure you want to restart?<br><em style='color: grey;'>This popup can be disabled in settings.</em>`,
+                                    [
+                                        {
+                                            text: 'Go back',
+                                            onclick: () => {closePrompt()}
+                                        },
+                                        {
+                                            text: 'Restart',
+                                            onclick: () => {
+                                                startGame()
+                                                closePrompt()
+                                                pauseGame()
+                                            }
+                                        }
+                                    ]
+                                )
+                            }
+                        ">Restart</button>
                     <button
-                        onclick="openPrompt(
-                            'Warning!',
-                            `Are you sure you want to quit? This run will not be saved.<br><em style='color: grey;'>This popup can be disabled in settings.</em>`,
-                            [
-                                {
-                                    text: 'Go back',
-                                    onclick: () => {closePrompt()}
-                                },
-                                {
-                                    text: 'Quit',
-                                    onclick: () => {
-                                        openMenu('main')
-                                        closePrompt()
-                                        pauseGame()
-                                        e.gameActive = false
-                                    }
-                                }
-                            ]
-                        )">Quit</button>
+                        onclick="
+                            if(!saveData.settings.showGameQuitWarning) {
+                                openMenu('main')
+                                closePrompt()
+                                pauseGame()
+                                e.gameActive = false
+                            } else {
+                                openPrompt('Warning!',
+                                    `Are you sure you want to quit? This run will not be saved.<br><em style='color: grey;'>This popup can be disabled in settings.</em>`,
+                                    [
+                                        {
+                                            text: 'Go back',
+                                            onclick: () => {closePrompt()}
+                                        },
+                                        {
+                                            text: 'Quit',
+                                            onclick: () => {
+                                                openMenu('main')
+                                                closePrompt()
+                                                pauseGame()
+                                                e.gameActive = false
+                                            }
+                                        }
+                                    ]
+                                )
+                            }
+                        ">Quit</button>
                 </div>
                 <div class="gamePauseMenu" id="pauseMenu-run_stats" menuHeight="250">
                     <button>STATS!</button>
@@ -290,31 +307,64 @@
             </div>
         </div>
         <div id="gameShopContainer">
+            <span id="gameShopTitle">Shop :)</span>
             <div id="gameShop">
-                <span>Shop :)</span>
-                <div id="gameShopUpgradesContainer">
-                    <!--Upgrades-->
+                <div>
                     <div class="gameShopSection">
                         <span class="gameShopHeader">ITEMS</span>
-                        <div id="gameShopUpgrades">                        
-                            <div class="shopUpgrade">
-                                <span class="shopUpgradePrice">$25</span>
-                                <img src="graphics/placeholder.png">
-                            </div>
-                        </div>
+                        <div id="gameShopUpgrades"></div>
                         <div id="gameShopUpgradesButtons">
                             <button onclick="rerollShop()">Reroll <span id="rerollPrice">$10</span></button>
-                            <button>Banish</button>
+                            <!-- <button>Banish</button> -->
                         </div>
                     </div>
-                    <!--Elixirs-->
-                    <div id="gameShopElixirs" class="gameShopSection">
-                        <span class="gameShopHeader">ELIXIRS</span>
-                        <div id="gameShopElixirs">
-                            
+                    <div id="gameShopTabs">
+                        <div class="gameShopTab" id="shopTab-powerItem">
+                            <div class="gameShopTabItem">
+                                <img src="graphics/placeholder.png" width="32">
+                            </div>                            
+                        </div>
+                        <div class="gameShopTab" id="shopTab-elixirs">
+                            <div class="gameShopTabItem">
+                                <img src="graphics/placeholder.png" width="32">
+                                <div class="gameShopElixirsTabTier">
+                                    <span>IV</span>
+                                </div>
+                            </div>
+                            <div class="gameShopTabItem">
+                                <img src="graphics/placeholder.png" width="32">
+                                <div class="gameShopElixirsTabTier">
+                                    <span>IV</span>
+                                </div>
+                            </div>
+                            <div class="gameShopTabItem">
+                                <img src="graphics/placeholder.png" width="32">
+                                <div class="gameShopElixirsTabTier">
+                                    <span>IV</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <!--Bank-->
+                <!-- <div class="gameShopSection" style="width: 150px;">
+                    <span class="gameShopHeader">BANK</span>
+                    <help header="About the BANK" content="The bank can be used to save money between runs. Every time you withdrawl or deposit money, the bank have a higher chance to break." style="position: absolute; top: 10px; right: 10px;">?</help>
+                    <div id="bankBalanceContainer">
+                        <span id="bankBalance">$1,000</span><span style="color: grey;" id="bankBalanceCents">.00</span>
+                    </div>
+                    <div id="bankButtons">
+                        <button id="bankDeposit">DEPOSIT</button>
+                        <button id="bankWithdrawl">WITHDRAWL</button>
+                    </div>
+                    <span id="bankBreakChance">0% to break</span>
+                </div> -->
+
+                <!-- <div class="gameShopSection" style="width: 150px;">
+                    <span class="gameShopHeader">CHEST</span>
+                    <img src="graphics/placeholder.png" width="64" id="shopChest">
+                </div> -->
             </div>
             <button id="continueButton" onclick="closeShop()">CONTINUE</button>
         </div>
@@ -323,14 +373,15 @@
                 <div id="gameSandboxTabs">
                     <button onclick="openSandboxMenu('enemies')">Enemies</button>
                     <button onclick="openSandboxMenu('upgrades')">Upgrades</button>
-                    <button onclick="openSandboxMenu('consumables')">Consumables</button>
-                    <button onclick="openSandboxMenu('stats')">Stats</button>
+                    <button onclick="openSandboxMenu('elixirs')">Elixirs</button>
+                    <button onclick="openSandboxMenu('stats')">Attributes</button>
                     <button onclick="openSandboxMenu('tools')">Tools</button>
                     <button onclick="openSandboxMenu('powerItems')">Power Items</button>
                 </div>
                 <div id="gameInnerSandbox">
                     <div id="sandboxMenu-enemies"></div>
                     <div id="sandboxMenu-upgrades"></div>
+                    <div id="sandboxMenu-elixirs"></div>
                     <div id="sandboxMenu-stats"></div>
                     <div id="sandboxMenu-tools">
                         <button onclick="doge('area').querySelectorAll('.enemy').forEach(enemy => {enemy.kill(100)})">Kill all enemies</button>
@@ -428,6 +479,7 @@
                 <span id="dbUpdates">Updates: 0</span><br>
                 <span id="dbTickInterval">Tick Interval: 0/0</span><br>
                 <span id="dbStatus">Status Effects: []</span><br>
+                <span id="dbElems">Elems: []</span><br>
             </div>
             <div id="performanceDebug">
                 <span id="dbFPS">-FPS</span><br>
@@ -446,7 +498,8 @@
                     <!--Status bars-->
                     <div id="gameStatusBarsContainer">
                         <div style="display: flex; align-items: center; gap: 5px;">
-                            <div class="statusBar">
+                            <!-- <img src="graphics/health.png" width="16"> -->
+                            <div class="statusBar" id="healthBarContainer">
                                 <div class="innerStatusBar" id="healthBar" style="background-color: rgb(255,100,100);"></div>
                             </div>
                             <div id="healthBarNum">100</div>
@@ -540,6 +593,7 @@
                     <!-- <div class="playerCosmeticContainer">
                         <img src="graphics/cosmetics/tophatOutline.png" id="playerCosmeticOutline">
                     </div> -->
+                    <img id="playerFire" style="scale: 2; translate: 0px -10px; opacity: 0; filter: blur(1px) drop-shadow(0px 0px 5px red); z-index: 4; pointer-events: none;" src="graphics/fireLarge.gif">
                     <div id="playerTextureContainer">
                         <img src="graphics/characters/fella.png" id="playerTexture">
                     </div>
@@ -573,10 +627,6 @@
                 <div class="cursorBar">
                     <div id="cursorCooldownBar"></div>
                 </div>
-            </div>
-    
-            <div id="debugButtons">
-                <button onclick="player.lastWaveDate = -1e67">Skip wave</button>
             </div>
 
             <div id="tutorialist">

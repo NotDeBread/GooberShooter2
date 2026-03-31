@@ -202,9 +202,10 @@ const enemies = {
         name: 'Cocoon',
         color: 'rgb(194, 192, 172)',
         size: 50,
-        health: 100,
-        speed: 0.001,
+        health: 200,
+        speed: 0.0000001,
         credits: 20,
+        regen: -0.5,
 
         split: {
             times: 1,
@@ -223,6 +224,32 @@ const enemies = {
 
         coinOverride: 2,
         meleeDamage: 10,
+    },
+    leech: {
+        name: 'Leech',
+        desc: 'A small, immobile enemy that deals constant damage to the player while alive.',
+        color: 'rgb(37, 18, 37)',
+        size: 25,
+        health: 25,
+        speed: 0,
+        credits: 20,
+
+        onDeath: enemy => {
+            createExplosion([...enemy.centerPos],100,0,-50,false,[[131,104],[43,29],[65,87]])
+        }
+    },
+    idol: {
+        name: 'Idol',
+        desc: 'A small, immobile enemy that prevents the player from healing while alive.',
+        color: 'rgb(183, 244, 255)',
+        size: 25,
+        health: 25,
+        speed: 0,
+        credits: 20,
+
+        onDeath: enemy => {
+            createExplosion([...enemy.centerPos],100,0,50,false,[[161,119],[255,205],[255,255]])
+        }
     },
     titan: {
         name: 'Titan',
@@ -308,6 +335,38 @@ const enemies = {
             impact: false,
         }
     },
+    debreadCube: {
+        name: 'DeBread Cube',
+        desc: '<em style="color: grey;">Sandbox only</em><br>Run',
+        color: 'orange',
+        size: 75,
+        health: 7777,
+        speed: 3,
+        credits: Infinity,
+        poor: true,
+
+        projectile: {
+            cooldown: 250,
+            size: 15,
+            dmg: 50,
+            speed: 10,
+
+            explosive: true,
+            explosionSize: 100,
+
+            poisonField: {
+                size: 50,
+                damage: 10,
+                rate: 10,
+            }
+        },
+
+        poisonField: {
+            size: 125,
+            damage: 25,
+            rate: 10,
+        },
+    },
 }
 
 const enemyBase = document.createElement('div')
@@ -318,6 +377,7 @@ enemyBase.innerHTML = `
             <div class="innerEnemyHealthBar"></div>
         </div>
     </div>
+    <img id="enemyFire" style="scale: 2; translate: 0px -10px; opacity: 0; filter: blur(1px) drop-shadow(0px 0px 5px red); position: absolute; pointer-events: none;">
     <span style="position: absolute; color: white; mix-blend-mode: difference; font-weight: 700;"></span>
 `
 addStyles(enemyBase, {
@@ -376,11 +436,21 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
     enemy.level = level
     enemy.timesSplit = extraData.timesSplit ?? 0
     enemy.isBleeding = false
+    enemy.data = data
 
     enemy.target = player
     enemy.elem = enemy
     enemy.friendly = false
+    enemy.onFire = false
     enemy.setAttribute('tame','false')
+
+    elems.enemies.push(enemy)
+
+    if(data.size > 25) {
+        enemy.querySelector('#enemyFire').src = 'graphics/fireLarge.gif'
+    } else {
+        enemy.querySelector('#enemyFire').src = 'graphics/fireSmall.gif'
+    }
 
     enemy.damage = (amount, silent) => {
         if(enemy.active) {
@@ -389,6 +459,8 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
             }
 
             enemy.health -= amount
+            enemy.health = Math.min(enemy.health, enemy.maxHealth)
+
             healthBar.style.width = enemy.health / enemy.maxHealth * 100 + '%'
 
             if(!silent) {
@@ -418,9 +490,10 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
         }
     }
 
-    enemy.kill = (endingDamage) => {
+    enemy.kill = (endingDamage, poor) => {
         if(enemy.alive) {
             enemy.alive = false
+            elems.enemies.splice(elems.enemies.indexOf(enemy),1)
             player.gameOverStats.enemiesKilled++
             createParticles([enemy.pos[0] + enemy.size / 2, enemy.pos[1] + enemy.size / 2], 10, enemy.size / 2, [0,100], 500, 'ease-out',{backgroundColor: data.color})
             let coins = Math.round(data.credits * player.stats.enemy.moneyMult)
@@ -432,29 +505,34 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
                 coins = data.coinOverride * player.stats.enemy.moneyMult
             }
     
-            const differentCoins = [0,0,0,0,0]
-            differentCoins[4] += Math.floor(coins / 100)
-            coins -= differentCoins[4] * 100
-            differentCoins[3] += Math.floor(coins / 25)
-            coins -= differentCoins[3] * 25
-            differentCoins[2] += Math.floor(coins / 10)
-            coins -= differentCoins[2] * 25
-            differentCoins[1] += Math.floor(coins / 5)
-            coins -= differentCoins[1]
-            differentCoins[0] += coins
-            coins -= differentCoins[0]
+            // const differentCoins = [0,0,0,0,0]
+            // differentCoins[4] += Math.floor(coins / 100)
+            // coins -= differentCoins[4] * 100
+            // differentCoins[3] += Math.floor(coins / 25)
+            // coins -= differentCoins[3] * 25
+            // differentCoins[2] += Math.floor(coins / 10)
+            // coins -= differentCoins[2] * 25
+            // differentCoins[1] += Math.floor(coins / 5)
+            // coins -= differentCoins[1]
+            // differentCoins[0] += coins
+            // coins -= differentCoins[0]
     
-    
-            for(let t = 0; t < differentCoins.length; t++) {
-                for(let i = 0; i < differentCoins[t]; i++) {                
-                    pickups.coin(
-                        t,
-                        [
-                            DeBread.randomNum(enemy.pos[0], enemy.pos[0] + enemy.offsetWidth),
-                            DeBread.randomNum(enemy.pos[1], enemy.pos[1] + enemy.offsetHeight),
-                        ], Math.min(endingDamage / 10, 25), 1,
-                    )
-                }
+            // if(!poor) {
+            //     for(let t = 0; t < differentCoins.length; t++) {
+            //         for(let i = 0; i < differentCoins[t]; i++) {                
+            //             pickups.coin(
+            //                 t,
+            //                 [
+            //                     DeBread.randomNum(enemy.pos[0], enemy.pos[0] + enemy.offsetWidth),
+            //                     DeBread.randomNum(enemy.pos[1], enemy.pos[1] + enemy.offsetHeight),
+            //                 ], Math.min(endingDamage / 10, 25), 1,
+            //             )
+            //         }
+            //     }
+            // }
+
+            if(data.onDeath) {
+                data.onDeath(enemy)
             }
     
             if(data.split && enemy.timesSplit < data.split.times) {
@@ -503,10 +581,9 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
                 )
             }
     
-    
             if(document.querySelectorAll('.enemy').length === 0 && ![2,3].includes(saveData.gameSettings.gamemode)) {
-                area.createNotice(`Quick wave clear! - +$${player.wave}`)
-                player.getMoney(player.wave)
+                // area.createNotice(`Quick wave clear! - +$${player.wave}`)
+                // player.getMoney(player.wave)
                 
                 if(player.wavesPaused) {
                     setTimeout(() => {
@@ -571,7 +648,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
                 enemy.target = closestEnemy
             }
 
-            doge('area').querySelectorAll('.enemy').forEach(otherEnemy => {
+            elems.enemies.forEach(otherEnemy => {
                 const angle = Math.atan2((otherEnemy.pos[1] + otherEnemy.size / 2) - (enemy.pos[1] + enemy.size / 2), (otherEnemy.pos[0] + otherEnemy.size / 2) - (enemy.pos[0] + enemy.size / 2))
                 if (isColliding(enemy, otherEnemy) && enemy !== otherEnemy && otherEnemy.active) {
                     const distance = Math.sqrt(
@@ -584,6 +661,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
                     enemy.pos[1] -= Math.sin(angle) * (enemy.speed * player.stats.enemy.speedMult + overlap)                    
                 }
             })
+
             if(enemy.target && isColliding(enemy, enemy.target.elem)) {
                 const angle = Math.atan2(enemy.target.centerPos[1] - (enemy.pos[1] + enemy.size / 2), enemy.target.centerPos[0] - (enemy.pos[0] + enemy.size / 2))
                 const distance = Math.sqrt(
@@ -616,10 +694,22 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
                 enemy.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
 
                 dirVel.speed /= dirVel.div
-                if(dirVel.speed <= 0.1) {
+                if(Math.abs(dirVel.speed) <= 0.1) {
                     enemy.dirVels.splice(i, 1)
                 }
             }
+
+            doge('area').querySelectorAll('.fire').forEach(fire => {
+                if(isColliding(enemy, fire)) {
+                    if(!enemy.onFire) {
+                        enemy.onFire = true
+                    }
+
+                    if(e.gameUpdates % 15 === 0) {
+                        enemy.damage(20)
+                    }
+                }
+            })
 
             addStyles(enemy, {
                 left: enemy.pos[0]+'px',
@@ -652,6 +742,26 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
                 if(data.explosive.impact) {
                     if(isColliding(player.elem, enemy)) enemy.kill()
                 }
+            }
+
+            if(data.regen) {
+                enemy.damage(-data.regen, true)
+            }
+
+            if(enemy.onFire) {
+                createParticles(
+                    [enemy.pos[0] + enemy.size / 2,enemy.pos[1] + enemy.size / 2],
+                    2,
+                    10,
+                    [25,50],
+                    250,
+                    'ease-out',
+                    {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`}
+                )
+
+                enemy.damage(1, true)
+
+                enemy.querySelector('#enemyFire').style.opacity = '0.75'
             }
 
             if(enemy.friendly) {
@@ -760,7 +870,8 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
         const poisonField = enemyPoisonFieldBase.cloneNode()
         addStyles(poisonField, {
             width: data.poisonField.size * 2 + 'px',
-            height: data.poisonField.size * 2 + 'px'
+            height: data.poisonField.size * 2 + 'px',
+            outline: `2px solid ${data.color}`
         })
         enemy.appendChild(poisonField)
     }
@@ -769,7 +880,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
     enemy.size = enemy.offsetWidth
 }
 
-function spawnWave(wave) {
+function spawnWave(wave, poor) {
     let credits = wave
     player.perfectWave = true
 
@@ -788,4 +899,32 @@ function spawnWave(wave) {
     }
 
     player.comboStrength += 25
+
+    
+    if(!poor) {
+        let coins = wave * player.stats.misc.waveMoneyMult
+        const differentCoins = [0,0,0,0,0]
+        differentCoins[4] += Math.floor(coins / 100)
+        coins -= differentCoins[4] * 100
+        differentCoins[3] += Math.floor(coins / 25)
+        coins -= differentCoins[3] * 25
+        differentCoins[2] += Math.floor(coins / 10)
+        coins -= differentCoins[2] * 10
+        differentCoins[1] += Math.floor(coins / 5)
+        coins -= differentCoins[1] * 5
+        differentCoins[0] += coins
+        coins -= differentCoins[0]
+        
+        for(let t = 0; t < differentCoins.length; t++) {
+            for(let i = 0; i < differentCoins[t]; i++) {                
+                pickups.coin(
+                    t,
+                    [
+                        doge('area').offsetWidth / 2,
+                        doge('area').offsetHeight / 2,
+                    ], 2, 1,
+                )
+            }
+        }
+    }   
 }

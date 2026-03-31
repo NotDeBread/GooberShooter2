@@ -402,3 +402,50 @@ function applyFlowText(elem,speedMult = 1) {
         }, (i * 25) / speedMult + 5);
     }
 }
+
+function getWeightedChance(weights) {
+    const total = weights.reduce((a, b) => a + b, 0)
+    let randomNum = DeBread.randomNum(0, total, 100)
+
+    for (let i = 0; i < weights.length; i++) {
+        if (randomNum < weights[i]) return i
+        randomNum -= weights[i]
+    }
+}
+
+
+//I did NOT make the function below, i am too tired rn and i just want to get ts over with
+function roman(num) {
+    if(num === 0) {
+        return '0'
+    }
+  // A lookup object mapping Roman symbols to their integer values in descending order
+  const romanMap = {
+    M: 1000,
+    CM: 900,
+    D: 500,
+    CD: 400,
+    C: 100,
+    XC: 90,
+    L: 50,
+    XL: 40,
+    X: 10,
+    IX: 9,
+    V: 5,
+    IV: 4,
+    I: 1
+  };
+
+  let roman = '';
+  // Iterate over the properties of the lookup object
+  for (const key in romanMap) {
+    const value = romanMap[key];
+    // Repeatedly append the Roman symbol and subtract its value as long as the number is greater than or equal to the value
+    while (num >= value) {
+      roman += key;
+      num -= value;
+    }
+  }
+
+  return roman;
+}

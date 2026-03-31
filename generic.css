@@ -53,6 +53,16 @@ cs {
     font-weight: 700;
 }
 
+help {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.75em;
+}
+
 button {
     background-color: transparent;
     border: 2px solid white;
@@ -121,6 +131,8 @@ input[type="range"]::-moz-range-track {
 
 input[type="range"]::-moz-range-progress {
     background-color: white;
+    color: rgb(131, 43, 65);
+    color: rgb(104, 29, 87);
 }
 
 .genericCheckbox {
@@ -189,7 +201,12 @@ a:hover {
     font-weight: 700;
 }
 
-#tooltipRarity {
+#tooltipTags {
+    display: flex;
+    gap: 5px;
+}
+
+.tooltipTag {
     font-size: 0.75em;
     font-weight: 700;
     box-shadow: inset 0px 2px rgb(255,255,255,0.25);

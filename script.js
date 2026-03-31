@@ -19,11 +19,17 @@ const saveData = {
 
     settings: {
         particles: true,
+        presentationMode: false,
+        showGameQuitWarning: true,
+        showPowerItemWarning: true,
+        debug: false,
     },
 
     gameSettings: {
         gamemode: 0,
     },
+
+    bankMoney: 0,
 
     cosmetics: [
         {
@@ -107,6 +113,7 @@ addStyles(popupTextBase, {
 })
 function createPopupText(text, pos) {
     const popup = popupTextBase.cloneNode()
+    popup.classList.add('popup')
     
     popup.style.setProperty('--popupX', `${DeBread.randomNum(-10,10)}px`)
     popup.style.setProperty('--popupY', `${DeBread.randomNum(-10,10)}px`)
@@ -121,6 +128,10 @@ function createPopupText(text, pos) {
     setTimeout(() => {
         popup.remove()
     },  2000);
+
+    if(doge('area').querySelectorAll('.popup').length > 50) {
+        doge('area').querySelectorAll('.popup')[0].remove()
+    }
 
     return popup
 }
@@ -173,24 +184,21 @@ function hitstop(length) { //Completely broken for some reason
     }
 }
 
-function tooltip(pos, title, rarity, desc, price, rarityCol) {
+function tooltip(pos, title, tags, desc, price) {
     doge('tooltip').style.opacity = '1'
 
     doge('tooltipTitle').innerText = title
     doge('tooltipBody').innerHTML = desc
     doge('tooltipBody').style.maxWidth = '300px'
 
-    if(typeof rarity === 'number') {
-        doge('tooltipRarity').innerText = rarities[rarity].name
-        doge('tooltipRarity').style.background = rarities[rarity].color    
-    } else {
-        doge('tooltipRarity').innerHTML = rarity
+    doge('tooltipTags').innerHTML = ''
+    for(const tag of tags) {
+        const div = document.createElement('div')
+        div.classList.add('tooltipTag')
+        div.innerHTML = tag.text
+        div.style.background = tag.col
 
-        if(rarityCol) {
-            doge('tooltipRarity').style.background = rarityCol
-        } else {
-            doge('tooltipRarity').style.background = rarities[0].color
-        }
+        doge('tooltipTags').append(div)
     }
 
     if(price) {
@@ -246,6 +254,17 @@ function openPrompt(title, body, buttons, size) {
 function closePrompt() {
     doge('promptContainer').style.display = 'none'
 }
+
+document.querySelectorAll('help').forEach(elem => {
+    elem.onmouseenter = () => {
+        const rect = elem.getBoundingClientRect()
+        tooltip([rect.left,rect.bottom],elem.getAttribute('header'),[],elem.getAttribute('content'))
+    }
+
+    elem.onmouseleave = () => {
+        doge('tooltip').style.opacity = '0'
+    }
+})
 
 const weaponPresets = {
     gun: {
@@ -474,7 +493,8 @@ const weaponPresets = {
 
         pros: [
             'Poison field chance',
-            'Poisonous parries'
+            'Poisonous parries',
+            'Damage Multiplier'
         ],
 
         cons: [
@@ -490,6 +510,7 @@ const weaponPresets = {
             modifyStat(['bullet','size'], '=40')
             modifyStat(['bullet','accuracy'], '=40')
             modifyStat(['bullet','shotCooldown'], '=200')
+            modifyStat(['bullet','damageMult'], '=1.5')
             
             modifyStat(['player','parryPoisonDmg'], '=20')
             modifyStat(['player','parryPoisonSize'], '=50')
@@ -546,6 +567,7 @@ const weaponPresets = {
         desc: 'Summons an orb of electricity the moves through enemies dealing electric damage.',
         textureSize: [25,5],
         ammoChar: '|',
+        animatedBulletTexture: true,
 
         pros: [
             'Drill ticks',
@@ -581,12 +603,13 @@ const weaponPresets = {
             'Bullet size'
         ],
         cons: [
+            'Damage multiplier',
             'Shot cooldown',
         ],
 
         apply: () => {
             modifyStat(['bullet','drillTicks'], '=25')
-            modifyStat(['bullet','damage'], '=1')
+            modifyStat(['bullet','damageMult'], '=0.2')
             modifyStat(['bullet','shotCooldown'], '=100')
             modifyStat(['bullet','size'], '=32')
             modifyStat(['bullet','spin'], '=20')
@@ -1138,7 +1161,7 @@ function updateCharacterSelectStats(character, box) {
         tooltipWidth = '500px'
     }
 
-    tooltip([rect.left + box.offsetWidth / 2,rect.bottom + 25],character.name, character.tag, 
+    tooltip([rect.left + box.offsetWidth / 2,rect.bottom + 25],character.name, [{text: character.tag, col: character.tagCol}], 
         `
         <div style="width: ${tooltipWidth}; margin-top: 5px;">
             ${character.desc}
@@ -1161,7 +1184,7 @@ function updateCharacterSelectStats(character, box) {
             </div>
         </div>
         `
-    , undefined, character.tagCol)
+    , undefined)
     
     doge('tooltipBody').style.maxWidth = tooltipWidth
 
@@ -1330,9 +1353,9 @@ const challenges = {
 //Music stuff
 
 const tracks = {
-    menu: new Audio('audio/music/menu.ogg'),
-    game: new Audio('audio/music/game.ogg'),
-    gameCombat: new Audio('audio/music/gameCombat.ogg')
+    menu: new Audio('audio/music/menu.mp3'),
+    // game: new Audio('audio/music/game.ogg'),
+    // gameCombat: new Audio('audio/music/gameCombat.ogg')
 }
 const totalTracks = Object.keys(tracks).length
 let loadedTracks = 0

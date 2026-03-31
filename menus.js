@@ -1,9 +1,9 @@
 let gameStartTimeout
 function startTitle() {
     tracks.menu.play()
-    tracks.menu.volume = 0.00
+    tracks.menu.volume = 0
     tracks.menu.preservesPitch = false
-    tracks.menu.playbackRate = 0.75
+    tracks.menu.playbackRate = 0.8
     tracks.menu.loop = true
 
     const divs = doge('gameStartScreen').querySelectorAll('div')
@@ -23,7 +23,7 @@ function startTitle() {
             })
             doge('gameStartScreen').querySelector('img').style.opacity = '0'
 
-            setTimeout(() => {
+            gameStartTimeout = setTimeout(() => {
                 doge('gameStartScreen').querySelector('img').style.display = 'none'
                 divs[0].innerText = 'With music by'
                 applyFlowText(divs[0], 0.75)
@@ -31,14 +31,14 @@ function startTitle() {
                 divs[1].innerText = 'BBDawgs'
                 applyFlowText(divs[1], 0.75)
 
-                setTimeout(() => {
+                gameStartTimeout = setTimeout(() => {
                     doge('gameStartScreen').querySelectorAll('.gameStartScreenText').forEach(text => {
                         text.querySelectorAll('div').forEach(char => {
                             char.style.animation += `, scaleOut 0.50s ease-in-out 0ms 1 forwards`
                         })
                     })
                     
-                    setTimeout(() => {                        
+                    gameStartTimeout = setTimeout(() => {                        
                         gameStartTimeout = setTimeout(() => {
                             doge('gameStartScreen').style.opacity = 0
                             doge('gameStartScreen').style.pointerEvents = 'none'
@@ -54,7 +54,7 @@ function startTitle() {
                 }, 2500);   
             }, 1000);
         }, 2500);
-    }, 1000);
+    }, 1000); //Peak engineering
 }
 
 doge('gameStartScreen').onclick = () => {
@@ -64,6 +64,10 @@ doge('gameStartScreen').onclick = () => {
         openMenu('main')
     
         tracks.menu.currentTime = 10.2
+
+        //Auto start game
+        // saveData.gameSettings.gamemode = 2
+        // openMenu('game')
         // startGame()
     }
 
@@ -240,7 +244,7 @@ function openMenu(menu) {
 }
 
 function renderCharacterSelect() {
-    function updateSelectedCharacter(character) {
+    function updateSelectedCharacter() {
         doge('selectedCharacterName').innerText = characters[saveData.selectedCharacter].name
         doge('selectedCharacterDesc').innerText = characters[saveData.selectedCharacter].desc
         doge('selectedCharacterImg').src = `graphics/characters/${saveData.selectedCharacter}Portrait.png`
@@ -290,17 +294,21 @@ function renderCharacterSelect() {
         }
 
         box.onclick = () => {
-            saveData.selectedCharacter = box.character
-            saveData.selectedSkin = -1
-
-            doge('characterSelectContainer').querySelectorAll('.characterSelectCharacterBox').forEach(button => {
-                button.style.outline = ''
-            })
-
-            box.style.outline = '2px solid white'
-
-            updateSelectedCharacter(box.character)
-            updateCharacterCustomization()
+            if(!saveData.settings.presentationMode) {
+                saveData.selectedCharacter = box.character
+                saveData.selectedSkin = -1
+    
+                doge('characterSelectContainer').querySelectorAll('.characterSelectCharacterBox').forEach(button => {
+                    button.style.outline = ''
+                })
+    
+                box.style.outline = '2px solid white'
+    
+                updateSelectedCharacter(box.character)
+                updateCharacterCustomization()
+            } else {
+                createNotification('Characters Unavailable!', 'Character changing is not allowed in presentation mode!')
+            }
         }
 
         doge('characterSelectContainer').append(box)
@@ -334,7 +342,7 @@ function updateCharacterCustomization() {
 
         button.onmouseenter = () => {
             const buttonRect = button.getBoundingClientRect()
-            tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], playerCosmetics[cosmetic].name, 'COSMETIC', playerCosmetics[cosmetic].desc)
+            tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], playerCosmetics[cosmetic].name, [{text: 'COSMETIC', col: '#5b5bbd'}], playerCosmetics[cosmetic].desc)
         }
 
         button.onmouseleave = () => {
@@ -386,7 +394,7 @@ function updateCharacterCustomization() {
         
         const buttonRect = button.getBoundingClientRect()
         button.onmouseenter = () => {
-            tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], playerSkins[skin].name, 'SKIN', 'desc')
+            tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], playerSkins[skin].name, [{text: 'SKIN', col: '#973a3a'}], 'desc')
         }
 
         button.onmouseleave = () => {
@@ -454,6 +462,7 @@ const gamemodeNames = [
 
 let currentGameSettingsMenu = 0
 function openGameSettingsMenu(id) {
+    renderChallenges()
     currentGameSettingsMenu = Math.min(Math.max(id,0),doge('gameSettingsTabs').children.length-1)
     for(let i = 0; i < doge('gameSettingsTabs').children.length; i++) {
         if(i === currentGameSettingsMenu) {
@@ -494,7 +503,7 @@ function openGameSettingsMenu(id) {
 
         doge('gameSettingsSelectedChallenge').onmouseenter = () => {
             const buttonRect = doge('gameSettingsSelectedChallenge').getBoundingClientRect()
-            tooltip([buttonRect.left + doge('gameSettingsSelectedChallenge').offsetWidth / 2, buttonRect.top + doge('gameSettingsSelectedChallenge').offsetHeight + 12], challenges[saveData.selectedChallenge].name, 'CHALLENGE', challenges[saveData.selectedChallenge].desc, undefined, '#661b2f')
+            tooltip([buttonRect.left + doge('gameSettingsSelectedChallenge').offsetWidth / 2, buttonRect.top + doge('gameSettingsSelectedChallenge').offsetHeight + 12], challenges[saveData.selectedChallenge].name, [{text: 'CHALLENGE', col: '#661b2f'}], challenges[saveData.selectedChallenge].desc, undefined)
         }
 
         doge('gameSettingsSelectedChallenge').onmouseleave = () => {
@@ -509,7 +518,7 @@ function openGameSettingsMenu(id) {
         }
 
         doge('gameSettingsCharacterContainer').onmouseenter = () => {
-            tooltip([rect.left + doge('gameSettingsCharacterContainer').offsetWidth / 2,rect.bottom + 25],characters[saveData.selectedCharacter].name, characters[saveData.selectedCharacter].tag, 
+            tooltip([rect.left + doge('gameSettingsCharacterContainer').offsetWidth / 2,rect.bottom + 25],characters[saveData.selectedCharacter].name, [{text: characters[saveData.selectedCharacter].tag, col: characters[saveData.selectedCharacter].tagCol}], 
                 `
                 <div style="width: ${tooltipWidth}; margin-top: 5px;">
                     ${characters[saveData.selectedCharacter].desc}
@@ -532,7 +541,7 @@ function openGameSettingsMenu(id) {
                     </div>
                 </div>
                 `
-            , undefined, character.tagCol)
+            , undefined)
 
         doge('tooltipBody').style.maxWidth = tooltipWidth
 
@@ -634,6 +643,10 @@ function selectGamemode(gm) {
 }
 
 function renderChallenges() {
+    if(saveData.gameSettings.gamemode === 3) {
+        saveData.selectedChallenge = 'none'
+    }
+
     doge('gameSettingsChallenges').innerHTML = ''
 
     for(const key in challenges) {
@@ -650,7 +663,7 @@ function renderChallenges() {
 
         button.onmouseenter = () => {
             const buttonRect = button.getBoundingClientRect()
-            tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], challenges[key].name, 'CHALLENGE', challenges[key].desc, undefined, '#661b2f')
+            tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], challenges[key].name, [{text: 'CHALLENGE', col: '#661b2f'}], challenges[key].desc, undefined)
         }
 
         button.onmouseleave = () => {
@@ -658,17 +671,23 @@ function renderChallenges() {
         }
 
         button.onclick = () => {
-            saveData.selectedChallenge = key
-
-            doge('gameSettingsChallenges').querySelectorAll('div').forEach(div => {
-                if(div === button) {
-                    div.style.backgroundColor = 'white'
-                    div.querySelector('img').style.filter = 'invert()'
-                } else {
-                    div.style.backgroundColor = 'transparent'
-                    div.querySelector('img').style.filter = 'unset'
-                }
-            })
+            if(saveData.gameSettings.gamemode === 3) {
+                createNotification('Whoops!','Challenges are not availble in the tutorial!')
+            } else if(saveData.settings.presentationMode) {
+                createNotification('Whoops!','Challenges are not availble in presentation mode!')
+            } else {
+                saveData.selectedChallenge = key
+    
+                doge('gameSettingsChallenges').querySelectorAll('div').forEach(div => {
+                    if(div === button) {
+                        div.style.backgroundColor = 'white'
+                        div.querySelector('img').style.filter = 'invert()'
+                    } else {
+                        div.style.backgroundColor = 'transparent'
+                        div.querySelector('img').style.filter = 'unset'
+                    }
+                })
+            }
         }
     }
 }
@@ -678,8 +697,10 @@ const creditsHTML = `
         <img src="graphics/logo.png" width=175>
         <span>By <a href="https://debread.space/" target="_blank">DeBread</a></span>
     </div>
-    <span>Idea help: <a href="https://yeen.town/@Chalkllate" target="blank">Jake</a>, <a>Redjive2</a></span><br>
-    <span>Texture help: <a href="https://plinkel.neocities.org/">Plonk</a>(Ashton Character)</span>
+    <span>Idea help: <a href="https://yeen.town/@Chalkllate" target="blank">Jake</a>, <a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a></span><br>
+    <span>Texture help: <a href="https://plinkel.neocities.org/">Plonk</a>(Ashton Character)</span><br>
+    <span>Background Shader: From <a href="https://www.playbalatro.com/" target="_blank">Balatro</a>, rewritten by <a href="https://xemantic.github.io/shader-web-background/" target="_blank">xemantic</a></span><br>
+    <span>Additional SFX: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a>
 `
 
 const settingsHTML = `
@@ -697,6 +718,34 @@ const settingsHTML = `
                     <span>Enhances graphics using particles.</span>
                 </div>
             </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-showGameQuitWarning"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Show game quit/restart waning</span>
+                    <span>Displays a popup before allowing you to quit/restart the game.</span>
+                </div>
+            </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-showPowerItemWarning"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Show Power Item replacement waning</span>
+                    <span>Displays a popup before allowing you to replace your current Power Item.</span>
+                </div>
+            </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-presentationMode"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Presentation Mode</span>
+                    <span>Enables local scoring and removes inappropriate language.</span>
+                </div>
+            </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-debug"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Debug Mode</span>
+                    <span>Shows debugging information in-game.</span>
+                </div>
+            </div>
         </div>
         <div class="settingsSection" id="settingsSection-audio">
             <span>Audio settings 🔥</span>
@@ -708,7 +757,7 @@ const settingsHTML = `
 `
 
 function openSettings() {
-    openPrompt('Settings', settingsHTML, [{text: "Close", onclick: () => {closePrompt()}}], [300, 400])
+    openPrompt('Settings', settingsHTML, [{text: "Close", onclick: () => {closePrompt()}}], [500, 400])
     openSettingsMenu('general')
 
     doge('prompt').querySelectorAll('.genericCheckbox').forEach(checkbox => {
@@ -728,6 +777,8 @@ function openSettings() {
             } else {
                 DeBread.playSound('audio/checkboxUncheck.mp3')
             }
+
+            updateSettings()
         }
     })
 }
@@ -741,3 +792,29 @@ function openSettingsMenu(menu) {
         doge(`settingsSection-${menu}`).style.display = 'unset'
     }
 }
+
+function updateSettings() {
+    if(saveData.settings.presentationMode) {
+        powerItems[0].blunt.name = 'Lolipop'
+        characters.jake.desc = 'Stupid dawg'
+        weaponPresets.piss.name = 'Super soaker'
+        weaponPresets.piss.desc = ''
+        characters.skywalkr.desc = 'This game is making me mad'
+    } else {
+        powerItems[0].blunt.name = 'Blunt'
+        characters.jake.des = 'Good morning wag wag'
+        weaponPresets.piss.name = 'Piss'
+        weaponPresets.piss.desc = 'piss description'
+        characters.skywalkr.desc = 'This game is pissing me off'
+    }
+
+    if(saveData.settings.debug) {
+        doge('gameDebug').style.display = 'unset'
+        doge('gameStatsContainer').style.display = 'flex'
+        doge('performanceDebug').style.display = 'unset'
+    } else {
+        doge('gameDebug').style.display = 'none'
+        doge('gameStatsContainer').style.display = 'none'
+        doge('performanceDebug').style.display = 'none'
+    }
+} updateSettings()
