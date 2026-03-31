@@ -90,7 +90,7 @@ function createPlayer() {
         
         stats: {
             player: {
-                immunityTime: 0, //How long (in ticks) the player becomes immune after being hit.
+                immunityTime: 1, //How long (in ticks) the player becomes immune after being hit.
                 speed: 5, //The max speed the player can move.
                 speedStep: 2.5, //The amount the player velocity changes every tick to reach the target speed value.
                 size: 36, //Player size. (in pixels)
@@ -207,6 +207,8 @@ function createPlayer() {
                 chargeMultCap: 0, //The max amount the bullet damage is multiplied by when firing a max charge shot.
 
                 penetratingRounds: false, //Determines whether or not extra damage from a bullet hitting an enemy prevents it from destroying.
+
+                stillSpeedIncrease: 0,
             },
             enemy: {
                 levelIncrease: 0, //How many levels enemies are offset by.
@@ -559,58 +561,57 @@ function createPlayer() {
                     break
                 }
             }
-            if(e.gameUpdates - player.lastHitDate >= player.stats.player.immunityTime || !player.immune) {
-                const startAmount = player.health
-                if(player.health - amount < 1 && player.health > 1) {
-                    player.health = 1
-                } else {
-                    if(amount > 0) {
-                        player.health -= amount
-                    } else if(!idolAlive) {
-                        player.health -= amount
-                    }
-                }
-                if(player.health <= 0) player.health = 0
-                if(player.health >= player.stats.player.maxHealth) player.health = player.stats.player.maxHealth
-                
+            const startAmount = player.health
+            if(player.health - amount < 1 && player.health > 1) {
+                player.health = 1
+            } else {
                 if(amount > 0) {
-                    player.gameOverStats.damageTaken += -(player.health - startAmount)
-                    player.lastHitDate = e.gameUpdates
-
-                    player.elem.style.animation = 'none'
-                    setTimeout(() => {
-                        player.elem.style.animation = 'playerHit 250ms ease-out 1 forwards'
-                    }, e.gameUpdateInterval)
-
-                    if(!light) {
-                        player.getPower(-(Math.min(amount, 25)))
-                    }
-
-                    //Explosive Damage
-                    if(DeBread.randomNum(1,100) < player.stats.player.explosiveHitChance) {
-                        createExplosion([...player.centerPos],player.stats.player.size * 2, player.stats.bullet.damage * player.stats.player.explosiveHitDamage, 100, true)
-                    }
-
-                    player.combo = Math.round(player.combo / 2)
-                    player.comboStrength /= 2
+                    player.health -= amount
+                } else if(!idolAlive) {
+                    player.health -= amount
                 }
-
-                doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'       
-
-                //Health bar num
-                doge('healthBarNum').innerHTML = ''
-                const healthNum = document.createElement('div')
-                for(let i = 0; i < formatNumber(Math.ceil(player.health)).length; i++) {
-                    const num = healthNum.cloneNode()
-                    num.innerText = formatNumber(Math.ceil(player.health))[i]
-                    doge('healthBarNum').append(num)
-                    
-                    DeBread.easeShake(num, 10, Math.min(amount / 3, 25), 0.5)
-                }
-                DeBread.easeShake(doge('healthBarContainer'), 10, Math.min(amount / 6, 25), 0.5)
-
-                player.perfectWave = false
             }
+            if(player.health <= 0) player.health = 0
+            if(player.health >= player.stats.player.maxHealth) player.health = player.stats.player.maxHealth
+            
+            if(amount > 0 && !player.immune && e.gameUpdates - player.lastHitDate >= player.stats.player.immunityTime) {
+                player.gameOverStats.damageTaken += -(player.health - startAmount)
+                player.lastHitDate = e.gameUpdates
+                DeBread.playSound('audio/hit.mp3', 0.25)
+
+                player.elem.style.animation = 'none'
+                setTimeout(() => {
+                    player.elem.style.animation = 'playerHit 250ms ease-out 1 forwards'
+                }, e.gameUpdateInterval)
+
+                if(!light) {
+                    player.getPower(-(Math.min(amount, 25)))
+                }
+
+                //Explosive Damage
+                if(DeBread.randomNum(1,100) < player.stats.player.explosiveHitChance) {
+                    createExplosion([...player.centerPos],player.stats.player.size * 2, player.stats.bullet.damage * player.stats.player.explosiveHitDamage, 100, true)
+                }
+
+                player.combo = Math.round(player.combo / 2)
+                player.comboStrength /= 2
+            }
+
+            doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'       
+
+            //Health bar num
+            doge('healthBarNum').innerHTML = ''
+            const healthNum = document.createElement('div')
+            for(let i = 0; i < formatNumber(Math.ceil(player.health)).length; i++) {
+                const num = healthNum.cloneNode()
+                num.innerText = formatNumber(Math.ceil(player.health))[i]
+                doge('healthBarNum').append(num)
+                
+                DeBread.easeShake(num, 10, Math.min(amount / 3, 25), 0.5)
+            }
+            DeBread.easeShake(doge('healthBarContainer'), 10, Math.min(amount / 6, 25), 0.5)
+
+            player.perfectWave = false
 
             if(amount < 0) {
                 if(!idolAlive) {
@@ -1374,6 +1375,10 @@ const updateInterval = DeBread.createInterval(() => {
             if(e.gameUpdates - player.lastDustParticle > 2) {
                 createParticles([DeBread.randomNum(player.pos[0], player.pos[0] + player.elem.offsetWidth),DeBread.randomNum(player.pos[1], player.pos[1] + player.elem.offsetHeight)], 1, 10, [0,10],750,'ease-out',{backgroundColor: 'rgb(100,100,100,0.25)'})
                 player.lastDustParticle = e.gameUpdates
+            }
+        } else {
+            if(player.stats.ammo.isReloading) {
+                player.stats.ammo.reloadDate -= player.stats.ammo.stillSpeedIncrease
             }
         }
         

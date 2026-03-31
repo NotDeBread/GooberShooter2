@@ -1270,6 +1270,20 @@ const powerItems = [
                 })
             }
         },
+        extra_mag: {
+            name: 'Extra Mag',
+            desc: `
+                Uses <cp>50</cp> POWER<br>
+                Immediatly reloads your weapon.
+                `,
+            charge: 50,
+
+            use: () => {
+                player.stats.ammo.current = player.stats.ammo.max
+                DeBread.playSound('audio/reload-long-end.mp3',0.25)
+                updateUI()
+            }
+        },
     },
     {
         pepper: {

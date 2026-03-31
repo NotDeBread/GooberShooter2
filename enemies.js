@@ -421,7 +421,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
 
     enemy.alive = true
     enemy.maxHealth = extraData.health ?? data.health * (1 +level / 2)
-    enemy.health = extraData.health ?? data.health * (1 + level / 2)
+    enemy.health = extraData.health ?? data.health * (1 + level / 4)
     enemy.damageTaken = 0
 
     enemy.lastHitDate = e.gameUpdates + (spawnTime * (e.gameUpdateInterval / 1000))
