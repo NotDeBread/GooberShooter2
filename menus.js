@@ -700,7 +700,8 @@ const creditsHTML = `
     <span>Idea help: <a href="https://yeen.town/@Chalkllate" target="blank">Jake</a>, <a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a></span><br>
     <span>Texture help: <a href="https://plinkel.neocities.org/">Plonk</a>(Ashton Character)</span><br>
     <span>Background Shader: From <a href="https://www.playbalatro.com/" target="_blank">Balatro</a>, rewritten by <a href="https://xemantic.github.io/shader-web-background/" target="_blank">xemantic</a></span><br>
-    <span>Additional SFX: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a>
+    <span>Additional SFX: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
+    <span>Playtesters: TrueSkywalkr</span>
 `
 
 const settingsHTML = `

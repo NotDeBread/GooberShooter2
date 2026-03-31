@@ -1336,7 +1336,14 @@ const challenges = {
             <cb>0</cb> Melee size<br>
             <cb>0</cb> Melee damage<br>
             Parrying a bullet deals <cb>25</cb> damage
-        `
+        `,
+
+        apply: () => {
+            modifyStat(['bullet','damage'], '+=25')
+            modifyStat(['melee','size'], '=0')
+            modifyStat(['melee','damage'], '=0')
+            modifyStat(['player','parryHeal'], '=-25')
+        }
     },
     melee_plus: {
         name: 'Melee+',
@@ -1344,9 +1351,16 @@ const challenges = {
             <cg>+25</cg> Melee damage<br>
             <cg>+15</cg> Melee size<br>
             <cb>0</cb> Max ammo<br>
-            <cb>0</cb> Damage<br>
+            <cb>-25</cb> Damage<br>
             Hitting an enemy with a projectile heals <cb>25</cb>HP to the enemy
-        `
+        `,
+        
+        apply: () => {
+            modifyStat(['melee','damage'], '+=25')
+            modifyStat(['melee','size'], '+=15')
+            modifyStat(['ammo','max'], '=0')
+            modifyStat(['bullet','damage'], '=-25')
+        }
     }
 }
 

@@ -14,7 +14,7 @@ function createPlayer() {
         restartProgress: 0,
         
         wave: 1,
-        lastWaveDate: 10000000,
+        lastWaveDate: -15000,
         wavesPaused: false,
         perfectWave: true,
 
@@ -1017,8 +1017,6 @@ function startGame() {
 
     doge('weaponTexture').src = `graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.toLowerCase().replaceAll(' ','_')}.png`
     
-    updateUI()
-
     if(saveData.gameSettings.gamemode === 3) {
         doge('tutorialist').style.display = 'unset'
         doge('tutorialistDialogueContainer').style.display = 'flex'
@@ -1046,6 +1044,8 @@ function startGame() {
         doge('tutorialistDialogueContainer').style.display = 'none'
         clearInterval(tutorialistInterval)
     }
+
+    updateUI()
 }
 
 const bulletBase = document.createElement('div')
@@ -3245,7 +3245,7 @@ const tutorial = [
         goalTarget: 3,
         
         run: () => {
-            player.getMoney(15)
+            player.getMoney(150)
             doge('gameShopContainer').style.pointerEvents = 'unset'
             doge('gameShopUpgrades').children[2].style.outline = '0px solid white'
         }
