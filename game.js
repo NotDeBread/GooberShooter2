@@ -179,6 +179,8 @@ function createPlayer() {
                 thornDamage: 0, //How much damage the player takes when firing a bullet.
 
                 spin: 0, //How many degrees bullets rotate every tick.
+
+                slow: 0,
             },
             melee: {
                 damage: 20, //How much damage is dealt to enemies within the players melee hitbox.
@@ -449,6 +451,15 @@ function createPlayer() {
                         }
                         
                         enemy.dirVels.push({angle: bullet.angle - Math.PI, speed: player.stats.bullet.knockback, div: 1.1})
+                        if(player.stats.bullet.slow) {
+                            enemy.speedMult *= (0.75 / (1 + player.stats.bullet.slow / 10))
+                            enemy.statusEffects.push({
+                                duration: 50 + (10*player.stats.bullet.slow),
+                                end: () => {
+                                    enemy.speedMult /= (0.75 / (1 + player.stats.bullet.slow / 10))
+                                }
+                            })
+                        }
                         
                         if(bullet.damage > enemy.health && player.stats.ammo.penetratingRounds) {
                             bullet.drillTicks--
@@ -979,6 +990,7 @@ function startGame() {
     elems.pickups = []
     doge('area').querySelectorAll('.bullet').forEach(bullet => {bullet.remove()})
     doge('area').querySelectorAll('.enemyProjectile').forEach(bullet => {bullet.remove()})
+    doge('area').querySelectorAll('.portal').forEach(portal => {portal.remove()})
     
     doge('gameWaveCounter').innerText = '0'
     doge('gameStyleContainer').innerHTML = ''
@@ -1023,7 +1035,12 @@ function startGame() {
     }
 
     doge('weaponTexture').src = `graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.toLowerCase().replaceAll(' ','_')}.png`
-    
+    doge('gameMoneyCount')
+
+    if(saveData.selectedChallenge === 'abstract') {
+        area.createNotice('Things are getting weird!')
+    }
+
     if(saveData.gameSettings.gamemode === 3) {
         doge('tutorialist').style.display = 'unset'
         doge('tutorialistDialogueContainer').style.display = 'flex'
@@ -2752,6 +2769,7 @@ function openSandboxMenu(menu) {
                 `
 
                 sandboxUpgrade.querySelector('img').onerror = ev => {
+                    createNotification('Whoops!',`An upgrade texture failed to load: ${ev}`)
                     sandboxUpgrade.querySelector('img').src = 'graphics/placeholder.png'
                 }
 

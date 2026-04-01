@@ -798,7 +798,7 @@ const upgrades = [
                 modifyStat(['bullet','damage'], '*=0.1')
             }
         },
-        OP_hourglass: {
+        op_hourglass: {
             name: 'OP Hourglass',
             desc: `
                 All passive abilities trigger twice as often.<br>
@@ -2275,7 +2275,7 @@ function createShopItems(items) {
                     const randomKey = filteredKeys[DeBread.randomNum(0, filteredKeys.length - 1)]
                     const randomItem = itemList[rarity][randomKey]
                     
-                    if(!randomItemsIDs.includes(randomKey)) {
+                    if(!randomItemsIDs.includes(randomKey) && saveData.selectedChallenge !== 'abstract') {
                         itemChosen = true
                         randomItems.push({
                             data: randomItem,
@@ -2289,14 +2289,14 @@ function createShopItems(items) {
     
                     attempts++
     
-                    if(attempts > 1000) {
+                    if(attempts > 500) {
                         itemChosen = true
                         randomItems.push({
                             data: upgrades[6].error,
                             rarity: 6,
                             type: 0,
                             id: 'error',
-                            cost: 100,
+                            cost: 10,
                         })
     
                         break
@@ -2444,6 +2444,8 @@ function createShopItems(items) {
         
         itemSlot.sellOut = () => {
             player.getMoney(-randomItems[key].cost)
+            player.gameOverStats.items++
+            player.gameOverStats.moneySpent += randomItems[key].cost
             itemSlot.style.pointerEvents = 'none'
             itemSlot.querySelector('.shopItemPrice').innerText = 'SOLD OUT'
             itemSlot.style.filter = 'grayscale(1) brightness(50%)'

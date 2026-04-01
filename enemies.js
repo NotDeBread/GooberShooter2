@@ -302,6 +302,16 @@ const enemies = {
         speed: 0,
         poor: true,
     },
+    movingDummy: {
+        name: 'Moving dummy',
+        desc: '<em style="color: grey;">Sandbox only</em><br>Has infinite health and moves.',
+        color: 'rgb(211, 187, 156)',
+        credits: Infinity,
+        size: 50,
+        health: Infinity,
+        speed: 2,
+        poor: true,
+    },
     nerfSentry: {
         name: 'Nerf Sentry',
         desc: '<em style="color: grey;">Sandbox only</em><br>Same as the dummy, but fires projectiles that doesn\'t deal any damage.',
@@ -401,12 +411,17 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
     }
     enemy.classList.add('enemy')
 
+    let sizeMult = [1,1]
+    if(saveData.selectedChallenge === 'abstract') {
+        sizeMult = [Math.pow(10,DeBread.randomNum(-1,1,5)),Math.pow(10,DeBread.randomNum(-1,1,5))]
+    }
+
     addStyles(enemy, {
         position: 'absolute',
         left: pos[0]+'px',
         top: pos[1]+'px',
-        width: (extraData.size ?? data.size) + 'px',
-        height: (extraData.size ?? data.size) + 'px',
+        width: (extraData.size ?? data.size) * sizeMult[0] + 'px',
+        height: (extraData.size ?? data.size) * sizeMult[1] + 'px',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -419,9 +434,13 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
         transition: `left linear ${e.gameUpdateInterval}ms, top linear ${e.gameUpdateInterval}ms`
     })
 
+    if(!saveData.settings.enemyEasing) {
+        enemy.style.transition = 'none'
+    }
+
     enemy.alive = true
     enemy.maxHealth = extraData.health ?? data.health * (1 +level / 2)
-    enemy.health = extraData.health ?? data.health * (1 + level / 4)
+    enemy.health = enemy.maxHealth
     enemy.damageTaken = 0
 
     enemy.lastHitDate = e.gameUpdates + (spawnTime * (e.gameUpdateInterval / 1000))
@@ -431,8 +450,12 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
     enemy.active = false
     enemy.pos = pos
     enemy.dirVels = []
-    enemy.centerPos = [pos[0]+data.size/2,pos[1]+data.size/2]
+    enemy.centerPos = [
+        pos[0]+(data.size * sizeMult[0])/2,
+        pos[1]+(data.size * sizeMult[1])/2
+    ]
     enemy.speed = data.speed ?? 0
+    enemy.speedMult = 1
     enemy.level = level
     enemy.timesSplit = extraData.timesSplit ?? 0
     enemy.isBleeding = false
@@ -625,130 +648,118 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
         healthBar.style.width = '100%'
     }
 
-    if(data.speed) {
-        enemy.move = () => {
-            if(enemy.friendly) {
-                let closestEnemy
-                let closestEnemyDis = Infinity
+    enemy.statusEffects = [
+        // {
+        //     duration: 0,
+        //     maxDuration: 0,
+        //     end: () => {
 
-                doge('area').querySelectorAll('.enemy').forEach(otherEnemy => {
-                    if(otherEnemy !== enemy && otherEnemy.active) {
-                        const distance = Math.sqrt(
-                            Math.pow(enemy.pos[0] - otherEnemy.pos[0],2) + 
-                            Math.pow(enemy.pos[1] - otherEnemy.pos[1],2)
-                        )
+        //     }
+        // }
+    ]
 
-                        if(distance <= closestEnemyDis && !otherEnemy.friendly) {
-                            closestEnemyDis = distance
-                            closestEnemy = otherEnemy
-                        }
-                    }
-                })
+    enemy.move = () => {
+        if(enemy.friendly) {
+            let closestEnemy
+            let closestEnemyDis = Infinity
 
-                enemy.target = closestEnemy
-            }
-
-            elems.enemies.forEach(otherEnemy => {
-                const angle = Math.atan2((otherEnemy.pos[1] + otherEnemy.size / 2) - (enemy.pos[1] + enemy.size / 2), (otherEnemy.pos[0] + otherEnemy.size / 2) - (enemy.pos[0] + enemy.size / 2))
-                if (isColliding(enemy, otherEnemy) && enemy !== otherEnemy && otherEnemy.active) {
+            doge('area').querySelectorAll('.enemy').forEach(otherEnemy => {
+                if(otherEnemy !== enemy && otherEnemy.active) {
                     const distance = Math.sqrt(
                         Math.pow(enemy.pos[0] - otherEnemy.pos[0],2) + 
                         Math.pow(enemy.pos[1] - otherEnemy.pos[1],2)
                     )
-                    
-                    const overlap = (enemy.size - distance) / 10
-                    enemy.pos[0] -= Math.cos(angle) * (enemy.speed * player.stats.enemy.speedMult + overlap)
-                    enemy.pos[1] -= Math.sin(angle) * (enemy.speed * player.stats.enemy.speedMult + overlap)                    
+
+                    if(distance <= closestEnemyDis && !otherEnemy.friendly) {
+                        closestEnemyDis = distance
+                        closestEnemy = otherEnemy
+                    }
                 }
             })
 
-            if(enemy.target && isColliding(enemy, enemy.target.elem)) {
-                const angle = Math.atan2(enemy.target.centerPos[1] - (enemy.pos[1] + enemy.size / 2), enemy.target.centerPos[0] - (enemy.pos[0] + enemy.size / 2))
+            enemy.target = closestEnemy
+        }
+
+        elems.enemies.forEach(otherEnemy => {
+            const angle = Math.atan2((otherEnemy.pos[1] + otherEnemy.size / 2) - (enemy.pos[1] + enemy.size / 2), (otherEnemy.pos[0] + otherEnemy.size / 2) - (enemy.pos[0] + enemy.size / 2))
+            if (isColliding(enemy, otherEnemy) && enemy !== otherEnemy && otherEnemy.active) {
                 const distance = Math.sqrt(
-                    Math.pow(enemy.pos[0] - enemy.target.pos[0],2) + 
-                    Math.pow(enemy.pos[1] - enemy.target.pos[1],2)
+                    Math.pow(enemy.pos[0] - otherEnemy.pos[0],2) + 
+                    Math.pow(enemy.pos[1] - otherEnemy.pos[1],2)
                 )
-
-                const overlap = (enemy.size - distance) / 10
-                enemy.pos[0] -= Math.cos(angle) * (enemy.speed * player.stats.enemy.speedMult + overlap)
-                enemy.pos[1] -= Math.sin(angle) * (enemy.speed * player.stats.enemy.speedMult + overlap)
                 
-                if(data.meleeDamage && e.gameUpdates - enemy.lastHitDate >= 25) {
-                    enemy.target.damage(data.meleeDamage * (1 + level / 2))
-                    enemy.lastHitDate = e.gameUpdates
-                }
-            } else if(enemy.target) {
-                const angle = Math.atan2(enemy.target.centerPos[1] - (enemy.pos[1] + enemy.size / 2), enemy.target.centerPos[0] - (enemy.pos[0] + enemy.size / 2))
-                enemy.pos[0] += Math.cos(angle) * enemy.speed * player.stats.enemy.speedMult
-                enemy.pos[1] += Math.sin(angle) * enemy.speed * player.stats.enemy.speedMult
+                const overlap = (enemy.size - distance) / 10
+                enemy.pos[0] -= Math.cos(angle) * (enemy.speed * player.stats.enemy.speedMult * enemy.speedMult + overlap)
+                enemy.pos[1] -= Math.sin(angle) * (enemy.speed * player.stats.enemy.speedMult * enemy.speedMult + overlap)                    
             }
+        })
 
-            if(enemy.pos[0] < 0) enemy.pos[0] = 0
-            if(enemy.pos[1] < 0) enemy.pos[1] = 0
-            if(enemy.pos[0] > doge('area').offsetWidth - enemy.size) enemy.pos[0] = doge('area').offsetWidth - enemy.size
-            if(enemy.pos[1] > doge('area').offsetHeight - enemy.size) enemy.pos[1] = doge('area').offsetHeight - enemy.size
+        if(enemy.target && isColliding(enemy, enemy.target.elem)) {
+            const angle = Math.atan2(enemy.target.centerPos[1] - (enemy.pos[1] + enemy.size / 2), enemy.target.centerPos[0] - (enemy.pos[0] + enemy.size / 2))
+            const distance = Math.sqrt(
+                Math.pow(enemy.pos[0] - enemy.target.pos[0],2) + 
+                Math.pow(enemy.pos[1] - enemy.target.pos[1],2)
+            )
 
-            for(let i = 0; i < enemy.dirVels.length; i++) {
-                const dirVel = enemy.dirVels[i]
-                enemy.pos[0] += Math.cos(dirVel.angle) * dirVel.speed
-                enemy.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
-
-                dirVel.speed /= dirVel.div
-                if(Math.abs(dirVel.speed) <= 0.1) {
-                    enemy.dirVels.splice(i, 1)
-                }
+            const overlap = (enemy.size - distance) / 10
+            enemy.pos[0] -= Math.cos(angle) * (enemy.speed * player.stats.enemy.speedMult * enemy.speedMult + overlap)
+            enemy.pos[1] -= Math.sin(angle) * (enemy.speed * player.stats.enemy.speedMult * enemy.speedMult + overlap)
+            
+            if(data.meleeDamage && e.gameUpdates - enemy.lastHitDate >= 25) {
+                enemy.target.damage(data.meleeDamage * (1 + level / 2))
+                enemy.lastHitDate = e.gameUpdates
             }
+        } else if(enemy.target) {
+            const angle = Math.atan2(enemy.target.centerPos[1] - (enemy.pos[1] + enemy.size / 2), enemy.target.centerPos[0] - (enemy.pos[0] + enemy.size / 2))
+            enemy.pos[0] += Math.cos(angle) * enemy.speed * player.stats.enemy.speedMult * enemy.speedMult
+            enemy.pos[1] += Math.sin(angle) * enemy.speed * player.stats.enemy.speedMult * enemy.speedMult
+        }
 
-            doge('area').querySelectorAll('.fire').forEach(fire => {
-                if(isColliding(enemy, fire)) {
-                    if(!enemy.onFire) {
-                        enemy.onFire = true
-                    }
+        if(enemy.pos[0] < 0) enemy.pos[0] = 0
+        if(enemy.pos[1] < 0) enemy.pos[1] = 0
+        if(enemy.pos[0] > doge('area').offsetWidth - enemy.size) enemy.pos[0] = doge('area').offsetWidth - enemy.size
+        if(enemy.pos[1] > doge('area').offsetHeight - enemy.size) enemy.pos[1] = doge('area').offsetHeight - enemy.size
 
-                    if(e.gameUpdates % 15 === 0) {
-                        enemy.damage(20)
-                    }
-                }
-            })
+        for(let i = 0; i < enemy.dirVels.length; i++) {
+            const dirVel = enemy.dirVels[i]
+            enemy.pos[0] += Math.cos(dirVel.angle) * dirVel.speed
+            enemy.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
 
-            addStyles(enemy, {
-                left: enemy.pos[0]+'px',
-                top: enemy.pos[1]+'px'
-            })
-
-            if(data.poisonField) {
-                const dx = (enemy.pos[0] + enemy.size / 2) - player.centerPos[0]
-                const dy = (enemy.pos[1] + enemy.size / 2) - player.centerPos[1]
-                const distance = Math.sqrt(Math.pow(dx,2) + Math.pow(dy,2))
-
-                if(distance <= data.poisonField.size && e.gameUpdates % DeBread.round(data.poisonField.rate / player.stats.enemy.speedMult) === 0) {
-                    player.damage(data.poisonField.damage, true)
-                }
+            dirVel.speed /= dirVel.div
+            if(Math.abs(dirVel.speed) <= 0.1) {
+                enemy.dirVels.splice(i, 1)
             }
+        }
 
-            if(data.explosive) {
-                if(data.speed > 1) {
-                    createParticles(
-                        [enemy.pos[0] + enemy.size / 2,enemy.pos[1] + enemy.size / 2],
-                        2,
-                        10,
-                        [25,50],
-                        250,
-                        'ease-out',
-                        {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`}
-                    )
-                } 
+        doge('area').querySelectorAll('.fire').forEach(fire => {
+            if(isColliding(enemy, fire)) {
+                if(!enemy.onFire) {
+                    enemy.onFire = true
+                }
 
-                if(data.explosive.impact) {
-                    if(isColliding(player.elem, enemy)) enemy.kill()
+                if(e.gameUpdates % 15 === 0) {
+                    enemy.damage(20)
                 }
             }
+        })
 
-            if(data.regen) {
-                enemy.damage(-data.regen, true)
+        addStyles(enemy, {
+            left: enemy.pos[0]+'px',
+            top: enemy.pos[1]+'px'
+        })
+
+        if(data.poisonField) {
+            const dx = (enemy.pos[0] + enemy.size / 2) - player.centerPos[0]
+            const dy = (enemy.pos[1] + enemy.size / 2) - player.centerPos[1]
+            const distance = Math.sqrt(Math.pow(dx,2) + Math.pow(dy,2))
+
+            if(distance <= data.poisonField.size && e.gameUpdates % DeBread.round(data.poisonField.rate / player.stats.enemy.speedMult / enemy.speedMult) === 0) {
+                player.damage(data.poisonField.damage, true)
             }
+        }
 
-            if(enemy.onFire) {
+        if(data.explosive) {
+            if(data.speed > 1) {
                 createParticles(
                     [enemy.pos[0] + enemy.size / 2,enemy.pos[1] + enemy.size / 2],
                     2,
@@ -758,29 +769,60 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
                     'ease-out',
                     {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`}
                 )
+            } 
 
-                enemy.damage(1, true)
-
-                enemy.querySelector('#enemyFire').style.opacity = '0.75'
+            if(data.explosive.impact) {
+                if(isColliding(player.elem, enemy)) enemy.kill()
             }
+        }
 
-            if(enemy.friendly) {
-                createParticles(
-                    [enemy.pos[0] + enemy.size / 2,enemy.pos[1] + enemy.size / 2],
-                    2,
-                    10,
-                    [25,50],
-                    250,
-                    'ease-out',
-                    {backgroundColor: `pink`}
-                )
+        if(data.regen) {
+            enemy.damage(-data.regen, true)
+        }
+
+        if(enemy.onFire) {
+            createParticles(
+                [enemy.pos[0] + enemy.size / 2,enemy.pos[1] + enemy.size / 2],
+                2,
+                10,
+                [25,50],
+                250,
+                'ease-out',
+                {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`}
+            )
+
+            enemy.damage(1, true)
+
+            enemy.querySelector('#enemyFire').style.opacity = '0.75'
+        }
+
+        if(enemy.friendly) {
+            createParticles(
+                [enemy.pos[0] + enemy.size / 2,enemy.pos[1] + enemy.size / 2],
+                2,
+                10,
+                [25,50],
+                250,
+                'ease-out',
+                {backgroundColor: `pink`}
+            )
+        }
+
+        if(enemy.isBleeding) {
+            enemy.damage(1, true)
+        }
+
+        enemy.centerPos = [enemy.pos[0]+enemy.offsetWidth/2,enemy.pos[1]+enemy.offsetHeight/2]
+
+        
+        for(statusEffect of enemy.statusEffects) {
+            statusEffect.duration--
+            
+            if(statusEffect.duration <= 0) {
+                enemy.statusEffects.splice(enemy.statusEffects.indexOf(statusEffect),1)
+                console.log('status effect spliced!', enemy.statusEffects)
+                statusEffect.end()
             }
-
-            if(enemy.isBleeding) {
-                enemy.damage(1, true)
-            }
-
-            enemy.centerPos = [enemy.pos[0]+enemy.offsetWidth/2,enemy.pos[1]+enemy.offsetHeight/2]
         }
     }
 
@@ -804,7 +846,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
                 const projectile = projectileBase.cloneNode()
                 projectile.target = enemy.target
                 projectile.classList.add('enemyProjectile')
-                projectile.pos = [enemy.pos[0] + enemy.size / 2, enemy.pos[1] + enemy.size / 2]
+                projectile.pos = [enemy.pos[0] + (enemy.size * sizeMult[0])/2, enemy.pos[1] + (enemy.size * sizeMult[1])/2]
                 addStyles(projectile, {
                     left: projectile.pos[0] +'px',
                     top: projectile.pos[1] +'px',

@@ -69,9 +69,11 @@ doge('gameStartScreen').onclick = () => {
         tracks.menu.currentTime = 10.2
 
         //Auto start game
-        // saveData.gameSettings.gamemode = 2
-        // openMenu('game')
-        // startGame()
+        if(e.keysDown.includes('shift')) {
+            saveData.gameSettings.gamemode = 2
+            openMenu('game')
+            startGame()
+        }
     }
 
     if(!navigator.userAgent.includes('Firefox')) {
@@ -706,37 +708,22 @@ const creditsHTML = `
     </div>
     <span>Idea help: <a href="https://yeen.town/@Chalkllate" target="blank">Jake</a>, <a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a></span><br>
     <span>Background Shader: From <a href="https://www.playbalatro.com/" target="_blank">Balatro</a>, rewritten by <a href="https://xemantic.github.io/shader-web-background/" target="_blank">xemantic</a></span><br>
-    <span>Addditional Textures: <a href="https://plinkel.neocities.org/">Plonk</a> (Ashton Character, Piss, Shotgun, Mounted Machine Gun)</span><br>
+    <span>Addditional Textures: <a href="https://plinkel.neocities.org/">Plonk</a> (Ashton Character, Lorna Character, Piss, Shotgun, Mounted Machine Gun)</span><br>
     <span>Additional SFX: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
-    <span>Playtesters: TrueSkywalkr, Dottr</span>
+    <span>Playtesters: Nova, TrueSkywalkr, Dottr</span>
 `
 
 const settingsHTML = `
     <div id="settings">
         <div style="display: flex; gap: 5px; padding-bottom: 5px; border-bottom: 1px solid grey; height: 24px;">
             <button onclick="openSettingsMenu('general')">General</button>
-            <button onclick="openSettingsMenu('audio')">Audio</button>
-            <button onclick="openSettingsMenu('display')">Display</button>
+            <button onclick="openSettingsMenu('performance')">Performance</button>
         </div>
         <div class="settingsSection" id="settingsSection-general">
             <div class="settingsCheckboxContainer">
-                <div class="genericCheckbox" id="scb-weaponEasing"></div>
-                <div class="settingsCheckboxInfo">
-                    <span>Weapon easing</span>
-                    <span>Makes the weapon smoothly move between postions. Disable if weapon position seems jittery or lags behind.</span>
-                </div>
-            </div>
-            <div class="settingsCheckboxContainer">
-                <div class="genericCheckbox" id="scb-particles"></div>
-                <div class="settingsCheckboxInfo">
-                    <span>Particles</span>
-                    <span>Enhances graphics using particles.</span>
-                </div>
-            </div>
-            <div class="settingsCheckboxContainer">
                 <div class="genericCheckbox" id="scb-showGameQuitWarning"></div>
                 <div class="settingsCheckboxInfo">
-                    <span>Show game quit/restart waning</span>
+                    <span>Show game quit/restart warning</span>
                     <span>Displays a popup before allowing you to quit/restart the game.</span>
                 </div>
             </div>
@@ -759,6 +746,29 @@ const settingsHTML = `
                 <div class="settingsCheckboxInfo">
                     <span>Debug Mode</span>
                     <span>Shows debugging information in-game.</span>
+                </div>
+            </div>
+        </div>
+        <div class="settingsSection" id="settingsSection-performance">
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-weaponEasing"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Weapon easing</span>
+                    <span>Makes the weapon smoothly move between postions. Disable if weapon position seems jittery or lags behind.</span>
+                </div>
+            </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-enemyEasing"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Enemy easing</span>
+                    <span>Makes enemies smoothly move between postions. Disable if enemies seem jittery.</span>
+                </div>
+            </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-particles"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Particles</span>
+                    <span>Enhances graphics using particles.</span>
                 </div>
             </div>
         </div>

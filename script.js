@@ -15,10 +15,11 @@ const saveData = {
     selectedSkin: -1,
     firstLogin: false,
 
-    selectedChallenge: 'none',
+    selectedChallenge: 'abstract',
 
     settings: {
         weaponEasing: true,
+        enemyEasing: true,
         particles: true,
         presentationMode: false,
         showGameQuitWarning: true,
@@ -309,10 +310,45 @@ const weaponPresets = {
             modifyStat(['bullet','recoil'], '=3')
         }
     },
+    riot_shotgun: {
+        name: 'Riot Shotgun',
+        desc: 'Loaded with rock salt. Less than lethal, but painful.',
+        ammoChar: '|',
+        textureSize: [26,10],
+
+        pros: [
+            'Multi-shot',
+            'Bullet speed',
+            'Slowing ammo',
+            'Damage',
+        ],
+        cons: [
+            'Range',
+            'Reload speed',
+            'Shot cooldown',
+            'Shrinking bullets',
+            'Recoil'
+        ],
+
+        apply: () => {
+            modifyStat(['bullet','damage'],'=5')
+            modifyStat(['bullet','speed'], '=20')
+            modifyStat(['bullet','multishot'], '=10')
+            modifyStat(['bullet','grow'], '=-7')
+            modifyStat(['ammo','max'], '=20')
+            modifyStat(['bullet','slow'], '=0.25')
+
+            modifyStat(['ammo','reloadSpeed'], '=1250')
+            modifyStat(['bullet','range'], '=7')
+            modifyStat(['bullet','shotCooldown'], '=600')
+            modifyStat(['bullet','recoil'], '=2')
+        }
+    },
     garand: {
         name: 'Garand',
         desc: 'Shoots high speed and damage bullets, but can only be reload when ammo is at 0.',
         ammoChar: '|',
+        textureSize: [41,9],
 
         pros: [
             'Damage',
@@ -520,7 +556,7 @@ const weaponPresets = {
     flintlock: {
         name: 'Flintlock',
         desc: 'A single shot pistol that has extreme damage and recoil.',
-        textureSize: [12,8],
+        textureSize: [16,9],
         ammoChar: '|',
 
         pros: [
@@ -619,7 +655,7 @@ const weaponPresets = {
     omnirifle: {
         name: 'Omnirifle',
         desc: 'Projectiles shot by this weapon get a weak version of every bullet effect.',
-        textureSize: [8,16],
+        textureSize: [34,16],
         ammoChar: '|',
 
         pros: [
@@ -752,6 +788,20 @@ const characters = {
         ],
 
         weapon: weaponPresets.shotgun
+    },
+    lorna: {
+        name: 'Lorna Walker',
+        desc: 'ACAB? Even her?',
+        tag: 'Black Wolf',
+        tagCol: '#592c23',
+        taunts: 1,
+
+        tagList: [
+            {text: 'GS2',col: '#775db9'},
+            {text: 'Drawn by Plinkel', col: 'grey'},
+        ],
+
+        weapon: weaponPresets.riot_shotgun
     },
     // tammy: {
     //     name: 'Tammy',
@@ -1275,93 +1325,103 @@ for(const key in characters) {
 }
 
 const challenges = {
-    none: {
-        name: 'None',
-        desc: '',
+    // none: {
+    //     name: 'None',
+    //     desc: '',
 
-        apply: () => {}
-    },
-    high_stakes: {
-        name: 'High Stakes',
-        desc: `
-            <cg>+50</cg> Luck<br>
-            <cg>+1</cg> Shop slot<br>
-            <cg>+2</cg> Shop rerolls<br>
-            <cp>+$1,000</cp><br>
-            Shop opens immediately<br>
-            <cb>+50</cb> Enemy level
-        `,
+    //     apply: () => {}
+    // },
+    // high_stakes: {
+    //     name: 'High Stakes',
+    //     desc: `
+    //         <cg>+50</cg> Luck<br>
+    //         <cg>+1</cg> Shop slot<br>
+    //         <cg>+2</cg> Shop rerolls<br>
+    //         <cp>+$1,000</cp><br>
+    //         Shop opens immediately<br>
+    //         <cb>+50</cb> Enemy level
+    //     `,
 
-        apply: () => {
-            modifyStat(['shop','luck'], '+=50')
-            modifyStat(['shop','upgrades'], '+=1'),
-            modifyStat(['shop','rerolls'], '+=2'),
-            player.getMoney(1000)
-            modifyStat(['enemy','levelIncrease'], '+=50')
-            openShop()
-        }
-    },
-    poverty: {
-        name: 'Poverty',
+    //     apply: () => {
+    //         modifyStat(['shop','luck'], '+=50')
+    //         modifyStat(['shop','upgrades'], '+=1'),
+    //         modifyStat(['shop','rerolls'], '+=2'),
+    //         player.getMoney(1000)
+    //         modifyStat(['enemy','levelIncrease'], '+=50')
+    //         openShop()
+    //     }
+    // },
+    // poverty: {
+    //     name: 'Poverty',
+    //     desc: `
+    //         <cs>1.25x</cs> Score multiplier<br>
+    //         Waves no longer drop money.<br>
+    //         Enemies no longer increase level<br>
+    //         <cp>+$250</cp>
+    //     `,
+
+    //     apply: () => {
+    //         player.scoreMult = 1.25
+    //         player.getMoney(250)
+    //         modifyStat(['enemy','levelIncrease'], '=-500')
+    //         modifyStat(['enemy','moneyMult'], '=0')
+    //     }
+    // },
+    // itemless: {
+    //     name: 'Itemless',
+    //     desc: `
+    //         <cs>5x</cs> Score multiplier<br>
+    //         Items no longer appear in the shop.
+    //     `,
+
+    //     apply: () => {
+    //         player.scoreMult = 5
+    //         modifyStat(['shop','upgrades'], '=0')
+    //     }
+    // },
+    // weapon_plus: {
+    //     name: 'Weapon+',
+    //     desc: `
+    //         <cg>+25</cg> Damage<br>
+    //         <cb>0</cb> Melee size<br>
+    //         <cb>0</cb> Melee damage<br>
+    //         Parrying a bullet deals <cb>25</cb> damage
+    //     `,
+
+    //     apply: () => {
+    //         modifyStat(['bullet','damage'], '+=25')
+    //         modifyStat(['melee','size'], '=0')
+    //         modifyStat(['melee','damage'], '=0')
+    //         modifyStat(['player','parryHeal'], '=-25')
+    //     }
+    // },
+    // melee_plus: {
+    //     name: 'Melee+',
+    //     desc: `
+    //         <cg>+25</cg> Melee damage<br>
+    //         <cg>+15</cg> Melee size<br>
+    //         <cb>0</cb> Max ammo<br>
+    //         <cb>-25</cb> Damage<br>
+    //         Hitting an enemy with a projectile heals <cb>25</cb>HP to the enemy
+    //     `,
+        
+    //     apply: () => {
+    //         modifyStat(['melee','damage'], '+=25')
+    //         modifyStat(['melee','size'], '+=15')
+    //         modifyStat(['ammo','max'], '=0')
+    //         modifyStat(['bullet','damage'], '=-25')
+    //     }
+    // },
+    abstract: {
+        name: 'Abstract',
         desc: `
-            <cs>1.25x</cs> Score multiplier<br>
-            Enemies no longer drop money or increase level.<br>
-            <cp>+$250</cp>
+            Enemys spawn with random widths and heights.<br>
+            Only the <strong>erorr</strong> item can appear in the shop.<br>
             <br>
-            <em style="color: grey;">(You can still gain money from quick wave clears.)</em>
-        `,
-
-        apply: () => {
-            player.scoreMult = 1.25
-            player.getMoney(250)
-            modifyStat(['enemy','levelIncrease'], '=-50')
-            modifyStat(['enemy','moneyMult'], '=0')
-        }
-    },
-    itemless: {
-        name: 'Itemless',
-        desc: `
-            <cs>5x</cs> Score multiplier<br>
-            Items no longer appear in the shop.
-        `,
-
-        apply: () => {
-            player.scoreMult = 5
-            modifyStat(['shop','upgrades'], '=0')
-        }
-    },
-    weapon_plus: {
-        name: 'Weapon+',
-        desc: `
-            <cg>+25</cg> Damage<br>
-            <cb>0</cb> Melee size<br>
-            <cb>0</cb> Melee damage<br>
-            Parrying a bullet deals <cb>25</cb> damage
-        `,
-
-        apply: () => {
-            modifyStat(['bullet','damage'], '+=25')
-            modifyStat(['melee','size'], '=0')
-            modifyStat(['melee','damage'], '=0')
-            modifyStat(['player','parryHeal'], '=-25')
-        }
-    },
-    melee_plus: {
-        name: 'Melee+',
-        desc: `
-            <cg>+25</cg> Melee damage<br>
-            <cg>+15</cg> Melee size<br>
-            <cb>0</cb> Max ammo<br>
-            <cb>-25</cb> Damage<br>
-            Hitting an enemy with a projectile heals <cb>25</cb>HP to the enemy
+            <em style="color: grey;">April Fools 2026</em>
         `,
         
-        apply: () => {
-            modifyStat(['melee','damage'], '+=25')
-            modifyStat(['melee','size'], '+=15')
-            modifyStat(['ammo','max'], '=0')
-            modifyStat(['bullet','damage'], '=-25')
-        }
+        apply: () => {}
     }
 }
 
