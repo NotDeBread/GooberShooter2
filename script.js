@@ -15,7 +15,7 @@ const saveData = {
     selectedSkin: -1,
     firstLogin: false,
 
-    selectedChallenge: 'abstract',
+    selectedChallenge: 'none',
 
     settings: {
         weaponEasing: true,
@@ -1325,93 +1325,93 @@ for(const key in characters) {
 }
 
 const challenges = {
-    // none: {
-    //     name: 'None',
-    //     desc: '',
+    none: {
+        name: 'None',
+        desc: '',
 
-    //     apply: () => {}
-    // },
-    // high_stakes: {
-    //     name: 'High Stakes',
-    //     desc: `
-    //         <cg>+50</cg> Luck<br>
-    //         <cg>+1</cg> Shop slot<br>
-    //         <cg>+2</cg> Shop rerolls<br>
-    //         <cp>+$1,000</cp><br>
-    //         Shop opens immediately<br>
-    //         <cb>+50</cb> Enemy level
-    //     `,
+        apply: () => {}
+    },
+    high_stakes: {
+        name: 'High Stakes',
+        desc: `
+            <cg>+50</cg> Luck<br>
+            <cg>+1</cg> Shop slot<br>
+            <cg>+2</cg> Shop rerolls<br>
+            <cp>+$1,000</cp><br>
+            Shop opens immediately<br>
+            <cb>+50</cb> Enemy level
+        `,
 
-    //     apply: () => {
-    //         modifyStat(['shop','luck'], '+=50')
-    //         modifyStat(['shop','upgrades'], '+=1'),
-    //         modifyStat(['shop','rerolls'], '+=2'),
-    //         player.getMoney(1000)
-    //         modifyStat(['enemy','levelIncrease'], '+=50')
-    //         openShop()
-    //     }
-    // },
-    // poverty: {
-    //     name: 'Poverty',
-    //     desc: `
-    //         <cs>1.25x</cs> Score multiplier<br>
-    //         Waves no longer drop money.<br>
-    //         Enemies no longer increase level<br>
-    //         <cp>+$250</cp>
-    //     `,
+        apply: () => {
+            modifyStat(['shop','luck'], '+=50')
+            modifyStat(['shop','upgrades'], '+=1'),
+            modifyStat(['shop','rerolls'], '+=2'),
+            player.getMoney(1000)
+            modifyStat(['enemy','levelIncrease'], '+=50')
+            openShop()
+        }
+    },
+    poverty: {
+        name: 'Poverty',
+        desc: `
+            <cs>1.25x</cs> Score multiplier<br>
+            Waves no longer drop money.<br>
+            Enemies no longer increase level<br>
+            <cp>+$250</cp>
+        `,
 
-    //     apply: () => {
-    //         player.scoreMult = 1.25
-    //         player.getMoney(250)
-    //         modifyStat(['enemy','levelIncrease'], '=-500')
-    //         modifyStat(['enemy','moneyMult'], '=0')
-    //     }
-    // },
-    // itemless: {
-    //     name: 'Itemless',
-    //     desc: `
-    //         <cs>5x</cs> Score multiplier<br>
-    //         Items no longer appear in the shop.
-    //     `,
+        apply: () => {
+            player.scoreMult = 1.25
+            player.getMoney(250)
+            modifyStat(['enemy','levelIncrease'], '=-500')
+            modifyStat(['enemy','moneyMult'], '=0')
+        }
+    },
+    itemless: {
+        name: 'Itemless',
+        desc: `
+            <cs>5x</cs> Score multiplier<br>
+            Items no longer appear in the shop.
+        `,
 
-    //     apply: () => {
-    //         player.scoreMult = 5
-    //         modifyStat(['shop','upgrades'], '=0')
-    //     }
-    // },
-    // weapon_plus: {
-    //     name: 'Weapon+',
-    //     desc: `
-    //         <cg>+25</cg> Damage<br>
-    //         <cb>0</cb> Melee size<br>
-    //         <cb>0</cb> Melee damage<br>
-    //         Parrying a bullet deals <cb>25</cb> damage
-    //     `,
+        apply: () => {
+            player.scoreMult = 5
+            modifyStat(['shop','upgrades'], '=0')
+        }
+    },
+    weapon_plus: {
+        name: 'Weapon+',
+        desc: `
+            <cg>+25</cg> Damage<br>
+            <cb>0</cb> Melee size<br>
+            <cb>0</cb> Melee damage<br>
+            Parrying a bullet deals <cb>25</cb> damage
+        `,
 
-    //     apply: () => {
-    //         modifyStat(['bullet','damage'], '+=25')
-    //         modifyStat(['melee','size'], '=0')
-    //         modifyStat(['melee','damage'], '=0')
-    //         modifyStat(['player','parryHeal'], '=-25')
-    //     }
-    // },
-    // melee_plus: {
-    //     name: 'Melee+',
-    //     desc: `
-    //         <cg>+25</cg> Melee damage<br>
-    //         <cg>+15</cg> Melee size<br>
-    //         <cb>0</cb> Max ammo<br>
-    //         <cb>-25</cb> Damage<br>
-    //         Hitting an enemy with a projectile heals <cb>25</cb>HP to the enemy
-    //     `,
+        apply: () => {
+            modifyStat(['bullet','damage'], '+=25')
+            modifyStat(['melee','size'], '=0')
+            modifyStat(['melee','damage'], '=0')
+            modifyStat(['player','parryHeal'], '=-25')
+        }
+    },
+    melee_plus: {
+        name: 'Melee+',
+        desc: `
+            <cg>+25</cg> Melee damage<br>
+            <cg>+15</cg> Melee size<br>
+            <cb>0</cb> Max ammo<br>
+            <cb>-25</cb> Damage<br>
+            Hitting an enemy with a projectile heals <cb>25</cb>HP to the enemy
+        `,
         
-    //     apply: () => {
-    //         modifyStat(['melee','damage'], '+=25')
-    //         modifyStat(['melee','size'], '+=15')
-    //         modifyStat(['ammo','max'], '=0')
-    //         modifyStat(['bullet','damage'], '=-25')
-    //     }
-    // },
+        apply: () => {
+            modifyStat(['melee','damage'], '+=25')
+            modifyStat(['melee','size'], '+=15')
+            modifyStat(['ammo','max'], '=0')
+            modifyStat(['bullet','damage'], '=-25')
+        }
+    },
     abstract: {
         name: 'Abstract',
         desc: `

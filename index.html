@@ -9,6 +9,13 @@
     <title id="pageTitle">Goober Shooter 2 - Main Menu</title>
 </head>
 <body>
+    <div id="performanceDebug">
+        <span id="dbFPS">-FPS</span><br>
+        <span id="dbFPSMS">-MS</span><br>
+        <span id="dbTPS">-TPS</span><br>
+        <span id="dbE">-E</span>
+    </div>
+
     <div id="gameStartScreen">
         <div class="gameStartScreenText">A game made by</div><br>
         <div style="font-size: 1.5em; font-weight: 700;" class="gameStartScreenText">DeBread</div>
@@ -57,7 +64,7 @@
             <span id="menuTitle1">Goober</span>
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
-            <span style="max-width: 100px !important;">PRESENTATION <br> DEMO <a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest4</a></span>
+            <span style="max-width: 100px !important;">PRESENTATION <br> DEMO <a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest5</a></span>
         </div>
         <div id="menuButtons">
             <button onclick="openMenu('gameSettings'); openGameSettingsMenu(0)" style="height: 40px;">PLAY</button>
@@ -480,12 +487,6 @@
                 <span id="dbTickInterval">Tick Interval: 0/0</span><br>
                 <span id="dbStatus">Status Effects: []</span><br>
                 <span id="dbElems">Elems: []</span><br>
-            </div>
-            <div id="performanceDebug">
-                <span id="dbFPS">-FPS</span><br>
-                <span id="dbFPSMS">-MS</span><br>
-                <span id="dbTPS">-TPS</span><br>
-                <span id="dbE">-E</span>
             </div>
             <div id="gameTopLeftContainer">
                 <!--Power item, bars, and status effects-->

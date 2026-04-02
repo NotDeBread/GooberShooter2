@@ -596,7 +596,7 @@ function createPlayer() {
                 }, e.gameUpdateInterval)
 
                 if(!light) {
-                    player.getPower(-(Math.min(amount, 25)))
+                    player.getPower(-(Math.min(amount / 2, 15)))
                 }
 
                 //Explosive Damage

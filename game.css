@@ -129,6 +129,10 @@
     transition: outline 250ms ease-in-out;
 }
 
+.shopItem img {
+    pointer-events: none;
+}
+
 @keyframes shopItemIn {
     from {
         scale: 0;
@@ -985,8 +989,8 @@
 
 #performanceDebug {
     position: absolute;
-    top: 100px;
-    right: 0;
+    top: 30px;
+    right: 225px;
     line-height: 1;
     font-size: 0.75em;
     text-align: right;
