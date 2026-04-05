@@ -2,7 +2,7 @@ const enemies = {
     guy: {
         name: 'Guy',
         desc: 'A small enemy that does little contact damage.',
-        color: 'rgb(255,100,100)',
+        color: [255,100,100],
         size: 40,
         health: 25,
         speed: 2,
@@ -13,7 +13,7 @@ const enemies = {
     scout: {
         name: 'Scout',
         desc: 'A medium-sized enemy that does contact damage.',
-        color: 'rgba(255, 82, 148, 1)',
+        color: [255,82,148],
         size: 50,
         health: 50,
         speed: 3,
@@ -24,7 +24,7 @@ const enemies = {
     goon: {
         desc: 'A slow moving enemy that shoots medium-damage projectiles.',
         name: 'Goon',
-        color: 'rgba(255, 243, 82, 1)',
+        color: [255,243,82],
         size: 50,
         health: 75,
         speed: 1,
@@ -42,7 +42,7 @@ const enemies = {
     machinist: {
         desc: 'A slow moving enemy that radpidly shoots low-damage projectiles.',
         name: 'Machinist',
-        color: 'rgb(255, 82, 238)',
+        color: [255,82,238],
         size: 50,
         health: 75,
         speed: 1,
@@ -59,7 +59,7 @@ const enemies = {
     },
     brute: {
         name: 'Brute',
-        color: 'rgb(200,200,200)',
+        color: [200,200,200],
         size: 60,
         health: 125,
         speed: 0.5,
@@ -76,7 +76,7 @@ const enemies = {
     },
     mutant: {
         name: 'Mutant',
-        color: 'rgb(125, 255, 125)',
+        color: [125,255,125],
         size: 35,
         health: 60,
         speed: 0.000001,
@@ -94,7 +94,7 @@ const enemies = {
     },
     pyro: {
         name: 'Pyro',
-        color: 'rgba(86, 49, 34, 1)',
+        color: [86,49,34],
         size: 50,
         health: 175,
         speed: 0.25,
@@ -114,7 +114,7 @@ const enemies = {
     },
     monstrosity: {
         name: 'Monstrosity',
-        color: 'rgba(51, 116, 51, 1)',
+        color: [51,116,51],
         size: 50,
         health: 100,
         speed: 0.5,
@@ -146,7 +146,7 @@ const enemies = {
     bomber: {
         name: 'Bomber',
         desc: 'Very quick enemy that explodes on impact.',
-        color: 'red',
+        color: [255,0,0],
         size: 40,
         health: 10,
         speed: 10,
@@ -161,10 +161,10 @@ const enemies = {
     explosive: {
         name: 'Explosive',
         desc: 'Creates an explosion when damaged.',
-        color: 'rgb(100,0,0)',
+        color: [100,0,0],
         size: 40,
         health: 1,
-        speed: 0.00000000001, //yeah okay
+        speed: 0,
         credits: 10,
         poor: true,
 
@@ -176,22 +176,29 @@ const enemies = {
     },
     sprinter: {
         name: 'Sprinter',
-        color: 'rgb(54, 78, 111)',
+        color: [54,78,111],
         size: 35,
         health: 30,
-        speed: 8,
+        speed: 7,
         credits: 10,
-        meleeDamage: 10,
+        meleeDamage: 7,
     },
     slime: {
         name: 'Slime',
-        color: 'lime',
+        desc: 'A slow moving enemy that splits into smaller, less power versions of itself when killed.',
+        color: [25,255,25],
         size: 50,
         heath: 50,
         speed: 2,
         health: 125,
         credits: 15,
         meleeDamage: 15,
+
+        creep: {
+            damage: 5,
+            ticks: 20,
+            tickRate: 10,
+        },
 
         split: {
             times: 2,
@@ -200,7 +207,8 @@ const enemies = {
     },
     cocoon: {
         name: 'Cocoon',
-        color: 'rgb(194, 192, 172)',
+        desc: 'A stationary enemy that loses heath over time. Once killed, it spawns 5 spiders.',
+        color: [194,192,172],
         size: 50,
         health: 200,
         speed: 0.0000001,
@@ -216,7 +224,8 @@ const enemies = {
     },
     spider: {
         name: 'Spider',
-        color: 'rgb(64, 68, 72)',
+        desc: 'A small, quick-moving enemy that does little melee damage.',
+        color: [64,68,72],
         size: 20,
         health: 20,
         speed: 5,
@@ -227,11 +236,12 @@ const enemies = {
     },
     leech: {
         name: 'Leech',
-        desc: 'A small, immobile enemy that deals constant damage to the player while alive.',
-        color: 'rgb(37, 18, 37)',
+        desc: 'A small, immobile enemy that deals constant damage to the player while alive. Creates an implosion one killed.',
+        color: [37,18,37],
         size: 25,
         health: 25,
         speed: 0,
+        mounted: true,
         credits: 20,
 
         onDeath: enemy => {
@@ -240,11 +250,12 @@ const enemies = {
     },
     idol: {
         name: 'Idol',
-        desc: 'A small, immobile enemy that prevents the player from healing while alive.',
-        color: 'rgb(183, 244, 255)',
+        desc: 'A small, immobile enemy that prevents the player from healing while alive. Creates an explosion once killed.',
+        color: [183,244,255],
         size: 25,
         health: 25,
         speed: 0,
+        mounted: true,
         credits: 20,
 
         onDeath: enemy => {
@@ -253,7 +264,8 @@ const enemies = {
     },
     titan: {
         name: 'Titan',
-        color: 'rgb(88, 38, 98)',
+        desc: 'A large, slow-moving enemy that fires huge projectiles that spawn poison fields.',
+        color: [88,38,98],
         size: 75,
         health: 750,
         speed: 0.5,
@@ -275,7 +287,7 @@ const enemies = {
     dummy: {
         name: 'Dummy',
         desc: '<em style="color: grey;">Sandbox only</em><br>Has infinite health and displays total damage taken.',
-        color: 'rgba(255, 218, 169, 1)',
+        color: [255,218,169],
         credits: Infinity,
         size: 50,
         health: Infinity,
@@ -285,7 +297,7 @@ const enemies = {
     weakDummy: {
         name: 'Weak Dummy',
         desc: '<em style="color: grey;">Sandbox only</em><br>Has 10 health and displays total damage taken.',
-        color: 'rgb(146, 94, 78)',
+        color: [146,94,78],
         credits: Infinity,
         size: 50,
         health: 10,
@@ -295,17 +307,18 @@ const enemies = {
     mountedDummy: {
         name: 'Mounted Dummy',
         desc: '<em style="color: grey;">Sandbox only</em><br>Same as the dummy, but does not have any collision.',
-        color: 'rgb(160, 129, 88)',
+        color: [160,129,88],
         credits: Infinity,
         size: 50,
         health: Infinity,
         speed: 0,
+        mounted: true,
         poor: true,
     },
     movingDummy: {
         name: 'Moving dummy',
         desc: '<em style="color: grey;">Sandbox only</em><br>Has infinite health and moves.',
-        color: 'rgb(211, 187, 156)',
+        color: [211,187,156],
         credits: Infinity,
         size: 50,
         health: Infinity,
@@ -315,7 +328,7 @@ const enemies = {
     nerfSentry: {
         name: 'Nerf Sentry',
         desc: '<em style="color: grey;">Sandbox only</em><br>Same as the dummy, but fires projectiles that doesn\'t deal any damage.',
-        color: 'rgb(160, 129, 88)',
+        color: [160,129,88],
         credits: Infinity,
         size: 50,
         health: Infinity,
@@ -332,10 +345,11 @@ const enemies = {
     mountedExplosive: {
         name: 'Mounted Explosive',
         desc: '<em style="color: grey;">Sandbox only</em><br>Creates an explosion when damaged.',
-        color: 'rgb(75,0,0)',
+        color: [75,0,0],
         size: 40,
         health: 1,
         speed: 0,
+        mounted: true,
         credits: Infinity,
         poor: true,
 
@@ -348,7 +362,7 @@ const enemies = {
     debreadCube: {
         name: 'DeBread Cube',
         desc: '<em style="color: grey;">Sandbox only</em><br>Run',
-        color: 'orange',
+        color: [244, 175, 84],
         size: 75,
         health: 7777,
         speed: 3,
@@ -428,14 +442,14 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
         boxShadow: '0px 0px 0px 0px white',
         borderRadius: '5px',
         zIndex: '6',
-        backgroundColor: data.color ?? 'rgb(200,200,200)',
+        backgroundColor: `rgb(${data.color})`,
         boxShadow: 'inset 0px 0px 0px 2px transparent',
         animation: 'enemyWait 1s ease-in-out infinite forwards, enemyIn 500ms cubic-bezier(0,1,.5,1) 1 forwards',
-        transition: `left linear ${e.gameUpdateInterval}ms, top linear ${e.gameUpdateInterval}ms`
+        transition: `left linear ${e.gameUpdateInterval}ms, top linear ${e.gameUpdateInterval}ms, background-color ease-in-out 1s`
     })
 
     if(!saveData.settings.enemyEasing) {
-        enemy.style.transition = 'none'
+        enemy.style.transition = 'background-color ease-in-out 1s'
     }
 
     enemy.alive = true
@@ -518,7 +532,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
             enemy.alive = false
             elems.enemies.splice(elems.enemies.indexOf(enemy),1)
             player.gameOverStats.enemiesKilled++
-            createParticles([enemy.pos[0] + enemy.size / 2, enemy.pos[1] + enemy.size / 2], 10, enemy.size / 2, [0,100], 500, 'ease-out',{backgroundColor: data.color})
+            createParticles([enemy.pos[0] + enemy.size / 2, enemy.pos[1] + enemy.size / 2], 10, enemy.size / 2, [0,100], 500, 'ease-out',{backgroundColor: `rgb(${data.color})`})
             let coins = Math.round(data.credits * player.stats.enemy.moneyMult)
             if(data.credits === Infinity || data.poor) {
                 coins = 0
@@ -646,6 +660,10 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
         enemy.style.boxShadow = '0px 0px 0px 10px transparent'
 
         healthBar.style.width = '100%'
+
+        if(saveData.selectedChallenge === 'hidden') {
+            enemy.style.backgroundColor = 'transparent'
+        }
     }
 
     enemy.statusEffects = [
@@ -680,39 +698,52 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
             enemy.target = closestEnemy
         }
 
-        elems.enemies.forEach(otherEnemy => {
-            const angle = Math.atan2((otherEnemy.pos[1] + otherEnemy.size / 2) - (enemy.pos[1] + enemy.size / 2), (otherEnemy.pos[0] + otherEnemy.size / 2) - (enemy.pos[0] + enemy.size / 2))
-            if (isColliding(enemy, otherEnemy) && enemy !== otherEnemy && otherEnemy.active) {
+        if(!data.mounted) {
+            elems.enemies.forEach(otherEnemy => {
+                const angle = Math.atan2((otherEnemy.pos[1] + otherEnemy.size / 2) - (enemy.pos[1] + enemy.size / 2), (otherEnemy.pos[0] + otherEnemy.size / 2) - (enemy.pos[0] + enemy.size / 2))
+                if (isColliding(enemy, otherEnemy) && enemy !== otherEnemy && otherEnemy.active) {
+                    const distance = Math.sqrt(
+                        Math.pow(enemy.pos[0] - otherEnemy.pos[0],2) + 
+                        Math.pow(enemy.pos[1] - otherEnemy.pos[1],2)
+                    )
+                    
+                    const overlap = (enemy.size - distance) / 10
+                    enemy.pos[0] -= Math.cos(angle) * (enemy.speed * player.stats.enemy.speedMult * enemy.speedMult + overlap)
+                    enemy.pos[1] -= Math.sin(angle) * (enemy.speed * player.stats.enemy.speedMult * enemy.speedMult + overlap)                    
+                }
+            })
+    
+            if(enemy.target && isColliding(enemy, enemy.target.elem)) {
+                const angle = Math.atan2(enemy.target.centerPos[1] - (enemy.pos[1] + enemy.size / 2), enemy.target.centerPos[0] - (enemy.pos[0] + enemy.size / 2))
                 const distance = Math.sqrt(
-                    Math.pow(enemy.pos[0] - otherEnemy.pos[0],2) + 
-                    Math.pow(enemy.pos[1] - otherEnemy.pos[1],2)
+                    Math.pow(enemy.pos[0] - enemy.target.pos[0],2) + 
+                    Math.pow(enemy.pos[1] - enemy.target.pos[1],2)
                 )
-                
+    
                 const overlap = (enemy.size - distance) / 10
                 enemy.pos[0] -= Math.cos(angle) * (enemy.speed * player.stats.enemy.speedMult * enemy.speedMult + overlap)
-                enemy.pos[1] -= Math.sin(angle) * (enemy.speed * player.stats.enemy.speedMult * enemy.speedMult + overlap)                    
+                enemy.pos[1] -= Math.sin(angle) * (enemy.speed * player.stats.enemy.speedMult * enemy.speedMult + overlap)
+                
+                if(data.meleeDamage && e.gameUpdates - enemy.lastHitDate >= 25) {
+                    enemy.target.damage(data.meleeDamage * (1 + level / 2))
+                    enemy.lastHitDate = e.gameUpdates
+                }
+            } else if(enemy.target) {
+                const angle = Math.atan2(enemy.target.centerPos[1] - (enemy.pos[1] + enemy.size / 2), enemy.target.centerPos[0] - (enemy.pos[0] + enemy.size / 2))
+                enemy.pos[0] += Math.cos(angle) * enemy.speed * player.stats.enemy.speedMult * enemy.speedMult
+                enemy.pos[1] += Math.sin(angle) * enemy.speed * player.stats.enemy.speedMult * enemy.speedMult
             }
-        })
 
-        if(enemy.target && isColliding(enemy, enemy.target.elem)) {
-            const angle = Math.atan2(enemy.target.centerPos[1] - (enemy.pos[1] + enemy.size / 2), enemy.target.centerPos[0] - (enemy.pos[0] + enemy.size / 2))
-            const distance = Math.sqrt(
-                Math.pow(enemy.pos[0] - enemy.target.pos[0],2) + 
-                Math.pow(enemy.pos[1] - enemy.target.pos[1],2)
-            )
-
-            const overlap = (enemy.size - distance) / 10
-            enemy.pos[0] -= Math.cos(angle) * (enemy.speed * player.stats.enemy.speedMult * enemy.speedMult + overlap)
-            enemy.pos[1] -= Math.sin(angle) * (enemy.speed * player.stats.enemy.speedMult * enemy.speedMult + overlap)
-            
-            if(data.meleeDamage && e.gameUpdates - enemy.lastHitDate >= 25) {
-                enemy.target.damage(data.meleeDamage * (1 + level / 2))
-                enemy.lastHitDate = e.gameUpdates
+            for(let i = 0; i < enemy.dirVels.length; i++) {
+                const dirVel = enemy.dirVels[i]
+                enemy.pos[0] += Math.cos(dirVel.angle) * dirVel.speed
+                enemy.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
+    
+                dirVel.speed /= dirVel.div
+                if(Math.abs(dirVel.speed) <= 0.1) {
+                    enemy.dirVels.splice(i, 1)
+                }
             }
-        } else if(enemy.target) {
-            const angle = Math.atan2(enemy.target.centerPos[1] - (enemy.pos[1] + enemy.size / 2), enemy.target.centerPos[0] - (enemy.pos[0] + enemy.size / 2))
-            enemy.pos[0] += Math.cos(angle) * enemy.speed * player.stats.enemy.speedMult * enemy.speedMult
-            enemy.pos[1] += Math.sin(angle) * enemy.speed * player.stats.enemy.speedMult * enemy.speedMult
         }
 
         if(enemy.pos[0] < 0) enemy.pos[0] = 0
@@ -720,16 +751,6 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
         if(enemy.pos[0] > doge('area').offsetWidth - enemy.size) enemy.pos[0] = doge('area').offsetWidth - enemy.size
         if(enemy.pos[1] > doge('area').offsetHeight - enemy.size) enemy.pos[1] = doge('area').offsetHeight - enemy.size
 
-        for(let i = 0; i < enemy.dirVels.length; i++) {
-            const dirVel = enemy.dirVels[i]
-            enemy.pos[0] += Math.cos(dirVel.angle) * dirVel.speed
-            enemy.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
-
-            dirVel.speed /= dirVel.div
-            if(Math.abs(dirVel.speed) <= 0.1) {
-                enemy.dirVels.splice(i, 1)
-            }
-        }
 
         doge('area').querySelectorAll('.fire').forEach(fire => {
             if(isColliding(enemy, fire)) {
@@ -778,6 +799,10 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
 
         if(data.regen) {
             enemy.damage(-data.regen, true)
+        }
+
+        if(data.creep && e.gameUpdates % 10 === 0) {
+            createPoisonField([...enemy.centerPos],enemy.size,data.creep.damage,data.creep.ticks,data.creep.tickRate, false, data.color, true)
         }
 
         if(enemy.onFire) {
@@ -913,7 +938,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
         addStyles(poisonField, {
             width: data.poisonField.size * 2 + 'px',
             height: data.poisonField.size * 2 + 'px',
-            outline: `2px solid ${data.color}`
+            outline: `2px solid rgb(${data.color})`
         })
         enemy.appendChild(poisonField)
     }

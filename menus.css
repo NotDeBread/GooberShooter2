@@ -380,7 +380,6 @@
 /* Character stats */
 
 #selectedCharacterContainer {
-    padding: 5px;
     outline: 1px solid white;
     display: flex;
     justify-content: space-between;
@@ -403,6 +402,7 @@
 #selectedCharacterTags {
     display: flex;
     gap: 5px;
+    padding: 5px;
 }
 
 .selectedCharacterTag {

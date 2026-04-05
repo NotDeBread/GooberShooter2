@@ -37,7 +37,7 @@ function createPlayer() {
         comboStrength: 100,
         scoreMult: 1,
 
-        money: 10,
+        money: 25,
         keys: 0,
 
         bankBreakChance: 0,
@@ -119,6 +119,7 @@ function createPlayer() {
                 explosiveHeal: 0, //How much HP the player heals when getting hit by an explosion.
 
                 weaponContactDamage: 0, //How much damage every tick the players weapon deals to enemies that are colliding with it.
+                maxWeaponDistance: 50,
             },
 
             shop: {
@@ -837,6 +838,10 @@ function createPlayer() {
                         updateTutorialGoal()
                     }
                 }
+
+                if(player.power < player.powerItem.charge && saveData.gameSettings.gamemode !== 2) {
+                    DeBread.shake(doge('powerContainer'),10,10,0,250)
+                }
             }
         },
 
@@ -912,8 +917,8 @@ function createPlayer() {
         
         
                 doge('weapon').pos = [
-                    Math.max(Math.min(player.centerPos[0] + Math.cos(angle) * Math.min(cursorDisance / 2, 50), doge('area').offsetWidth), 0),
-                    Math.max(Math.min(player.centerPos[1] + Math.sin(angle) * Math.min(cursorDisance / 2, 50), doge('area').offsetHeight), 0)
+                    Math.max(Math.min(player.centerPos[0] + Math.cos(angle) * Math.min(cursorDisance / 2, player.stats.player.maxWeaponDistance), doge('area').offsetWidth), 0),
+                    Math.max(Math.min(player.centerPos[1] + Math.sin(angle) * Math.min(cursorDisance / 2, player.stats.player.maxWeaponDistance), doge('area').offsetHeight), 0)
                 ]
 
                 addStyles(doge('weapon'), {
@@ -991,6 +996,7 @@ function startGame() {
     doge('area').querySelectorAll('.bullet').forEach(bullet => {bullet.remove()})
     doge('area').querySelectorAll('.enemyProjectile').forEach(bullet => {bullet.remove()})
     doge('area').querySelectorAll('.portal').forEach(portal => {portal.remove()})
+    doge('area').querySelectorAll('.poisonField').forEach(field => {field.remove()})
     
     doge('gameWaveCounter').innerText = '0'
     doge('gameStyleContainer').innerHTML = ''
@@ -1035,7 +1041,7 @@ function startGame() {
     }
 
     doge('weaponTexture').src = `graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.toLowerCase().replaceAll(' ','_')}.png`
-    doge('gameMoneyCount')
+    doge('gameMoneyCount').innerText = `$${player.money}`
 
     if(saveData.selectedChallenge === 'abstract') {
         area.createNotice('Things are getting weird!')
@@ -1739,12 +1745,11 @@ const updateInterval = DeBread.createInterval(() => {
                 if(isColliding(player.elem, field) && e.gameUpdates - field.lastTick >= field.tickRate) {
                     player.damage(field.damage)
     
-                    field.lastTick = e.gameUpdates
+                    // field.lastTick = e.gameUpdates
                 }
     
                 elems.enemies.forEach(enemy => {
-                    let enemyHit = false
-                    if(isColliding(enemy, field) && e.gameUpdates - field.lastTick >= field.tickRate && enemy.active) {
+                    if(isColliding(enemy, field) && e.gameUpdates - field.lastTick >= field.tickRate && enemy.active && !field.ignoreEnemies) {
                         enemy.damage(field.damage)
                         if(!enemy.alive) {
                             getStyle(styles.poisoned)
@@ -2330,13 +2335,14 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer, col = [[255,255],[0,2
     }
 }
 
-function createPoisonField(pos, size, dmg, ticks, tickRate, circular = false, color = [255,255,255]) {
+function createPoisonField(pos, size, dmg, ticks, tickRate, circular = false, color = [255,255,255], ignoreEnemies = false) {
     const field = document.createElement('div')
     field.pos = pos
     field.damage = dmg
     field.circular = circular
     field.size = size
     field.tickRate = tickRate
+    field.ignoreEnemies = ignoreEnemies
     
     field.ticks = 0
     field.maxTicks = ticks
@@ -2561,11 +2567,15 @@ function getStyle(style) {
                 <span id="gameStyleCombo">1</span>
             </div>
             <div class="coolLine"></div>
-            <span id="gameStylePoints">${style.baseAmnt * player.combo * player.scoreMult}</span>
+            <span id="gameStylePoints">${DeBread.round(style.baseAmnt * player.combo * player.scoreMult)}</span>
         `
         div.styleType = style
     
         doge('gameStyleContainer').append(div)
+
+        if(doge('gameStyleContainer').children[50]) {
+            doge('gameStyleContainer').children[1].remove()
+        }
     }
 
     for(let i = 0; i < 10; i++) {
@@ -2692,10 +2702,20 @@ function openSandboxMenu(menu) {
             const button = document.createElement('div')
             button.innerHTML = '<div></div>'
 
+            addStyles(button, {
+                width: '64px',
+                height: '64px',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                border: '1px solid grey',
+                overflow: 'hidden'
+            })
+
             addStyles(button.querySelector('div'), {
-                width: '50px',
-                height: '50px',
-                backgroundColor: enemy.color
+                width: `${enemy.size}px`,
+                height: `${enemy.size}px`,
+                backgroundColor: `rgb(${enemy.color})`
             })
 
             button.onclick = () => {
@@ -2716,6 +2736,19 @@ function openSandboxMenu(menu) {
 
             doge('sandboxMenu-enemies').append(button)
         }
+
+        const infoText = document.createElement('div')
+        addStyles(infoText, {
+            width: '100%',
+            border: '1px solid grey',
+            padding: '5px'
+        })
+        infoText.innerHTML = `
+        Left-Click to place enemy<br>
+        Right-Click to deselect<br>
+        Hold SHIFT to place multiple enemies
+        `
+        doge('sandboxMenu-enemies').append(infoText)
     }
 
     if(menu === 'upgrades') {

@@ -256,7 +256,7 @@ function renderCharacterSelect() {
     function updateSelectedCharacter() {
         doge('selectedCharacterName').innerText = characters[saveData.selectedCharacter].name
         doge('selectedCharacterDesc').innerText = characters[saveData.selectedCharacter].desc
-        doge('selectedCharacterImg').src = `graphics/characters/${saveData.selectedCharacter}Portrait.png`
+        doge('selectedCharacterImg').src = `graphics/characters/${saveData.selectedCharacter}PortraitLarge.png`
 
         doge('selectedCharacterTags').innerHTML = ''
 
@@ -485,6 +485,12 @@ function openGameSettingsMenu(id) {
         }
     }
 
+    if(id === 0) {
+        doge('gameSettingsBack').style.display = 'none'
+    } else {
+        doge('gameSettingsBack').style.display = 'unset'
+    }
+
     if(id === doge('gameSettingsTabs').children.length-1) {
         doge('gameSettingsNext').innerText = 'PLAY'
         doge('gameSettingsNext').style.width = '100px'
@@ -708,7 +714,7 @@ const creditsHTML = `
     </div>
     <span>Idea help: <a href="https://yeen.town/@Chalkllate" target="blank">Jake</a>, <a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a></span><br>
     <span>Background Shader: From <a href="https://www.playbalatro.com/" target="_blank">Balatro</a>, rewritten by <a href="https://xemantic.github.io/shader-web-background/" target="_blank">xemantic</a></span><br>
-    <span>Addditional Textures: <a href="https://plinkel.neocities.org/">Plonk</a> (Ashton Character, Lorna Character, Piss, Shotgun, Mounted Machine Gun)</span><br>
+    <span>Addditional Textures: <a href="https://plinkel.neocities.org/">Plonk</a></span><br>
     <span>Additional SFX: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
     <span>Playtesters: Nova, TrueSkywalkr, Dottr</span>
 `
@@ -730,7 +736,7 @@ const settingsHTML = `
             <div class="settingsCheckboxContainer">
                 <div class="genericCheckbox" id="scb-showPowerItemWarning"></div>
                 <div class="settingsCheckboxInfo">
-                    <span>Show Power Item replacement waning</span>
+                    <span>Show Power Item replacement warning</span>
                     <span>Displays a popup before allowing you to replace your current Power Item.</span>
                 </div>
             </div>
@@ -739,6 +745,13 @@ const settingsHTML = `
                 <div class="settingsCheckboxInfo">
                     <span>Presentation Mode</span>
                     <span>Enables local scoring and removes inappropriate language.</span>
+                </div>
+            </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-showGameOverflow"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Show area overflow</span>
+                    <span>Displays area objects located outside of the game bounds.</span>
                 </div>
             </div>
             <div class="settingsCheckboxContainer">
@@ -849,5 +862,11 @@ function updateSettings() {
     } else {
         doge('weapon').style.transition = 'scale ease-in-out 500ms'
         doge('meleeHitbox').style.transition = 'scale ease-in-out 500ms'
+    }
+
+    if(saveData.settings.showGameOverflow) {
+        doge('area').style.overflow = 'visible'
+    } else {
+        doge('area').style.overflow = 'hidden'
     }
 } updateSettings()

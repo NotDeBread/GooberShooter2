@@ -64,7 +64,7 @@
             <span id="menuTitle1">Goober</span>
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
-            <span style="max-width: 100px !important;">PRESENTATION <br> DEMO <a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest5</a></span>
+            <span style="max-width: 100px !important;">PRESENTATION <br> DEMO <a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest6</a></span>
         </div>
         <div id="menuButtons">
             <button onclick="openMenu('gameSettings'); openGameSettingsMenu(0)" style="height: 40px;">PLAY</button>
@@ -135,7 +135,7 @@
                     <button onclick="openMenu('game'); startGame()">Play with previous settings</button>
                 </div>
                 <div>
-                    <button onclick="openGameSettingsMenu(currentGameSettingsMenu-1)">Back</button>
+                    <button onclick="openGameSettingsMenu(currentGameSettingsMenu-1)" id="gameSettingsBack">Back</button>
                     <button onclick="openGameSettingsMenu(currentGameSettingsMenu+1)" id="gameSettingsNext" style="transition: width ease-in-out 500ms;">Next</button>
                 </div>
             </div>
@@ -150,7 +150,7 @@
         <div style="display: flex; gap: 5px; flex-direction: column;">
             <div id="selectedCharacterContainer">
                 <div style="display: flex; flex-direction: column; justify-content: space-between;">
-                    <div style="line-height: 1;">
+                    <div style="line-height: 1; padding: 5px;">
                         <em style="color: grey;">Selected character</em><br>
                         <span id="selectedCharacterName">Some guy</span><br>
                         <span id="selectedCharacterDesc" style="line-height: 1.5;">some description</span>
@@ -159,7 +159,7 @@
                         <div class="selectedCharacterTag">SOME TAG</div>
                     </div>
                 </div>
-                <img src="graphics/placeholder.png" width="92" id="selectedCharacterImg">
+                <img src="graphics/placeholder.png" id="selectedCharacterImg" width="120">
             </div>
             <div id="characterSelectContainer"></div>
             <div id="characterCustomizationContainer" style="overflow: hidden;">

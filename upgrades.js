@@ -561,15 +561,20 @@ const upgrades = [
         nuclear_waste: {
             name: 'Nuclear Waste',
             desc: `
-                Bullets get a <cg>+10%</cg> chance to create a poison field, dealing <cg>+10%</cg> of your damage.<br>
+                Bullets get a <cg>+10%</cg> chance to create a poison field, dealing <cg>+100%</cg> of your damage for <cg>+5</cg> ticks.<br>
                 <cg>+5</cg> Poison field size <br>
                 <cb>-50%</cb> Max health
             `,
 
             apply: () => {
                 modifyStat(['bullet','poisonFieldChance'], '+=10')
-                modifyStat(['bullet','poisonFieldDmgPercent'], '+=1')
-                modifyStat(['bullet','poisonFieldSize'], '+=5')
+                modifyStat(['bullet','poisonFieldDmgPercent'], '+=100')
+                modifyStat(['bullet','poisonFieldTicks'], '+=5')
+                if(player.stats.bullet.poisonFieldSize > 0) {
+                    modifyStat(['bullet','poisonFieldSize'], '+=10')
+                } else {
+                    modifyStat(['bullet','poisonFieldSize'], '+=100')
+                }
                 modifyStat(['player','maxHealth'], '*=0.5')
             }
         },
@@ -1900,7 +1905,6 @@ const powerItems = [
             charge: 100,
             canUseInShop: true,
             requirement: () => {
-                console.log('requirement checked!')
                 return player.inPortal
             },
 
@@ -1930,6 +1934,23 @@ const powerItems = [
                 })
 
                 createShopItems(items)
+            }
+        },
+        demon_core: {
+            name: 'Demon Core',
+            desc: `
+                Uses <cp>100</cp> POWER<br>
+                Creates a giant explosion, dealing <cg>50</cg> damage and applying bleeding to enemies.<br>
+                Creates a giant poison field that does <cb>100</cb> damage over 500 ticks.
+            `,
+            charge: 100,
+
+            use: () => {
+                createExplosion([player.centerPos[0]+DeBread.randomNum(-1,1,10),player.centerPos[1]+DeBread.randomNum(-1,1,10)], 500, 50, 250, true, [[255,255],[255,255],[255,255]])
+                createPoisonField([...player.centerPos], 500, 10, 10, 50, false, [200,255,200])
+                elems.enemies.forEach(enemy => {
+                    enemy.isBleeding = true
+                })
             }
         },
     },

@@ -24,6 +24,7 @@ const saveData = {
         presentationMode: false,
         showGameQuitWarning: true,
         showPowerItemWarning: true,
+        showGameOverflow: false,
         debug: false,
     },
 
@@ -369,6 +370,7 @@ const weaponPresets = {
             modifyStat(['ammo','max'], '=8')
 
             modifyStat(['ammo','garandReload'], '=true')
+            modifyStat(['player','maxWeaponDistance'],'=60')
         }
     },
     sniper: {
@@ -777,7 +779,7 @@ const characters = {
     },
     ashton: {
         name: 'Ashton',
-        desc: 'Some other other guy',
+        desc: 'bro thinks hes james sunderland',
         tag: 'Arctic Fox',
         tagCol: 'rgb(89, 150, 168)',
         taunts: 1,
@@ -803,12 +805,19 @@ const characters = {
 
         weapon: weaponPresets.riot_shotgun
     },
-    // tammy: {
-    //     name: 'Tammy',
-    //     desc: 'Some other other guy',
+    tammy: {
+        name: 'Tammy',
+        desc: 'Some other other guy',
+        tag: 'Dire Wolf',
+        tagCol: 'rgb(147, 151, 182)',
 
-    //     weapon: weaponPresets.garand
-    // },
+        tagList: [
+            {text: 'GS2',col: '#775db9'},
+            {text: 'Drawn by Plinkel', col: 'grey'},
+        ],
+        
+        weapon: weaponPresets.garand
+    },
     jaden: {
         name: 'Jaden',
         desc: 'my wife left me',
@@ -844,11 +853,17 @@ const characters = {
         tag: 'Fox',
         tagCol: '#6072ad',
 
+        info: `Starts with the 'Demon Core' Power Item <br>${powerItems[3].demon_core.desc}`,
+
         tagList: [
             {text: 'GS1',col: '#e0a24a'}
         ],
 
-        weapon: weaponPresets.cannon
+        weapon: weaponPresets.cannon,
+
+        applyStats: () => {
+            player.powerItem = powerItems[3].demon_core
+        }
     },
     sasha: {
         name: 'Sasha',
@@ -1054,7 +1069,7 @@ const characters = {
         weapon: weaponPresets.gun
     },
     snorp: {
-        name: 'Snorp',
+        name: 'Douglass',
         desc: '',
         taunts: 5,
         tag: 'Cat ?',
@@ -1416,12 +1431,23 @@ const challenges = {
         name: 'Abstract',
         desc: `
             Enemys spawn with random widths and heights.<br>
-            Only the <strong>erorr</strong> item can appear in the shop.<br>
+            Only the <strong>error</strong> item can appear in the shop.<br>
             <br>
             <em style="color: grey;">April Fools 2026</em>
         `,
         
         apply: () => {}
+    },
+    hidden: {
+        name: 'Hidden',
+        desc: `
+            <cs>1.5x</cs> Score multiplier<br>
+            Enemies spawn invisible
+        `,
+        
+        apply: () => {
+            player.scoreMult = 1.25
+        }
     }
 }
 
