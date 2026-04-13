@@ -19,7 +19,10 @@
     <div id="gameStartScreen">
         <div class="gameStartScreenText">A game made by</div><br>
         <div style="font-size: 1.5em; font-weight: 700;" class="gameStartScreenText">DeBread</div>
-        <img src="graphics/characters/fellaPortrait.png" width="72" style="transition: opacity ease-in-out 500ms; opacity: 0;">
+        <div style="display: flex;">
+            <img src="graphics/characters/fellaPortrait.png" width="72" style="transition: opacity ease-in-out 500ms; opacity: 0;">
+            <img src="graphics/characters/meringuePortrait.png" width="72" style="transition: opacity ease-in-out 500ms; opacity: 0;">
+        </div>
     </div>
 
     <div id="tooltip">
@@ -50,31 +53,21 @@
             </div>
         </div>
     </div>
-    <div id="notificationContainer">
-        <!-- <div class="notification">
-            <img src="graphics/placeholder.png">
-            <div>
-                <span style="font-weight: 700;">Some really really long title</span><br>
-                <span>Some really cool super long description with a lot of words to see if text wrapping works correctly</span>
-            </div>
-        </div> -->
-    </div>
+    <div id="notificationContainer"></div>
     <div id="menu-main" class="menu" style="display: flex;">
         <div style="position: relative; translate: -25px 0px;">
             <span id="menuTitle1">Goober</span>
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
-            <span style="max-width: 100px !important;">PRESENTATION <br> DEMO <a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest6</a></span>
+            <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest7</a></span>
         </div>
         <div id="menuButtons">
-            <button onclick="openMenu('gameSettings'); openGameSettingsMenu(0)" style="height: 40px;">PLAY</button>
+            <button onclick="tryPlay()" style="height: 40px;">PLAY</button>
             <button onclick="openMenu('characterSelect')">CHARACTER SELECT</button>
             <button onclick="openSettings()">SETTINGS</button>
             <button onclick="openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,300])
             ">CREDITS</button>
             <button onclick="window.open('https://forms.gle/zkECpXQ6iEFuKfVA8','_blank')">REPORT A BUG</button>
-            <span>⬆️</span>
-            <span style="text-align: center; width: 400px;">PLEASE do this if you encounter any bugs or other issues. I need this game to be pretty much bug free within the next week!</span>
         </div>
     </div>
     <div id="menu-gameSettings" class="menu">
@@ -94,7 +87,7 @@
                             Survival<br>
                             <div>Survive waves of enemies as long as you can.</div>
                         </div>
-                        <div class="gameSettingsGamemodeButton" id="gameSettingsGM1" onclick="selectGamemode(1)" style="pointer-events: none; opacity: 0.5;">
+                        <div class="gameSettingsGamemodeButton" id="gameSettingsGM1" style="opacity: 0.5; cursor: not-allowed;">
                             Sprint<br>
                             <div>Last through as many waves as you can before time is up.</div>
                         </div>
@@ -102,10 +95,13 @@
                             Sandbox<br>
                             <div>Give yourself items, summon enemies, change player attributes, no consequences!</div>
                         </div>
-                        <div class="gameSettingsGamemodeButton" id="gameSettingsGM3" onclick="selectGamemode(3)">
+                        <!-- <div class="gameSettingsGamemodeButton" id="gameSettingsGM3" onclick="selectGamemode(3)">
                             Tutorial<br>
                             <div>Learn how to play!</div>
-                        </div>
+                        </div> -->
+                    </div>
+                    <div style="display: flex; justify-content: center; margin-top: 5px;">
+                        <button onclick="saveData.gameSettings.gamemode = 3;openMenu('game');startGame()">Play the tutorial instead</button>
                     </div>
                 </div>
                 <div id="gameSettingsMenu-1" style="display: none;">
@@ -122,7 +118,9 @@
                     <strong>Challenge: </strong><span id="gameSettingsSelectedChallenge">???</span><br>
                     <strong>Character: </strong>
                     <div id="gameSettingsCharacterContainer">
-                        <img src="graphics/characters/fellaPortrait.png" width="36" id="gameSettingsSelectedCharacterImg">
+                        <div>
+                            <img src="graphics/characters/fellaPortrait.png" width="36" id="gameSettingsSelectedCharacterImg">
+                        </div>
                         <div>
                             <span id="gameSettingsSelectedCharacter">???</span><br>
                             <em id="gameSettingsSelectedWeapon">???</em>
@@ -159,7 +157,10 @@
                         <div class="selectedCharacterTag">SOME TAG</div>
                     </div>
                 </div>
-                <img src="graphics/placeholder.png" id="selectedCharacterImg" width="120">
+                <div style="height: 120px;">
+                    <img src="graphics/placeholder.png" id="selectedCharacterImgSmall" width="54" style="margin-bottom: 5px;">
+                    <img src="graphics/placeholder.png" id="selectedCharacterImg" width="120">
+                </div>
             </div>
             <div id="characterSelectContainer"></div>
             <div id="characterCustomizationContainer" style="overflow: hidden;">
@@ -577,7 +578,7 @@
                 <em>Wave</em>
                 <div style="display: flex; align-items: end; margin: 4px 0px;">
                     <div id="gameWaveCounter">0</div>
-                    <span>/100</span>
+                    <span>/∞</span>
                 </div>
                 <div id="gameWaveBar">
                     <div id="gameInnerWaveBar"></div>

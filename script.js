@@ -14,6 +14,7 @@ const saveData = {
     selectedCharacter: 'debread',
     selectedSkin: -1,
     firstLogin: false,
+    tutorialBeat: true,
 
     selectedChallenge: 'none',
 
@@ -24,7 +25,7 @@ const saveData = {
         presentationMode: false,
         showGameQuitWarning: true,
         showPowerItemWarning: true,
-        showGameOverflow: false,
+        showGameOverflow: true,
         debug: false,
     },
 
@@ -177,12 +178,12 @@ function hitstop(length) { //Completely broken for some reason
     if(!hitstopActive) {
         console.log('stop!')
         DeBread.easeShake(doge('area'), e.gameUpdateInterval, 5, 1)
-        DeBread.pauseInterval(1)
+        DeBread.pauseInterval(1, true)
         hitstopActive = true
 
         setTimeout(() => {
             hitstopActive = false  
-            DeBread.pauseInterval(1)
+            DeBread.pauseInterval(1, false)
         }, length);
     }
 }
@@ -699,7 +700,21 @@ const weaponPresets = {
 
             modifyStat(['bullet','thornDamage'],'=0.25')
         }
-    }
+    },
+    baretta_93r: {
+        name: 'Baretta 93r',
+        desc: '',
+        textureSize: [16,11],
+        ammoChar: '|',
+
+        pros: [
+        ],
+        cons: [
+        ],
+
+        apply: () => {
+        }
+    },
 }
 
 const characters = {
@@ -818,6 +833,19 @@ const characters = {
         
         weapon: weaponPresets.garand
     },
+    // tana: {
+    //     name: 'Tana',
+    //     desc: '',
+    //     tag: 'Dhole',
+    //     tagCol: 'rgb(92, 189, 230)',
+
+    //     tagList: [
+    //         {text: 'GS2',col: '#775db9'},
+    //         {text: 'Drawn by Plinkel', col: 'grey'},
+    //     ],
+        
+    //     weapon: weaponPresets.baretta_93r
+    // },
     jaden: {
         name: 'Jaden',
         desc: 'my wife left me',
@@ -894,7 +922,8 @@ const characters = {
         tagCol: '#403b39',
 
         tagList: [
-            {text: 'GS1',col: '#e0a24a'}
+            {text: 'GS1',col: '#e0a24a'},
+            {text: 'Garn47',col: '#57473d'}
         ],
 
         weapon: weaponPresets.gun
@@ -960,6 +989,54 @@ const characters = {
         taunts: 1,
         tag: 'Cat',
         tagCol: '#a57f4b',
+
+        tagList: [
+            {text: 'GS2',col: '#775db9'}
+        ],
+
+        weapon: weaponPresets.gun
+    },
+    bean: {
+        name: 'Bean',
+        desc: '',
+        tag: 'Bean',
+        tagCol: 'rgb(113, 82, 45)',
+
+        tagList: [
+            {text: 'GS2',col: '#775db9'}
+        ],
+
+        weapon: weaponPresets.gun
+    },
+    phoenix: {
+        name: 'Phoenix',
+        desc: '',
+        taunts: 1,
+        tag: 'Fox🔥',
+        tagCol: '#be0013',
+        info: `
+            Colliding with enemies sets them on fire.<br>
+            Has a <cg>50%</cg> to create an explosion dealing <cg>100%</cg> of your damage when hit.
+        `,
+
+        tagList: [
+            {text: 'GS2',col: '#775db9'}
+        ],
+
+        applyStats: () => {
+            modifyStat(['player','fireTouch'],'=true')
+            modifyStat(['player','explosiveHitChance'],'=50')
+            modifyStat(['player','explosiveHitDamage'],'=1')  
+        },
+
+        weapon: weaponPresets.gun
+    },
+    allx: {
+        name: 'Quantum',
+        desc: '',
+        taunts: 1,
+        tag: 'Protogen',
+        tagCol: '#f67c20',
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
@@ -1109,14 +1186,6 @@ const characters = {
 
     //     weapon: weaponPresets.gun
     // },
-    // bean: {
-    //     name: 'Bean',
-    //     desc: '',
-    //     tag: 'Bean',
-    //     tagCol: 'rgb(113, 82, 45)',
-
-    //     weapon: weaponPresets.gun
-    // },
     skywalkr: {
         name: 'Skywalkr',
         desc: 'this game is pissing me off',
@@ -1157,7 +1226,7 @@ const characters = {
     //     desc: '',
     //     tag: 'Raccoon',
 
-    //     weapon: weaponPresets.gun
+    //     weapon: weaponPresets.gun //odst pistol
     // },
     // henry: {
     //     name: 'Henry',
@@ -1186,6 +1255,36 @@ const characters = {
 
     //     weapon: weaponPresets.gun
     // },
+    glorp: {
+        name: 'Glorp',
+        desc: '',
+        taunts: 1,
+        tag: 'Alien',
+        tagCol: '#185225',
+
+        tagList: [
+            {text: 'GS2',col: '#775db9'},
+            {text: 'Wizlians',col:'#185225'},
+            {text: 'SUSA 2026', col: '#59a7ff'}
+        ],
+
+        weapon: weaponPresets.gun
+    },
+    tico: {
+        name: 'Tico',
+        desc: '',
+        taunts: 1,
+        tag: 'Dragon',
+        tagCol: '#7c2f96',
+
+        tagList: [
+            {text: 'GS2',col: '#775db9'},
+            {text: 'Hot Springs',col:'#7c2f96'},
+            {text: 'SUSA 2026', col: '#59a7ff'}
+        ],
+
+        weapon: weaponPresets.gun
+    },
     tutorialist: {
         name: 'The Tutorialist',
         desc: '',
@@ -1430,7 +1529,7 @@ const challenges = {
     abstract: {
         name: 'Abstract',
         desc: `
-            Enemys spawn with random widths and heights.<br>
+            Enemies spawn with random widths and heights.<br>
             Only the <strong>error</strong> item can appear in the shop.<br>
             <br>
             <em style="color: grey;">April Fools 2026</em>
@@ -1447,6 +1546,58 @@ const challenges = {
         
         apply: () => {
             player.scoreMult = 1.25
+        }
+    },
+    wheelchair: {
+        name: 'Wheelchair',
+        desc: `
+            <cs>1.25x</cs> Score multiplier<br>
+            <cg>+50</cg> ammo<br>
+            <cb>+10</cb> Recoil<br> 
+            <cb>0</cb> Speed
+        `,
+        
+        apply: () => {
+            player.scoreMult = 1.25
+            modifyStat(['ammo','max'],'+50')
+            modifyStat(['bullet','recoil'], '+=10')
+            modifyStat(['player','speed'], '=0')
+        }
+    },
+    skillsUSA: {
+        name: 'SkillsUSA Judge Mode',
+        desc: `
+            <cs>0.01x</cs> Score multiplier<br>
+            <cg>+Infinity</cg> Max Ammo<br>
+            <cg>+100</cg> Max HP<br>
+            <cg>+100</cg> Melee Damage<br>
+            <cg>-90%</cg> Melee Cooldown<br>
+            <cg>+100</cg> Luck<br>
+            <cg>+900</cg> Max POWER<br>
+            <cg>+5</cg> POWER gain multiplier<br>
+            <cg>+2 Shop slots</cg><br>
+            <cg>+Infinity</cg> Shop rerolls<br>
+            <cp>+$Infinity</cp><br>
+            <br>
+            +Enemies no longer increase level<br>
+            +Regular reminders appear telling how to parry<br>
+            +Get complimented when successfully performing a parry<br>
+        `,
+        
+        apply: () => {
+            player.scoreMult = 0.01
+            modifyStat(['player','maxHealth'],'+=100')
+            modifyStat(['melee','damage'],'+=100')
+            modifyStat(['melee','cooldown'],'*=0.1')
+            modifyStat(['ammo','max'],'=Infinity')
+            modifyStat(['player','powerGainMult'], '+=5')
+            modifyStat(['player','maxPower'], '+=900')
+            modifyStat(['shop','luck'],'+=100')
+            modifyStat(['shop','upgrades'],'+=2')
+            modifyStat(['shop','rerolls'],'=Infinity')
+
+            modifyStat(['enemy','levelIncrease'],'=-Infinity')
+            player.getMoney(Infinity)
         }
     }
 }
@@ -1468,7 +1619,9 @@ for(const key in tracks) {
         console.log(`${loadedTracks}/${totalTracks} Tracks loaded!`)
 
         if(loadedTracks === totalTracks) {
-            startTitle()
+            startScreenTimeouts.push(setTimeout(() => {
+                startTitle()
+            }, 500));
         }
     }
 
@@ -1476,7 +1629,9 @@ for(const key in tracks) {
         loadedTracks++
         
         if(loadedTracks === totalTracks) {
-            startTitle()
+            startScreenTimeouts.push(setTimeout(() => {
+                startTitle()
+            }, 500));
         }
         throw Error(`Track ${key} failed to load! Proceeding anyways...`)
     }

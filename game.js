@@ -101,12 +101,14 @@ function createPlayer() {
                 socksDamage: 0,
                 thirdEye: 0,
                 passiveAbilityMult: 1,
+
                 powerGainMult: 1,
+                maxPower: 100,
                 
                 grazeSize: 2, //How big (in player sizes) the graze hitbox is.
                 grazeCooldown: 5, //How long (in ticks) between each graze tick.
 
-                parryHeal: 0, //How much the player heals after performing a parry.
+                parryHeal: 5, //How much the player heals after performing a parry.
                 parryPoisonDmg: 0, //How much damage (as a percent of the player damage) a poison field (from a parried bullet) deals every poison field tick.
                 parryPoisonTicks: 0, //How many times a poison field (from a parried bullet) attempts to damage an enemy before destroying.
                 parryPoisonSize: 0, //How big (in pixels) the parried poison fields are.
@@ -120,6 +122,8 @@ function createPlayer() {
 
                 weaponContactDamage: 0, //How much damage every tick the players weapon deals to enemies that are colliding with it.
                 maxWeaponDistance: 50,
+                
+                fireTouch: false,
             },
 
             shop: {
@@ -169,6 +173,7 @@ function createPlayer() {
                 poisonFieldColor: [255,0,0], //The color of the poison field created by a bullet.
 
                 recoil: 0, //The amount (in pixels) that the player gets knocked back when firing their weapon.
+                physRecoil: 5,
                 accuracy: 10, //How much the bullet target can deviate from the crosshair. (Higher = lower accuracy)
 
                 magnetStrength: 0, //How much bullets gravitate towards the nearest enemy. (Higher = stronger) (Magnetic ammo increases by 0.2)
@@ -184,7 +189,7 @@ function createPlayer() {
                 slow: 0,
             },
             melee: {
-                damage: 20, //How much damage is dealt to enemies within the players melee hitbox.
+                damage: 25, //How much damage is dealt to enemies within the players melee hitbox.
                 damageMult: 1, //Multiplies damage stat.
                 cooldown: 75, //How long (in ticks) it takes to recharge the cooldown.
                 size: 50, //How large (in pixels) the melee hitbox is.
@@ -517,6 +522,8 @@ function createPlayer() {
                                 popup.style.color = 'aqua'
                                 popup.style.fontSize = Math.min(Math.max(damage / 5, 15), 50) + 'px'
                                 doge('area').append(popup)
+
+                                getStyle(styles.shocked)
                                 
                                 for(let p = 0; p < 5; p++) {
                                     createParticles(
@@ -602,7 +609,7 @@ function createPlayer() {
 
                 //Explosive Damage
                 if(DeBread.randomNum(1,100) < player.stats.player.explosiveHitChance) {
-                    createExplosion([...player.centerPos],player.stats.player.size * 2, player.stats.bullet.damage * player.stats.player.explosiveHitDamage, 100, true)
+                    createExplosion([...player.centerPos],player.stats.player.size * 3, player.stats.bullet.damage * player.stats.player.explosiveHitDamage, 50, true)
                 }
 
                 player.combo = Math.round(player.combo / 2)
@@ -647,7 +654,7 @@ function createPlayer() {
             if(player.alive && saveData.gameSettings.gamemode < 2) {
                 player.elem.style.opacity = '0'
                 doge('weapon').style.opacity = '0'
-                createParticles(player.centerPos, 10, 25, [25,50], 2500, 'ease-out', {backgroundColor: 'red'})
+                createParticles(player.centerPos, 10, 25, [0,50], 2500, 'ease-out', {backgroundColor: 'red'})
                 DeBread.easeShake(doge('area'), 25, 2, 0.05)
         
                 for(let i = 0; i < 50; i++) {
@@ -766,9 +773,23 @@ function createPlayer() {
                             player.tutorial.goalValue++
                             updateTutorialGoal()
                         }
+
+                        if(saveData.selectedChallenge === 'skillsUSA') {
+                            const compliments = [
+                                'Good job!',
+                                'Nice one!',
+                                'Good timing!',
+                                'Wow!',
+                                'I\'m proud of you!',
+                                'Look at you go!',
+                                'Oh my!',
+                                'Your\'re awesome!'
+                            ]
+                            area.createNotice(compliments[DeBread.randomNum(0,compliments.length-1)])
+                        }
                     }
                 })
-                doge('area').querySelectorAll('.supermagnet').forEach(magnet => {
+                doge('area').querySelectorAll('.superMagnet').forEach(magnet => {
                     if(isColliding(doge('meleeHitbox'), magnet)) {
                         magnet.destroy()
                     }
@@ -789,10 +810,9 @@ function createPlayer() {
             const prevAmount = player.power
             let multiplier = 1
             if(amount > 0 && !isNaN(player.stats.player.powerGainMult)) multiplier = player.stats.player.powerGainMult
-            player.power = Math.max(Math.min(player.power + amount * multiplier, 100), 0)
+            player.power = Math.max(Math.min(player.power + amount * multiplier, player.stats.player.maxPower), 0)
 
-            doge('powerBarNum').innerHTML = DeBread.round(player.power)
-            doge('powerBar').style.width = player.power+'%'
+            updateUI()
 
             if(player.powerItem) {
                 if(player.power >= player.powerItem.charge) {
@@ -914,12 +934,22 @@ function createPlayer() {
                     Math.pow(player.rectPos[0] + player.elem.offsetWidth / 2 - e.cursorPos[0], 2)+
                     Math.pow(player.rectPos[1] + player.elem.offsetHeight / 2 - e.cursorPos[1], 2)
                 ) + (weapon.textureSize[0] + weapon.textureSize[1])/2
-        
-        
+                        
                 doge('weapon').pos = [
                     Math.max(Math.min(player.centerPos[0] + Math.cos(angle) * Math.min(cursorDisance / 2, player.stats.player.maxWeaponDistance), doge('area').offsetWidth), 0),
                     Math.max(Math.min(player.centerPos[1] + Math.sin(angle) * Math.min(cursorDisance / 2, player.stats.player.maxWeaponDistance), doge('area').offsetHeight), 0)
                 ]
+
+                for(let i = 0; i < weaponDirVels.length; i++) {
+                    const dirVel = weaponDirVels[i]
+                    doge('weapon').pos[0] += Math.cos(dirVel.angle) * dirVel.speed
+                    doge('weapon').pos[1] += Math.sin(dirVel.angle) * dirVel.speed
+        
+                    dirVel.speed /= dirVel.div
+                    if(Math.abs(dirVel.speed) <= 0.1) {
+                        weaponDirVels.splice(i, 1)
+                    }
+                }
 
                 addStyles(doge('weapon'), {
                     left: doge('weapon').pos[0]+'px',
@@ -953,12 +983,17 @@ function createPlayer() {
                     height: player.stats.player.size * player.stats.player.grazeSize + 'px'
                 })
 
-                if(player.stats.player.contactDamage) {
+                if(player.stats.player.contactDamage || player.stats.player.fireTouch) {
                     elems.enemies.forEach(enemy => {
                         if(isColliding(player.elem, enemy)) {
-                            enemy.damage(player.stats.player.contactDamage)
+                            enemy.damage(player.stats.player.contactDamage, true)
                             if(!enemy.alive) {
                                 getStyle(styles.trampled)
+                            }
+
+                            if(player.stats.player.fireTouch) {
+                                enemy.onFire = true
+                                console.log('wow!')
                             }
                         }
                     })
@@ -974,6 +1009,8 @@ const elems = {
     enemies: [],
     pickups: [],
 }
+
+const weaponDirVels = []
 
 function startGame() {
     doge('gameOverContainer').style.display = 'none'
@@ -1005,7 +1042,6 @@ function startGame() {
     doge('gameShopUpgradesButtons').style.pointerEvents = 'unset'
 
     renderStats()
-    updateArea()
     updateShopTab()
     if(saveData.gameSettings.gamemode === 3) {
         modifyStat(['melee','size'], '=0')
@@ -1075,7 +1111,10 @@ function startGame() {
         clearInterval(tutorialistInterval)
     }
 
+    
+    fixStats()
     updateUI()
+    updateArea()
 }
 
 const bulletBase = document.createElement('div')
@@ -1122,6 +1161,8 @@ const weapons = {
                 for(let i = 0; i < player.stats.bullet.multishot; i++) {
                     if(player.stats.ammo.current > 0) {
                         player.dirVels.push({angle: bulletAngle, speed: player.stats.bullet.recoil, div: 1.25})
+                        weaponDirVels.push({angle: bulletAngle, speed: player.stats.bullet.physRecoil, div: 1.25})
+
                         const bulletPos = [...weaponPos]
                         player.stats.ammo.current--
     
@@ -1157,6 +1198,10 @@ const weapons = {
                     player.stats.bullet.lastShotDate = e.gameUpdates
                 }
             } else {
+                if(player.stats.ammo.current <= 0) {
+                    const weapon = weapons[player.weapon]
+                    weapon.r()
+                }
                 DeBread.playSound('audio/noAmmo.mp3', 0.5)
             }
         },
@@ -1299,8 +1344,11 @@ function updateUI() {
     doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'
     doge('healthBarNum').innerHTML = formatNumber(Math.ceil(player.health))
 
+    doge('powerBarNum').innerHTML = DeBread.round(player.power)
+    doge('powerBar').style.width = player.power / player.stats.player.maxPower * 100+'%'
+
     if(player.powerItem) {
-        doge('lowerPowerBar').style.width = player.powerItem.charge + '%'
+        doge('lowerPowerBar').style.width = player.powerItem.charge / player.stats.player.maxPower * 100 + '%'
         doge('powerItem').src = `graphics/powerItems/${player.powerItem.name.toLowerCase().replaceAll(' ','_')}.png`
         doge('powerItem').style.opacity = '1'
         doge('powerItemContainer').style.width = 'unset'
@@ -1351,6 +1399,7 @@ function updateArea() {
 }
 
 let lastTickDate = 0
+let timeouts = []
 const updateInterval = DeBread.createInterval(() => {    
     //Player movement
     if(e.gameActive) {
@@ -1405,7 +1454,11 @@ const updateInterval = DeBread.createInterval(() => {
     
         if(Math.abs(player.vel[0]) > 0 || Math.abs(player.vel[1]) > 0) {
             if(e.gameUpdates - player.lastDustParticle > 2) {
-                createParticles([DeBread.randomNum(player.pos[0], player.pos[0] + player.elem.offsetWidth),DeBread.randomNum(player.pos[1], player.pos[1] + player.elem.offsetHeight)], 1, 10, [0,10],750,'ease-out',{backgroundColor: 'rgb(100,100,100,0.25)'})
+                if(player.stats.player.fireTouch) {
+                    createParticles([DeBread.randomNum(player.pos[0], player.pos[0] + player.elem.offsetWidth),DeBread.randomNum(player.pos[1], player.pos[1] + player.elem.offsetHeight)], 1, 10, [0,10],750,'ease-out',{backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0, 0.5)`})
+                } else {
+                    createParticles([DeBread.randomNum(player.pos[0], player.pos[0] + player.elem.offsetWidth),DeBread.randomNum(player.pos[1], player.pos[1] + player.elem.offsetHeight)], 1, 10, [0,10],750,'ease-out',{backgroundColor: 'rgb(100,100,100,0.25)'})
+                }
                 player.lastDustParticle = e.gameUpdates
             }
         } else {
@@ -1795,6 +1848,16 @@ const updateInterval = DeBread.createInterval(() => {
         doge('statusEffectContainer').append(statusEffectIcon)
     }
 
+    //Timeouts
+    for(const key in timeouts) {
+        timeouts[key].duration--
+
+        if(timeouts[key].duration <= 0) {
+            timeouts[key].run()
+            timeouts.splice(key, 1)
+        }
+    }
+
     //Fire
     document.querySelectorAll('.fire').forEach(fire => {
         if(isColliding(fire, player.elem)) {
@@ -1985,15 +2048,20 @@ const updateInterval = DeBread.createInterval(() => {
         doge('sandboxEnemy').style.left = e.relCursorPos[0]+'px'
         doge('sandboxEnemy').style.top = e.relCursorPos[1]+'px'
         doge('sandboxEnemy').style.width = sandBoxEnemy.size + 'px'
-        doge('sandboxEnemy').style.backgroundColor = sandBoxEnemy.color
+        doge('sandboxEnemy').style.backgroundColor = `rgb(${sandBoxEnemy.color})`
     } else {
         doge('sandboxEnemy').style.opacity = '0'
     }
     
     //Tick stuff
-    document.querySelectorAll('.thrownCoin, .thrownBottle, .tennisBall, .wisp, .supermagnet, .fire').forEach(elem => {
-        elem.move(elems.enemies)
+    document.querySelectorAll('.fire, .entity').forEach(elem => {
+        elem.tick(elems.enemies)
     })
+
+    //Random stuff
+    if(e.gameUpdates % 500 === 0 && saveData.selectedChallenge === 'skillsUSA') {
+        createNotification('Tip!','You can parry by pressing <strong>F</strong>! Give it a try!', undefined, 5000)
+    }
 
     //Restart
     const lastRestartProgress = player.restartProgress
@@ -2220,7 +2288,7 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer, col = [[255,255],[0,2
 
     createParticles(pos, 10, size / 2, [size, size * 2], 500, 'ease-out', {backgroundColor: randomColor})
 
-    DeBread.easeShake(doge('area'), e.gameUpdateInterval, Math.min(5, dmg), dmg / 25)
+    // DeBread.easeShake(doge('area'), e.gameUpdateInterval, Math.min(5, dmg), dmg / 25)
     doge('area').append(explosion)
     doge('area').append(explosionEffect)
     doge('area').append(largeExplosionEffect)
@@ -2548,6 +2616,11 @@ const styles = {
     fragmented: {
         text: 'Fragmented',
         baseAmnt: 5,
+        comboBoost: 1,
+    },
+    shocked: {
+        text: 'Shocked',
+        baseAmnt: 10,
         comboBoost: 1,
     }
 }
@@ -3131,26 +3204,29 @@ function getChest() {
 
 const tutorialEnemies = {
     dummy0: {
-        color: 'rgba(255, 218, 169, 1)',
+        color: [255, 218, 169],
         credits: 0,
         size: 50,
         health: 80,
         speed: 0,
+        mounted: true,
         hideLevel: true,
     },
     dummy1: {
-        color: 'rgba(255, 218, 169, 1)',
+        color: [255, 218, 169],
         credits: 0,
         size: 50,
         health: Infinity,
         speed: 0,
+        mounted: true,
     },
     dummy2: {
-        color: 'rgba(255, 218, 169, 1)',
+        color: [255, 218, 169],
         credits: 0,
         size: 50,
         health: Infinity,
         speed: 0,
+        mounted: true,
 
         projectile: {
             cooldown: 2500,
@@ -3160,11 +3236,12 @@ const tutorialEnemies = {
         },
     },
     dummy3: {
-        color: 'rgba(255, 218, 169, 1)',
+        color: [255, 218, 169],
         credits: 0,
         size: 50,
         health: Infinity,
         speed: 0,
+        mounted: true,
 
         projectile: {
             cooldown: 1000,
@@ -3272,7 +3349,7 @@ const tutorial = [
         }
     },
     {
-        text: 'This is the <strong>Shop</strong>. Waves drop coins based on how difficult they are. You can use these coins to buy different things.'
+        text: 'This is the <strong>Shop</strong>. Waves drop coins based on how difficult they are. You can use these coins to buy different things:'
     },
     {
         text: '<strong>Items</strong> are permanent upgrades that modify your player stats.',
@@ -3292,7 +3369,7 @@ const tutorial = [
         text: 'You can gain POWER by killing enemies, parrying enemy projectiles, or narrowly dodging enemy projectiles within your <strong>Graze Hitbox</strong>.'
     },
     {
-        text: 'But watch out though! You loose half your current <strong>POWER</strong> when getting hit by an enemy!'
+        text: 'But watch out though! You loose some <strong>POWER</strong> when getting hit by an enemy!'
     },
     {
         text: '<strong>Elixirs</strong> are like items, but can be bought multiple times to increase its player stat changes.',

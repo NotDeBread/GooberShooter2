@@ -149,7 +149,7 @@ const enemies = {
         color: [255,0,0],
         size: 40,
         health: 10,
-        speed: 10,
+        speed: 5,
         credits: 10,
 
         explosive: {
@@ -179,16 +179,16 @@ const enemies = {
         color: [54,78,111],
         size: 35,
         health: 30,
-        speed: 7,
+        speed: 6,
         credits: 10,
-        meleeDamage: 7,
+        meleeDamage: 5,
     },
     slime: {
         name: 'Slime',
         desc: 'A slow moving enemy that splits into smaller, less power versions of itself when killed.',
         color: [25,255,25],
         size: 50,
-        heath: 50,
+        heath: 35,
         speed: 2,
         health: 125,
         credits: 15,
@@ -938,7 +938,8 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
         addStyles(poisonField, {
             width: data.poisonField.size * 2 + 'px',
             height: data.poisonField.size * 2 + 'px',
-            outline: `2px solid rgb(${data.color})`
+            outline: `2px solid rgb(${data.color})`,
+            backgroundColor: `rgba(${data.color}, 0.25)`
         })
         enemy.appendChild(poisonField)
     }
@@ -994,4 +995,42 @@ function spawnWave(wave, poor) {
             }
         }
     }   
+}
+
+const bosses = {
+    beast: {
+        health: 5000,
+        size: 100,
+
+        moves: {
+            dash: {
+                duration: 50,
+                do: boss => {
+                    const playerAngle = Math.atan2(
+                        boss.centerPos[1] + player.centerPos[1],
+                        boss.centerPos[0] + player.centerPos[0]
+                    )
+
+                    boss.dirVels.push({
+                        angle: playerAngle,
+                        div: 1.1
+                    })
+                }
+            }
+        }
+    }
+}
+
+function spawnBoss(pos, data) {
+    const boss = enemyBase.cloneNode()
+    boss.classList.add('entity')
+    addStyles(boss, {
+        backgroundColor: 'white',
+        width: data.size + 'px',
+        height: data.size + 'px'
+    })
+
+    boss.dateSpawned = e.gameUpdates
+
+    doge('area').append(boss)
 }

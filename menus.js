@@ -1,73 +1,96 @@
-let gameStartTimeout
+const startSequence = [
+    {
+        text: [
+            'A game by',
+            'DeBread'
+        ],
+        images: [
+            'graphics/characters/fellaPortrait.png',
+        ]
+    },
+    {
+        text: [
+            'With music by',
+            'B Dawgs'
+        ],
+    },
+    {
+        text: [
+            'And extra art from',
+            'Plinkel'
+        ],
+        images: [
+            'graphics/characters/ashtonPortrait.png',
+        ]
+    },
+]
+
+const startScreenTimeouts = []
 function startTitle() {
-    tracks.menu.play()
-    tracks.menu.volume = 0
-    tracks.menu.preservesPitch = false
-    tracks.menu.playbackRate = 0.8
-    tracks.menu.loop = true
-
-    const divs = doge('gameStartScreen').querySelectorAll('div')
-
-    gameStartTimeout = setTimeout(() => {
-        doge('gameStartScreen').querySelectorAll('.gameStartScreenText').forEach(div => {
-            div.style.opacity = '1'
-            applyFlowText(div, 0.75)
-        })
-        doge('gameStartScreen').querySelector('img').style.opacity = '1'
-        
-        gameStartTimeout = setTimeout(() => {
-            doge('gameStartScreen').querySelectorAll('.gameStartScreenText').forEach(text => {
-                text.querySelectorAll('div').forEach(char => {
-                    char.style.animation += `, scaleOut 0.50s ease-in-out 0ms 1 forwards`
-                })
-            })
-            doge('gameStartScreen').querySelector('img').style.opacity = '0'
-
-            gameStartTimeout = setTimeout(() => {
-                doge('gameStartScreen').querySelector('img').style.display = 'none'
-                divs[0].innerText = 'With music by'
-                applyFlowText(divs[0], 0.75)
-
-                divs[1].innerText = 'BBDawgs'
-                applyFlowText(divs[1], 0.75)
-
-                gameStartTimeout = setTimeout(() => {
-                    doge('gameStartScreen').querySelectorAll('.gameStartScreenText').forEach(text => {
-                        text.querySelectorAll('div').forEach(char => {
+    for(let i = 0; i < startSequence.length + 1; i++) {
+        if(i < startSequence.length) {
+            let data = startSequence[i]
+            startScreenTimeouts.push(setTimeout(() => {
+                for(let x = 0; x < data.text.length; x++) {
+                    const textElem = doge('gameStartScreen').querySelectorAll('.gameStartScreenText')[x]
+    
+                    textElem.style.opacity = '1'
+                    textElem.innerText = data.text[x]
+                    applyFlowText(textElem, 0.75)
+    
+                    startScreenTimeouts.push(setTimeout(() => {
+                        textElem.querySelectorAll('div').forEach(char => {
                             char.style.animation += `, scaleOut 0.50s ease-in-out 0ms 1 forwards`
                         })
+                        doge('gameStartScreen').querySelectorAll('img').forEach(img => {
+                            img.style.opacity = '0'
+                        })
+                    }, 3500))
+                }
+                if(data.images) {
+                    doge('gameStartScreen').querySelectorAll('img').forEach(img => {
+                        addStyles(img, {
+                            opacity: '0',
+                            height: '0',
+                            display: 'none'
+                        })
                     })
-                    
-                    gameStartTimeout = setTimeout(() => {                        
-                        gameStartTimeout = setTimeout(() => {
-                            doge('gameStartScreen').style.opacity = 0
-                            doge('gameStartScreen').style.pointerEvents = 'none'
-                    
-                            openMenu('main')
-                
-                            if(!navigator.userAgent.includes('Firefox')) {
-                                openPrompt('Browser warning','Goober Shooter 2 was made for Firefox browsers. Some issues may occur. If you notice your weapon trailing behind, you can disable <strong>Weapon easing</strong> in settings', [{text: 'I understand',onclick: closePrompt}])
-                            }
-                
-                            if(navigator.userAgent.includes('Firefox') && saveData.firstLogin) {
-                                openPrompt('You\'re running Firefox','Goober Shooter 2 runs on a tick-based system using the setInterval function. On Firefox browsers this function does not have drift correction, so the game may run slower then expected.',[{text: 'I understand',onclick: closePrompt}])
-                            }
-                        }, 1000);
-                    }, 500);
-                }, 2500);   
-            }, 1000);
-        }, 2500);
-    }, 1000); //Peak engineering
+    
+                    for(let x = 0; x < data.images.length; x++) {
+                        const imgElem = doge('gameStartScreen').querySelectorAll('img')[x]
+                        addStyles(imgElem, {
+                            opacity: '1',
+                            height: '72px',
+                            display: 'unset'
+                        })
+                        imgElem.src = data.images[x]
+                    }
+                } else {
+                    doge('gameStartScreen').querySelectorAll('img').forEach(img => {
+                        addStyles(img, {
+                            opacity: '0',
+                            height: '0',
+                        })
+                    })
+                }
+            }, 4000 * i))
+        } else {
+            startScreenTimeouts.push(setTimeout(() => {
+                doge('gameStartScreen').style.opacity = 0
+                doge('gameStartScreen').style.pointerEvents = 'none'
+                startMainMenu(false)
+            }, 4000 * i))
+        }
+    }
 }
 
-doge('gameStartScreen').onclick = () => {
+function startMainMenu(removeStartScreen = true) {
     if(!saveData.firstLogin) {
-        doge('gameStartScreen').remove()
-        clearTimeout(gameStartTimeout)
+        if(removeStartScreen) doge('gameStartScreen').remove()
         openMenu('main')
     
         tracks.menu.currentTime = 10.2
-
+    
         //Auto start game
         if(e.keysDown.includes('shift')) {
             saveData.gameSettings.gamemode = 2
@@ -76,14 +99,20 @@ doge('gameStartScreen').onclick = () => {
         }
     }
 
+    for(let i = 0; i < startScreenTimeouts.length; i++) {
+        clearTimeout(startScreenTimeouts[i])
+    }
+    
     if(!navigator.userAgent.includes('Firefox')) {
         openPrompt('Browser warning','Goober Shooter 2 was made for Firefox browsers. Some issues may occur. If you notice your weapon trailing behind, you can disable <strong>Weapon easing</strong> in settings', [{text: 'I understand',onclick: closePrompt}])
     }
-
+    
     if(navigator.userAgent.includes('Firefox') && saveData.firstLogin) {
         openPrompt('You\'re running Firefox','Goober Shooter 2 runs on a tick-based system using the setInterval function. On Firefox browsers this function does not have drift correction, so the game may run slower then expected.',[{text: 'I understand',onclick: closePrompt}])
     }
 }
+
+doge('gameStartScreen').onclick = startMainMenu
 
 function createMenuCharacter() {
     const character = document.createElement('div')
@@ -183,6 +212,38 @@ setInterval(() => {
     doge('menu-main').querySelectorAll('.menuCharacter').forEach(character => {character.update()})
 }, 20)
 
+function tryPlay() {
+    if(!saveData.tutorialBeat) {
+        openPrompt(
+            'Watch out!',
+            'Looks like you haven\'t played the tutorial yet, would you like to play it?',
+            [
+                {
+                    text: 'Yea please', 
+                    onclick: () => {
+                        saveData.gameSettings.gamemode = 3
+                        openMenu('game')
+                        startGame()
+                        closePrompt()
+                    }
+                },
+                {
+                    text: 'Nah i know what im doing',
+                    onclick: () => {
+                        openMenu('gameSettings') 
+                        openGameSettingsMenu(0)
+                        closePrompt()
+                    }
+                }
+            ]
+        )
+    } else {
+        openMenu('gameSettings') 
+        openGameSettingsMenu(0)
+        closePrompt()
+    }
+}
+
 let currentMenu = 'main'
 function openMenu(menu) {
     doge(`menu-${currentMenu}`).style.display = 'none'
@@ -238,7 +299,7 @@ function openMenu(menu) {
                 }
             }, 20)
         } else {
-            for(let i = 0; i < 5; i++) {createMenuCharacter()}
+            for(let i = 0; i < 4; i++) {createMenuCharacter()}
         }
     } else {
         doge('menu-main').querySelectorAll('.menuCharacter').forEach(char => {char.remove()})
@@ -257,6 +318,7 @@ function renderCharacterSelect() {
         doge('selectedCharacterName').innerText = characters[saveData.selectedCharacter].name
         doge('selectedCharacterDesc').innerText = characters[saveData.selectedCharacter].desc
         doge('selectedCharacterImg').src = `graphics/characters/${saveData.selectedCharacter}PortraitLarge.png`
+        doge('selectedCharacterImgSmall').src = `graphics/characters/${saveData.selectedCharacter}Portrait.png`
 
         doge('selectedCharacterTags').innerHTML = ''
 
@@ -303,21 +365,17 @@ function renderCharacterSelect() {
         }
 
         box.onclick = () => {
-            if(!saveData.settings.presentationMode) {
-                saveData.selectedCharacter = box.character
-                saveData.selectedSkin = -1
-    
-                doge('characterSelectContainer').querySelectorAll('.characterSelectCharacterBox').forEach(button => {
-                    button.style.outline = ''
-                })
-    
-                box.style.outline = '2px solid white'
-    
-                updateSelectedCharacter(box.character)
-                updateCharacterCustomization()
-            } else {
-                createNotification('Characters Unavailable!', 'Character changing is not allowed in presentation mode!')
-            }
+            saveData.selectedCharacter = box.character
+            saveData.selectedSkin = -1
+
+            doge('characterSelectContainer').querySelectorAll('.characterSelectCharacterBox').forEach(button => {
+                button.style.outline = ''
+            })
+
+            box.style.outline = '2px solid white'
+
+            updateSelectedCharacter(box.character)
+            updateCharacterCustomization()
         }
 
         doge('characterSelectContainer').append(box)
@@ -466,7 +524,7 @@ const gamemodeNames = [
     'Survival',
     'Sprint',
     'Sandbox',
-    'Tutorial'
+    // 'Tutorial'
 ]
 
 let currentGameSettingsMenu = 0
@@ -647,7 +705,7 @@ function openGameSettingsMenu(id) {
 } openGameSettingsMenu(currentGameSettingsMenu)
 
 function selectGamemode(gm) {
-    for(let i = 0; i <= 3; i++) {
+    for(let i = 0; i <= gamemodeNames.length-1; i++) {
         if(i !== gm) {
             doge(`gameSettingsGM${i}`).setAttribute('selected','false')
         } else {
@@ -714,9 +772,9 @@ const creditsHTML = `
     </div>
     <span>Idea help: <a href="https://yeen.town/@Chalkllate" target="blank">Jake</a>, <a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a></span><br>
     <span>Background Shader: From <a href="https://www.playbalatro.com/" target="_blank">Balatro</a>, rewritten by <a href="https://xemantic.github.io/shader-web-background/" target="_blank">xemantic</a></span><br>
-    <span>Addditional Textures: <a href="https://plinkel.neocities.org/">Plonk</a></span><br>
+    <span>Addditional Textures: <a href="https://plinkel.neocities.org/" target="_blank">Plinkel</a></span><br>
     <span>Additional SFX: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
-    <span>Playtesters: Nova, TrueSkywalkr, Dottr</span>
+    <span>Playtesters: Nova, TrueSkywalkr, Dottr, <a href="https://plinkel.neocities.org/" target="_blank">Plinkel</a></span>
 `
 
 const settingsHTML = `
@@ -833,7 +891,7 @@ function openSettingsMenu(menu) {
 
 function updateSettings() {
     if(saveData.settings.presentationMode) {
-        powerItems[0].blunt.name = 'Lolipop'
+        powerItems[0].blunt.name = 'Lollipop'
         characters.jake.desc = 'Stupid dawg'
         weaponPresets.piss.name = 'Super soaker'
         weaponPresets.piss.desc = ''

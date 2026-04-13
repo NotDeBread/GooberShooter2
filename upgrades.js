@@ -24,6 +24,8 @@ function fixStats() {
     if(player.stats.ammo.current > player.stats.ammo.max) {
         player.stats.ammo.current = player.stats.ammo.max
     }
+
+    player.stats.bullet.multishot = Math.max(DeBread.round(player.stats.bullet.multishot),1)
 }
 
 function modifyStat(stat, modifier) {
@@ -615,7 +617,7 @@ const upgrades = [
         explosive_vest: {
             name: 'Explosive Vest',
             desc: `
-                Getting hit by an enemy has a <cg>+10%</cg> to create an explosion, dealing <cg>+25%</cg> of your damage.<br>
+                Getting hit by an enemy has a <cg>+10%</cg> to create an explosion, dealing <cg>+100%</cg> of your damage.<br>
                 <cb>-20%</cb> Speed<br>
                 <em style="color: grey;">Explosion does not damage player.</em>
             `,
@@ -623,7 +625,7 @@ const upgrades = [
 
             apply: () => {
                 modifyStat(['player','explosiveHitChance'], '+=10')
-                modifyStat(['player','explosiveHitDamage'], '+=0.25')
+                modifyStat(['player','explosiveHitDamage'], '+=1')
 
                 modifyStat(['player','speed'], '*=0.8')
             }
@@ -1345,7 +1347,7 @@ const powerItems = [
             use: () => {
                 if(doge('area').querySelectorAll('.tennisBall').length === 0) {
                     const ball = document.createElement('div')
-                    ball.classList.add('tennisBall')
+                    ball.classList.add('entity')
                     ball.classList.add('physObj')
                     ball.pos = [...player.centerPos]
                     ball.angle = Math.atan2(e.relCursorPos[1] - ball.pos[1], e.relCursorPos[0] - ball.pos[0])
@@ -1369,7 +1371,7 @@ const powerItems = [
                     
                     doge('area').append(ball)
                     
-                    ball.move = () => {
+                    ball.tick = () => {
                         ball.pos[0] += Math.cos(ball.angle) * ball.speed
                         ball.pos[1] += Math.sin(ball.angle) * ball.speed
                         ball.speed /= ball.traction
@@ -1469,7 +1471,7 @@ const powerItems = [
                 player.getMoney(-1)
 
                 const coin = document.createElement('div')
-                coin.classList.add('thrownCoin')
+                coin.classList.add('entity')
                 coin.pos = [...player.centerPos]
                 coin.angle = Math.atan2(e.relCursorPos[1] - coin.pos[1], e.relCursorPos[0] - coin.pos[0])
                 coin.speed = 10
@@ -1489,7 +1491,7 @@ const powerItems = [
                 })
                 coin.innerHTML = '<img src="graphics/throwableCoin.gif" width=16>'
 
-                coin.move = () => {
+                coin.tick = () => {
                     const texture = coin.querySelector('img')
 
                     coin.movementAngle = Math.atan2(
@@ -1606,7 +1608,7 @@ const powerItems = [
 
             use: () => {
                 const bottle = document.createElement('div')
-                bottle.classList.add('thrownBottle')
+                bottle.classList.add('entity')
                 bottle.pos = [...player.centerPos]
                 bottle.angle = Math.atan2(e.relCursorPos[1] - bottle.pos[1], e.relCursorPos[0] - bottle.pos[0])
                 bottle.speed = 10
@@ -1625,7 +1627,7 @@ const powerItems = [
                     backgroundRepeat: 'no-repeat'
                 })
 
-                bottle.move = (enemies) => {
+                bottle.tick = (enemies) => {
                     bottle.rot += 10
                     bottle.pos[0] += Math.cos(bottle.angle) * bottle.speed
                     bottle.pos[1] += Math.sin(bottle.angle) * bottle.speed + bottle.grav
@@ -1740,7 +1742,8 @@ const powerItems = [
             use: () => {
                 const magnet = document.createElement('div')
                 magnet.pos = [...e.relCursorPos]
-                magnet.classList.add('supermagnet')
+                magnet.classList.add('entity')
+                magnet.classList.add('superMagnet')
                 addStyles(magnet, {
                     position: 'absolute',
                     translate: '-50% -50%',
@@ -1760,7 +1763,7 @@ const powerItems = [
                 }, 250);
 
                 magnet.ticksActive = 0
-                magnet.move = () => {
+                magnet.tick = () => {
                     magnet.ticksActive++
 
                     if(magnet.ticksActive % 10 === 0) {
@@ -1820,7 +1823,7 @@ const powerItems = [
 
             use: () => {
                 const bottle = document.createElement('div')
-                bottle.classList.add('thrownBottle')
+                bottle.classList.add('entity')
                 bottle.pos = [...player.centerPos]
                 bottle.angle = Math.atan2(e.relCursorPos[1] - bottle.pos[1], e.relCursorPos[0] - bottle.pos[0])
 
@@ -1845,7 +1848,7 @@ const powerItems = [
                     backgroundRepeat: 'no-repeat'
                 })
 
-                bottle.move = (enemies) => {
+                bottle.tick = (enemies) => {
                     bottle.rot += 10
                     bottle.pos[0] += Math.cos(bottle.angle) * (cursorDis / 25)
                     bottle.pos[1] += Math.sin(bottle.angle) * (cursorDis / 25) + bottle.grav
@@ -1960,7 +1963,7 @@ const powerItems = [
             desc: `
                 Uses <cp>75</cp> POWER<br>
                 Summons a wisp on your crosshair.<br>
-                Wisps fire projectiles at enemies when the player fires a projectile that deals <cg>50%</cg> of the players damage. This also ignore shot cooldown and ammo.<br>
+                Wisps fire projectiles at enemies when the player fires a projectile that deals <cg>50%</cg> of the players damage. This also ignores shot cooldown and ammo.<br>
                 Wisps' projectile attributes copy the players projectile attributes.<br>
                 Wisps explode after 500 ticks, dealing up to <cg>100</cg> damage.
             `,
@@ -1970,7 +1973,7 @@ const powerItems = [
                 const wisp = document.createElement('div')
                 wisp.ticksActive = 0
                 wisp.pos = [...e.relCursorPos]
-                wisp.classList.add('wisp')
+                wisp.classList.add('entity')
                 addStyles(wisp, {
                     position: 'absolute',
                     left: wisp.pos[0]+'px',
@@ -1983,7 +1986,7 @@ const powerItems = [
 
                 doge('area').append(wisp)
 
-                wisp.move = () => {
+                wisp.tick = () => {
                     wisp.ticksActive++
 
                     if(wisp.ticksActive >= 500) {
@@ -2020,29 +2023,29 @@ const elixirs = [{
     fighter: {
         name: 'Fighter Elixir',
         desc: `
-            <cg>+1.25</cg> Melee damage multiplier
+            <cg>+0.75</cg> Melee damage multiplier
         `,
         baseCost: 100,
-        costIncrease: 1.25,
+        costIncrease: 1.5,
         buyLimit: Infinity,
         tier: 0,
 
         apply: () => {
-            modifyStat(['melee','damageMult'], '+=1.25')
+            modifyStat(['melee','damageMult'], '+=0.75')
         }
     },
     gunslinger: {
         name: 'Gunslinger Elixir',
         desc: `
-            <cg>+1.25</cg> Damage multiplier
+            <cg>+0.75</cg> Damage multiplier
         `,
         baseCost: 100,
-        costIncrease: 1.25,
+        costIncrease: 1.5,
         buyLimit: Infinity,
         tier: 0,
 
         apply: () => {
-            modifyStat(['bullet','damageMult'], '+=1.25')
+            modifyStat(['bullet','damageMult'], '+=0.75')
         }
     },
     haste: {
@@ -2086,7 +2089,7 @@ const elixirs = [{
         `,
         baseCost: 100,
         costIncrease: 2,
-        buyLimit: 10,
+        buyLimit: 15,
         tier: 0,
 
         apply: () => {
@@ -2136,6 +2139,19 @@ const elixirs = [{
             modifyStat(['shop','rerolls'], '+=1')
         }
     },
+    battery: {
+        name: 'Battery Elixir',
+        desc: `
+            <cg>+10</cg> Max POWER
+        `,
+        baseCost: 125,
+        costIncrease: 2,
+        buyLimit: 10,
+
+        apply: () => {
+            modifyStat(['player','maxPower'], '+=10')
+        }
+    }
 }]
 
 const rarities = [
@@ -2176,6 +2192,7 @@ const rarities = [
 ]
 
 function openShop(upgradeList) {
+    updateShopTab()
     if(player.alive) {
         e.gameActive = false
         player.rerolls = player.stats.shop.rerolls
@@ -2482,6 +2499,74 @@ function createShopItems(items) {
     }
 }
 
+// function createShopItems() {
+//     let randomItems = []
+//     let randomItemsIDs = []
+        
+//     for(let i = 0; i < player.stats.shop.upgrades; i++) {
+//         //Gets a random item type based on previously specified item type weights
+//         const itemType = getWeightedChance(player.shopWeights) 
+
+//         let itemList = []
+//         if(itemType === 0) {
+//             itemList = upgrades
+//         } else if(itemType === 1) {
+//             itemList = powerItems
+//         } else if(itemType === 2) {
+//             itemList = elixirs
+//         }
+
+//         let rarity = 0
+//         const luck = player.stats.shop.luck
+//         if(itemType < 2) {
+//             rarity = getWeightedChance([ //Returns a random number between 0 and 4 based on weights
+//                 55 + luck,
+//                 27 + 1.25*luck,
+//                 16 + 1.25*luck,
+//                 1.95 + 1.25*luck,
+//                 0.01 + 0.05*luck
+//             ])
+//         }
+        
+//         let attempts = 0
+//         let itemChosen = false
+
+//         while(!itemChosen) {
+//             const keys = Object.keys(itemList[rarity]) //Turns the list object into an array to iterate through
+
+//             const randomKey = keys[DeBread.randomNum(0, keys.length - 1)]
+//             const randomItem = itemList[rarity][randomKey]
+            
+//             if(!randomItemsIDs.includes(randomKey)) {
+//                 itemChosen = true
+//                 randomItems.push({
+//                     data: randomItem,
+//                     id: randomKey,
+//                     rarity: rarity,
+//                     type: itemType,
+//                     cost: DeBread.round(rarities[rarity].costBase * (1 + player.wave / 10) * (randomItem.priceMult ?? 1))
+//                 })
+//                 randomItemsIDs.push(randomKey)
+//             }
+
+//             attempts++
+
+//             if(attempts > 500) { //If the picker fails to find an item after 500 attempts, it chooses the rare 'error' item
+//                 itemChosen = true
+//                 randomItems.push({
+//                     data: upgrades[6].error,
+//                     rarity: 6,
+//                     type: 0,
+//                     id: 'error',
+//                     cost: 10,
+//                 })
+
+//                 break
+//             }
+//         }
+//     }
+// }
+
 function updateShopTab() {
     const powerItemDiv = doge('shopTab-powerItem').querySelector('div')
     if(player.powerItem) {
@@ -2490,12 +2575,14 @@ function updateShopTab() {
         powerItemDiv.querySelector('img').src = `graphics/powerItems/${player.powerItem.name.toLowerCase().replaceAll(' ','_')}.png`
 
         powerItemDiv.onmouseenter = () => {
-            tooltip(
-                [divRect.left + powerItemDiv.offsetWidth / 2, divRect.top + powerItemDiv.offsetHeight + 24], 
-                player.powerItem.name,
-                [{text: 'POWER ITEM', col: 'rgb(50,50,50)'}], 
-                player.powerItem.desc
-            )
+            if(player.powerItem) {
+                tooltip(
+                    [divRect.left + powerItemDiv.offsetWidth / 2, divRect.top + powerItemDiv.offsetHeight + 24], 
+                    player.powerItem.name,
+                    [{text: 'POWER ITEM', col: 'rgb(50,50,50)'}], 
+                    player.powerItem.desc
+                )
+            }
         }
 
         powerItemDiv.onmouseleave = () => {
