@@ -25,6 +25,10 @@ function fixStats() {
         player.stats.ammo.current = player.stats.ammo.max
     }
 
+    if(saveData.selectedCharacter === 'walf') {
+        player.stats.ammo.max = 0
+    }
+
     player.stats.bullet.multishot = Math.max(DeBread.round(player.stats.bullet.multishot),1)
 }
 
@@ -635,12 +639,14 @@ const upgrades = [
             desc: `
                 Meleeing an enemy creates an explosion.<br>
                 <cg>+10</cg> Knuckleblaster explosion size<br>
+                <cg>+5</cg> Melee knockback<br>
                 <cb>+20%</cb> Melee cooldown
             `,
             priceMult: 0.75,
 
             apply: () => {
-                modifyStat(['melee','explosionPower'], '+=10')
+                modifyStat(['melee','explosionPower'], '+=15')
+                modifyStat(['melee','knockback'], '+=5')
                 modifyStat(['melee','cooldown'], '*=1.2')
             }
         },
@@ -880,6 +886,17 @@ const upgrades = [
                     modifyStat(['bullet','explosionSize'], '+=10')
                 }
                 modifyStat(['bullet','damage'], '+=5')
+            }
+        },
+        golden_ammo: {
+            name: 'Golden Ammo',
+            desc: `
+                Hitting an enemy with a bullet gains a <cg>+1%</cg> chance to spawn a copper coin
+            `,
+            priceMult: 1.5,
+
+            apply: () => {
+                modifyStat(['bullet','coinChance'], '+=1')
             }
         },
         third_eye: {
@@ -1997,6 +2014,204 @@ const powerItems = [
                 wisp.destroy = () => {
                     createExplosion(wisp.pos, 100, 100, 25, true)
                     wisp.remove()
+                }
+            }
+        },
+        tesla_coil: {
+            name: 'Tesla Coil',
+            desc: `
+                Uses <cp>80</cp> POWER<br>
+                Spawns a Tesla Coil on your crosshair, dealing constant electricity damage to random enemies.
+            `,
+            charge: 75,
+
+            use: () => {
+                const teslaCoil = document.createElement('div')
+                teslaCoil.ticksActive = 0
+                teslaCoil.pos = [...e.relCursorPos]
+                teslaCoil.classList.add('entity')
+                addStyles(teslaCoil, {
+                    position: 'absolute',
+                    left: teslaCoil.pos[0]+'px',
+                    top: teslaCoil.pos[1]+'px',
+                    width: '32px',
+                    height: '64px',
+                    translate: '-50% -50%',
+                    backgroundImage: 'url(graphics/teslaCoil.png)',
+                    backgroundSize: '32px 64px'
+                })
+
+                doge('area').append(teslaCoil)
+
+                teslaCoil.tick = () => {
+                    teslaCoil.ticksActive++
+
+                    if(teslaCoil.ticksActive % 10 === 0 && elems.enemies.length > 0) {
+                        const randomEnemy = elems.enemies[DeBread.randomNum(0,elems.enemies.length-1)]
+                        const rdx = randomEnemy.centerPos[0] - teslaCoil.pos[0]
+                        const rdy = randomEnemy.centerPos[1] - teslaCoil.pos[1]
+                        const rdis = Math.sqrt(rdx*rdx+rdy*rdy)
+                        let closestStartingEnemy = {enemy: randomEnemy, distance: rdis, d: [rdx,rdy]}
+
+                        if(closestStartingEnemy.enemy) {
+                            let enemiesHit = [closestStartingEnemy.enemy]
+                            let currentEnemy = closestStartingEnemy.enemy
+    
+                            closestStartingEnemy.enemy.damage(player.stats.bullet.damage * 2)
+    
+                            const popup = createPopupText(DeBread.round(player.stats.bullet.damage), [closestStartingEnemy.enemy.centerPos[0],closestStartingEnemy.enemy.centerPos[1]])
+                            popup.style.color = 'aqua'
+                            popup.style.fontSize = Math.min(Math.max(player.stats.bullet.damage / 5, 15), 50) + 'px'
+                            doge('area').append(popup)
+                            const startingEnemyAngle = Math.atan2(closestStartingEnemy.d[1], closestStartingEnemy.d[0])
+                            
+                            const firstChain = document.createElement('div')
+                            addStyles(firstChain, {
+                                width: closestStartingEnemy.distance+'px',
+                                height: '10px',
+                                translate: '-50% -50%',
+                                position: 'absolute',
+                                left: (teslaCoil.pos[0]+closestStartingEnemy.enemy.centerPos[0])/2+'px',
+                                top: (teslaCoil.pos[1]+closestStartingEnemy.enemy.centerPos[1])/2+'px',
+                                rotate: startingEnemyAngle+'rad',
+                                backgroundImage: 'url(graphics/electricityChain.gif)',
+                                backgroundSize: 'contain',
+                                filter: 'drop-shadow(0px 0px 5px rgba(0,255,255,0.5))',
+                                animation: 'electricityChain 250ms ease-out 1 forwards',
+                                zIndex: 5,
+                            })
+                            setTimeout(() => {
+                                firstChain.remove()
+                            }, 250);
+                            doge('area').append(firstChain)
+    
+                            getStyle(styles.shocked)
+    
+                            for(let i = 0; i < 10; i++) {
+                                let shortestEnemy = {enemy: undefined, distance: Infinity, d: []}
+                                elems.enemies.forEach(otherEnemy => {
+                                    if(currentEnemy !== otherEnemy && !enemiesHit.includes(otherEnemy) && otherEnemy.active) {
+                                        const dx = currentEnemy.pos[0] - otherEnemy.pos[0]
+                                        const dy = currentEnemy.pos[1] - otherEnemy.pos[1]
+        
+                                        const distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
+                                        if(distance < shortestEnemy.distance && distance <= 150) {
+                                            shortestEnemy.enemy = otherEnemy
+                                            shortestEnemy.distance = distance
+                                            shortestEnemy.d = [dx, dy]
+                                        }
+                                    }
+                                })
+    
+                                if(shortestEnemy.enemy === undefined) break
+                                
+                                const fromEnemy = currentEnemy
+                                currentEnemy = shortestEnemy.enemy
+                                const toEnemy = currentEnemy
+    
+                                const damage = (player.stats.bullet.damage * 2) / (i + 1)
+                                shortestEnemy.enemy.damage(damage)
+    
+                                const popup = createPopupText(DeBread.round(damage), [shortestEnemy.enemy.centerPos[0],shortestEnemy.enemy.centerPos[1]])
+                                popup.style.color = 'aqua'
+                                popup.style.fontSize = Math.min(Math.max(damage / 5, 15), 50) + 'px'
+                                doge('area').append(popup)
+    
+                                getStyle(styles.shocked)
+
+                                const enemiesAngle = Math.atan2(fromEnemy.centerPos[1] - toEnemy.centerPos[1], fromEnemy.centerPos[0] - toEnemy.centerPos[0])
+                                const enemiesDist = Math.sqrt(
+                                    Math.pow(fromEnemy.centerPos[0] - toEnemy.centerPos[0],2) + 
+                                    Math.pow(fromEnemy.centerPos[1] - toEnemy.centerPos[1],2)
+                                )
+
+                                const chain = document.createElement('div')
+                                addStyles(chain, {
+                                    width: enemiesDist+'px',
+                                    height: '10px',
+                                    translate: '-50% -50%',
+                                    position: 'absolute',
+                                    left: (fromEnemy.centerPos[0]+toEnemy.centerPos[0])/2+'px',
+                                    top: (fromEnemy.centerPos[1]+toEnemy.centerPos[1])/2+'px',
+                                    rotate: enemiesAngle+'rad',
+                                    backgroundImage: 'url(graphics/electricityChain.gif)',
+                                    backgroundSize: 'contain',
+                                    filter: 'drop-shadow(0px 0px 5px rgba(0,255,255,0.5))',
+                                    animation: 'electricityChain 250ms ease-out 1 forwards',
+                                    zIndex: 5,
+                                })
+                                setTimeout(() => {
+                                    chain.remove()
+                                }, 250);
+                                doge('area').append(chain)
+    
+                                enemiesHit.push(shortestEnemy.enemy)
+                            }
+                        }
+                    }
+
+                    if(teslaCoil.ticksActive >= 750) {
+                        teslaCoil.destroy()
+                    }
+                }
+
+                teslaCoil.destroy = () => {
+                    createExplosion(teslaCoil.pos, 100, 100, 25, true, [[0,50],[155,255],[255,255]])
+                    teslaCoil.remove()
+                }
+            }
+        },
+    },
+    {
+        walfling: {
+            name: 'Walfling',
+            desc: `
+                Uses <cp>25</cp> POWER<br>
+                Spawns a Walfling on the crosshair<br>
+                Walflings fire projectiles that mimic player bullet attributes<br>
+                Explodes after 300 ticks
+            `,
+            charge: 25,
+
+            use: () => {
+                const walfling = document.createElement('div')
+                walfling.ticksActive = 0
+                walfling.pos = [...e.relCursorPos]
+                walfling.classList.add('entity')
+                walfling.classList.add('walfling')
+                addStyles(walfling, {
+                    position: 'absolute',
+                    left: walfling.pos[0]+'px',
+                    top: walfling.pos[1]+'px',
+                    width: '32px',
+                    height: '32px',
+                    translate: '-50% -50%',
+                    backgroundImage: 'url(graphics/walfling.png)',
+                    backgroundSize: 'cover'
+                })
+
+                doge('area').append(walfling)
+                createParticles(
+                    walfling.pos,
+                    5,
+                    32,
+                    [8,32],
+                    250,
+                    'ease-out',
+                    {backgroundColor: '#a69e9a'}
+                )
+
+                walfling.tick = () => {
+                    walfling.ticksActive++
+
+                    if(walfling.ticksActive >= 300) {
+                        walfling.destroy()
+                    }
+                }
+
+                walfling.destroy = () => {
+                    createExplosion(walfling.pos, 100, 100, 25, true)
+                    walfling.remove()
                 }
             }
         },

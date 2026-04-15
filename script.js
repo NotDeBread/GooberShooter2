@@ -271,6 +271,19 @@ document.querySelectorAll('help').forEach(elem => {
 })
 
 const weaponPresets = {
+    none: {
+        name: 'None',
+        desc: 'No weapon',
+        ammoChar: '❌',
+        textureSize: [0,0],
+
+        pros: [],
+        cons: [],
+
+        apply: () => {
+            modifyStat(['ammo','max'],'=0')
+        }
+    },
     gun: {
         name: 'Gun',
         desc: 'Standard gun',
@@ -708,13 +721,42 @@ const weaponPresets = {
         ammoChar: '|',
 
         pros: [
+            'Max ammo',
+            'Burst'
         ],
         cons: [
         ],
 
         apply: () => {
+            modifyStat(['ammo','max'], '=15')
+            modifyStat(['ammo','burst'], '=3')
         }
     },
+    firePaws: {
+        name: 'Fire Paws',
+        desc: 'Hot firey paws, living grill and barbecue',
+        ammoChar: '🔥',
+        textureSize: [0,0],
+
+        pros: [
+            'Firey ammo',
+            'Explosive ammo',
+            'Damage'
+        ],
+        cons: [
+            'Speed loss',
+            'Weapon reach'
+        ],
+
+        apply: () => {
+            modifyStat(['bullet','damage'],'=10')
+            modifyStat(['bullet','speedDiv'],'=1.1')
+            modifyStat(['bullet','range'],'=50')
+            modifyStat(['bullet','explosionSize'],'=75')
+            modifyStat(['player','maxWeaponDistance'],'=25')
+            modifyStat(['player','explosiveHeal'], '=0.00001')
+        }
+    }
 }
 
 const characters = {
@@ -801,7 +843,7 @@ const characters = {
 
         tagList: [
             {text: 'GS2',col: '#775db9'},
-            {text: 'Drawn by Plinkel', col: 'grey'},
+            {text: 'Plinkel Pack', col: '#386942'},
         ],
 
         weapon: weaponPresets.shotgun
@@ -815,7 +857,7 @@ const characters = {
 
         tagList: [
             {text: 'GS2',col: '#775db9'},
-            {text: 'Drawn by Plinkel', col: 'grey'},
+            {text: 'Plinkel Pack', col: '#386942'},
         ],
 
         weapon: weaponPresets.riot_shotgun
@@ -828,24 +870,24 @@ const characters = {
 
         tagList: [
             {text: 'GS2',col: '#775db9'},
-            {text: 'Drawn by Plinkel', col: 'grey'},
+            {text: 'Plinkel Pack', col: '#386942'},
         ],
         
         weapon: weaponPresets.garand
     },
-    // tana: {
-    //     name: 'Tana',
-    //     desc: '',
-    //     tag: 'Dhole',
-    //     tagCol: 'rgb(92, 189, 230)',
+    tana: {
+        name: 'Tana',
+        desc: '',
+        tag: 'Dhole',
+        tagCol: 'rgb(92, 189, 230)',
 
-    //     tagList: [
-    //         {text: 'GS2',col: '#775db9'},
-    //         {text: 'Drawn by Plinkel', col: 'grey'},
-    //     ],
+        tagList: [
+            {text: 'GS2',col: '#775db9'},
+            {text: 'Plinkel Pack', col: '#386942'},
+        ],
         
-    //     weapon: weaponPresets.baretta_93r
-    // },
+        weapon: weaponPresets.baretta_93r
+    },
     jaden: {
         name: 'Jaden',
         desc: 'my wife left me',
@@ -893,6 +935,18 @@ const characters = {
             player.powerItem = powerItems[3].demon_core
         }
     },
+    slip: {
+        name: 'Slip',
+        desc: '',
+        tag: 'Raccoon',
+        tagCol: '#514d47',
+
+        tagList: [
+            {text: 'GS2',col: '#775db9'}
+        ],
+
+        weapon: weaponPresets.gun //odst pistol
+    },
     sasha: {
         name: 'Sasha',
         desc: 'the chomnpner',
@@ -914,6 +968,32 @@ const characters = {
             player.powerItem = powerItems[1].tennis_ball
         }
     },
+    // olive: {
+    //     name: 'Olive',
+    //     desc: '',
+    //     taunts: 1,
+    //     tag: 'Cat',
+    //     tagCol: '#9c8670',
+
+    //     tagList: [
+    //         {text: 'GS1',col: '#e0a24a'}
+    //     ],
+
+    //     weapon: weaponPresets.gun,
+
+    //     skins: [
+    //         {
+    //             name: 'Mold Olive',
+    //             src: 'mold_olive',
+    //             taunts: 1,
+    //         },
+    //         {
+    //             name: 'Pixel Olive',
+    //             src: 'pixel_olive',
+    //             taunts: 1,
+    //         },
+    //     ]
+    // },
     car: {
         name: 'car',
         desc: 'my name is car',
@@ -926,16 +1006,20 @@ const characters = {
             {text: 'Garn47',col: '#57473d'}
         ],
 
+        weapon: weaponPresets.gun,
+    },
+    erix: {
+        name: 'erix',
+        desc: 'use this one if you wanna be really swag',
+        tag: 'Cat',
+        tagCol: 'hotpink',
+
+        tagList: [
+            {text: 'GS2',col: '#775db9'}
+        ],
+
         weapon: weaponPresets.gun
     },
-    // erix: {
-    //     name: 'erix',
-    //     desc: 'use this one if you wanna be really swag',
-    //     tag: 'Cat',
-    //     tagCol: 'hotpink',
-
-    //     weapon: weaponPresets.gun
-    // },
     walf: {
         name: 'Walf',
         desc: '',
@@ -947,7 +1031,20 @@ const characters = {
             {text: 'GS2',col: '#775db9'}
         ],
 
-        weapon: weaponPresets.gun
+        pros: ['POWER regen'],
+
+        info: `
+            Cannot fire thier own projectiles.<br>
+            <br>
+            Starts with the \`Walfling\` Power Item.<br>${powerItems[5].walfling.desc}
+        `,
+
+        weapon: weaponPresets.none,
+
+        applyStats: () => {
+            modifyStat(['player','powerRegen'],'=0.1')
+            player.powerItem = powerItems[5].walfling
+        },
     },
     jake: {
         name: 'Jake',
@@ -981,6 +1078,10 @@ const characters = {
         tag: 'Crow',
         tagCol: '#0c0026',
 
+        tagList: [
+            {text: 'GS2',col: '#775db9'}
+        ],
+
         weapon: weaponPresets.meatCleaver
     },
     krazy: {
@@ -1013,7 +1114,7 @@ const characters = {
         desc: '',
         taunts: 1,
         tag: 'Fox🔥',
-        tagCol: '#be0013',
+        tagCol: '#FF5500',
         info: `
             Colliding with enemies sets them on fire.<br>
             Has a <cg>50%</cg> to create an explosion dealing <cg>100%</cg> of your damage when hit.
@@ -1023,13 +1124,25 @@ const characters = {
             {text: 'GS2',col: '#775db9'}
         ],
 
+        pros: [
+            'Explosion immunity',
+            'Melee damage'
+        ],
+
+        cons: [
+            'Speed'
+        ],
+
         applyStats: () => {
             modifyStat(['player','fireTouch'],'=true')
+            modifyStat(['player','speed'],'=true')
             modifyStat(['player','explosiveHitChance'],'=50')
             modifyStat(['player','explosiveHitDamage'],'=1')  
+
+            modifyStat(['melee','damage'], '=40')
         },
 
-        weapon: weaponPresets.gun
+        weapon: weaponPresets.firePaws
     },
     allx: {
         name: 'Quantum',
@@ -1037,12 +1150,24 @@ const characters = {
         taunts: 1,
         tag: 'Protogen',
         tagCol: '#f67c20',
+        info: `Starts with the \'Tesla Coil\' Power Item.<br>${powerItems[4].tesla_coil.desc}`,
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
         ],
 
-        weapon: weaponPresets.gun
+        weapon: weaponPresets.gun,
+
+        pros: [
+            'Electrified ammo',
+        ],
+
+        applyStats: () => {
+            player.powerItem = powerItems[4].tesla_coil
+
+            modifyStat(['bullet','electricChainReach'], '=100')
+            modifyStat(['bullet','electricChainLength'], '=3')
+        }
     },
     dottr: {
         name: 'Dottr',
@@ -1220,13 +1345,6 @@ const characters = {
     //     tag: 'Yeen',
 
     //     weapon: weaponPresets.gun
-    // },
-    // slip: {
-    //     name: 'Slip',
-    //     desc: '',
-    //     tag: 'Raccoon',
-
-    //     weapon: weaponPresets.gun //odst pistol
     // },
     // henry: {
     //     name: 'Henry',
@@ -1559,7 +1677,7 @@ const challenges = {
         
         apply: () => {
             player.scoreMult = 1.25
-            modifyStat(['ammo','max'],'+50')
+            modifyStat(['ammo','max'],'+=50')
             modifyStat(['bullet','recoil'], '+=10')
             modifyStat(['player','speed'], '=0')
         }
@@ -1599,7 +1717,31 @@ const challenges = {
             modifyStat(['enemy','levelIncrease'],'=-Infinity')
             player.getMoney(Infinity)
         }
-    }
+    },
+    spontaneous: {
+        name: 'Spontaneous',
+        desc: `
+            <cs>2.5x</cs> Score multiplier<br>
+            Waves have <cb>0</cb> cooldown
+        `,
+        
+        apply: () => {
+            player.scoreMult = 2.5
+            modifyStat(['misc','waveInterval'],'=0')
+        }
+    },
+    greed: {
+        name: 'Greed',
+        desc: `
+            Hitting an enemy with a bullet has a <cg>25%</cg> chance to spawn 1 copper coin<br>
+            Waves no longer spawn money
+        `,
+        
+        apply: () => {
+            modifyStat(['bullet','coinChance'],'=25')
+            modifyStat(['misc','waveMoneyMult'],'=0')
+        }
+    },
 }
 
 //Music stuff

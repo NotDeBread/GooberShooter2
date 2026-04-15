@@ -1130,6 +1130,12 @@
     transition: box-shadow ease-in-out 1s, scale ease-in-out 500ms;
 }
 
+#areaCanvasTop, #areaCanvasBottom {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
 #player {
     width: 36px;
     height: 36px;
@@ -1473,6 +1479,12 @@
 @keyframes portalEffect {
     to {
         scale: 10;
+        opacity: 0;
+    }
+}
+
+@keyframes electricityChain {
+    to {
         opacity: 0;
     }
 }

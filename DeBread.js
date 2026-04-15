@@ -414,7 +414,7 @@ function getWeightedChance(weights) {
 }
 
 
-//I did NOT make the function below, i am too tired rn and i just want to get ts over with
+//I did NOT anything below, i am too tired rn and i just want to get ts over with
 function roman(num) {
     if(num === 0) {
         return '0'
@@ -448,4 +448,113 @@ function roman(num) {
   }
 
   return roman;
+}
+
+// --------------------
+// Basic helpers
+// --------------------
+function clamp(val, min, max) {
+    return Math.max(min, Math.min(max, val))
+}
+
+function distSq(x1, y1, x2, y2) {
+    const dx = x2 - x1
+    const dy = y2 - y1
+    return dx * dx + dy * dy
+}
+
+// --------------------
+// Point inside rectangle
+// rect = { x, y, w, h }
+// --------------------
+function pointInRect(px, py, rect) {
+    return (
+        px >= rect.x &&
+        px <= rect.x + rect.w &&
+        py >= rect.y &&
+        py <= rect.y + rect.h
+    )
+}
+
+// --------------------
+// Line vs line intersection
+// --------------------
+function linesIntersect(x1,y1,x2,y2, x3,y3,x4,y4) {
+    function ccw(ax,ay, bx,by, cx,cy) {
+        return (cy - ay) * (bx - ax) > (by - ay) * (cx - ax)
+    }
+
+    return (
+        ccw(x1,y1, x3,y3, x4,y4) !== ccw(x2,y2, x3,y3, x4,y4) &&
+        ccw(x1,y1, x2,y2, x3,y3) !== ccw(x1,y1, x2,y2, x4,y4)
+    )
+}
+
+// --------------------
+// Thin line vs rectangle
+// --------------------
+function lineIntersectsRect(x1, y1, x2, y2, rect) {
+    // 1. endpoint inside
+    if (
+        pointInRect(x1, y1, rect) ||
+        pointInRect(x2, y2, rect)
+    ) return true
+
+    const rx = rect.x
+    const ry = rect.y
+    const rw = rect.w
+    const rh = rect.h
+
+    // 2. check edges
+    return (
+        linesIntersect(x1,y1,x2,y2, rx,ry, rx+rw,ry) ||         // top
+        linesIntersect(x1,y1,x2,y2, rx+rw,ry, rx+rw,ry+rh) ||   // right
+        linesIntersect(x1,y1,x2,y2, rx,ry+rh, rx+rw,ry+rh) ||   // bottom
+        linesIntersect(x1,y1,x2,y2, rx,ry, rx,ry+rh)            // left
+    )
+}
+
+// --------------------
+// Closest point on line segment
+// --------------------
+function closestPointOnSegment(px, py, x1, y1, x2, y2) {
+    const dx = x2 - x1
+    const dy = y2 - y1
+
+    const lengthSq = dx * dx + dy * dy
+    if (lengthSq === 0) return [x1, y1]
+
+    let t = ((px - x1) * dx + (py - y1) * dy) / lengthSq
+    t = clamp(t, 0, 1)
+
+    return [x1 + t * dx, y1 + t * dy]
+}
+
+// --------------------
+// Thick line (with width) vs rectangle
+// --------------------
+function thickLineIntersectsRect(x1, y1, x2, y2, width, rect) {
+    const halfW = width / 2
+
+    // 1. Thin line already hits
+    if (lineIntersectsRect(x1, y1, x2, y2, rect)) return true
+
+    // 2. Check rectangle corners vs line distance
+    const corners = [
+        [rect.x, rect.y],
+        [rect.x + rect.w, rect.y],
+        [rect.x, rect.y + rect.h],
+        [rect.x + rect.w, rect.y + rect.h]
+    ]
+
+    for (let i = 0; i < corners.length; i++) {
+        const [px, py] = corners[i]
+        const [cx, cy] = closestPointOnSegment(px, py, x1, y1, x2, y2)
+
+        if (distSq(px, py, cx, cy) <= halfW * halfW) {
+            return true
+        }
+    }
+
+    return false
 }

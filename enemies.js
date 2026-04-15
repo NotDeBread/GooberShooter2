@@ -244,6 +244,8 @@ const enemies = {
         mounted: true,
         credits: 20,
 
+        beamWidth: 15,
+
         onDeath: enemy => {
             createExplosion([...enemy.centerPos],100,0,-50,false,[[131,104],[43,29],[65,87]])
         }
@@ -257,6 +259,8 @@ const enemies = {
         speed: 0,
         mounted: true,
         credits: 20,
+
+        beamWidth: 15,
 
         onDeath: enemy => {
             createExplosion([...enemy.centerPos],100,0,50,false,[[161,119],[255,205],[255,255]])
