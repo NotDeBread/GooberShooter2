@@ -1,6 +1,7 @@
 function createPlayer() {
     return {
         alive: true,
+        active: true,
 
         //Position stuff
         pos: [doge('area').offsetWidth / 2 - doge('player').offsetWidth / 2,doge('area').offsetHeight / 2 - doge('player').offsetHeight / 2],
@@ -149,11 +150,11 @@ function createPlayer() {
                 critDamageMult: 1.25, //The amount that the bullet damage is multiplied by when it is considered a crit.
 
                 split: 0, //The amount of projectiles projectiles split into.
-                splits: 1, //The amount of times that a bullet can split.
+                splits: 0, //The amount of times that a bullet can split.
 
                 bounces: 0, //The amount of times a bullet can bounce off of a wall before destroying.
                 
-                drillTicks: 1, //The amount of times a bullet can hit an enemy before being destroyed.
+                drillTicks: 0, //The amount of times a bullet can hit an enemy before being destroyed.
                 
                 explosionSize: 0, //The size (in pixels) of the explosion a bullet creates when being destroyed.
 
@@ -192,6 +193,10 @@ function createPlayer() {
                 slow: 0,
 
                 coinChance: 0, //The percent chance of the bullet spawning a coin when hitting en enemy
+
+                radiationSize: 0,
+
+                style: 0, //0: Player bullet, 1: Enemy projectile
             },
             melee: {
                 damage: 25, //How much damage is dealt to enemies within the players melee hitbox.
@@ -235,385 +240,14 @@ function createPlayer() {
                 areaSize: 500,
                 waveInterval: 15000, //How long (in milliseconds) between each wave spawning.
                 waveMoneyMult: 1,
+                horseWeapon: false,
+                horseIncrease: 1,
             }
         },
         
         elem: doge('player'),
 
         //Functions
-
-        createBullet: (pos, angle, extraData = {}) => {
-            const bullet = bulletBase.cloneNode()
-            bullet.angle = angle
-            bullet.pos = [...pos]
-            bullet.ticks = 0
-            bullet.speed = player.stats.bullet.speed
-            bullet.size = player.stats.bullet.size
-            bullet.damage = extraData.damage ?? player.stats.bullet.damage
-            bullet.bounces = player.stats.bullet.bounces
-            bullet.onFire = false
-
-            bullet.spin = 0
-
-            bullet.hasHitEnemy = false
-
-            //Apply damage multiplier
-            bullet.damage *= player.stats.bullet.damageMult
-
-            //Additional crit mults for crit chance above 100%
-            for(let i = 0; i < Math.floor(player.stats.bullet.critChance / 100); i++) {
-                bullet.damage *= player.stats.bullet.critDamageMult
-                bullet.isCrit = true
-            }
-
-            if(DeBread.randomNum(0,100,5) <= player.stats.bullet.critChance % 100) {
-                bullet.damage *= player.stats.bullet.critDamageMult
-                bullet.isCrit = true
-            }
-
-            bullet.damage *= DeBread.randomNum(1, player.stats.bullet.randDmgMult,10) * player.chargeDmgMult
-
-            if(player.stats.ammo.chargeShot) {
-                bullet.size *= 1 + (player.chargeDmgMult / player.stats.ammo.chargeMultCap)
-            }
-
-            bullet.splits = extraData.splits ?? 0
-            bullet.drillTicks = extraData.drillTicks ?? 1
-            bullet.classList.add('bullet')
-            bullet.style.transition = `left linear ${e.gameUpdateInterval}ms, top linear ${e.gameUpdateInterval}ms`
-            addStyles(bullet, {
-                left: bullet.pos[0] + 'px',
-                top: bullet.pos[1] + 'px',
-                width: bullet.size + 'px',
-                height: bullet.size + 'px',
-                rotate: bullet.angle + 'rad',
-                backgroundImage: 'url(graphics/bullet.png)',
-                backgroundSize: 'cover'
-            })
-
-            if(characters[saveData.selectedCharacter].weapon.bulletTexture) {
-                bullet.style.backgroundImage = `url(graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.replaceAll(' ','_').toLowerCase()}_bullet.png)`
-            }
-
-            if(characters[saveData.selectedCharacter].weapon.animatedBulletTexture) {
-                bullet.style.backgroundImage = `url(graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.replaceAll(' ','_').toLowerCase()}_bullet.gif)`
-            }
-
-            for(const key in extraData) {
-                bullet[key] = extraData[key]
-            }
-
-            bullet.destroy = offset => {
-                if(!bullet.splits) {
-                    let particleOffset = [0,0]
-                    if(offset) {
-                        particleOffset = [
-                            Math.cos(bullet.angle) * player.stats.bullet.speed,
-                            Math.sin(bullet.angle) * player.stats.bullet.speed
-                        ]
-                    }
-
-                    createParticles(
-                        [bullet.pos[0]-particleOffset[0],bullet.pos[1]-particleOffset[1]],
-                        5,
-                        bullet.size,
-                        [10,25],
-                        250,
-                        'ease-out',
-                        {backgroundColor: 'white'}
-                    )
-                }
-
-                if(player.stats.bullet.explosionSize > 0) {
-                    createExplosion(bullet.pos, player.stats.bullet.explosionSize, player.stats.bullet.damage, player.stats.bullet.knockback * 10, false)
-                }
-
-                if(DeBread.randomNum(1,100) <= player.stats.bullet.poisonFieldChance) {
-                    createPoisonField(bullet.pos, player.stats.bullet.poisonFieldSize, player.stats.bullet.damage * player.stats.bullet.poisonFieldDmgPercent / 100, player.stats.bullet.poisonFieldTicks, 20, false, player.stats.bullet.poisonFieldColor)
-                }
-
-                if(player.stats.bullet.split > 0 && bullet.splits < player.stats.bullet.splits) {
-                    for(let i = 0; i < player.stats.bullet.split; i++) {
-                        player.createBullet(
-                            [bullet.pos[0],bullet.pos[1]],
-                            (2*Math.PI / player.stats.bullet.split) * i + bullet.angle + Math.PI / 2,
-                            {
-                                splits: bullet.splits + 1,
-                                damage: bullet.damage / 2
-                            }
-                        )
-                    }
-                }
-
-                if(bullet.hasHitEnemy) {
-                    player.bulletsHit++
-                }
-
-                bullet.remove()
-            }
-
-            bullet.updatePosition = enemies => {
-                bullet.pos[0] += -Math.cos(bullet.angle) * bullet.speed
-                bullet.pos[1] += -Math.sin(bullet.angle) * bullet.speed
-                bullet.spin += player.stats.bullet.spin
-
-                if(player.stats.bullet.spin > 0) {
-                    bullet.style.rotate = bullet.spin + 'deg'
-                }
-
-                if(
-                    bullet.pos[0] + -Math.cos(bullet.angle) * bullet.speed < 0 ||
-                    bullet.pos[0] + -Math.cos(bullet.angle) * bullet.speed > doge('area').offsetWidth ||
-                    bullet.pos[1] + -Math.sin(bullet.angle) * bullet.speed < 0 ||
-                    bullet.pos[1] + -Math.sin(bullet.angle) * bullet.speed > doge('area').offsetHeight
-                ) { 
-                    if(bullet.bounces > 0) {
-                        if( //X axis
-                            bullet.pos[0] + -Math.cos(bullet.angle) * bullet.speed < 0 ||
-                            bullet.pos[0] + -Math.cos(bullet.angle) * bullet.speed > doge('area').offsetWidth
-                        ) {
-                            bullet.angle = Math.PI - bullet.angle
-                        }
-
-                        if( //Y axis
-                            bullet.pos[1] + -Math.sin(bullet.angle) * bullet.speed < 0 ||
-                            bullet.pos[1] + -Math.sin(bullet.angle) * bullet.speed > doge('area').offsetHeight
-                        ) {
-                            bullet.angle = -bullet.angle
-                        }
-
-                        if(player.stats.bullet.spin > 0) {
-                            bullet.style.rotate = player.stats.bullet.spin + 'deg'
-                        } else {
-                            bullet.style.rotate = bullet.angle + 'rad'
-                        }
-
-                        createParticles(
-                            bullet.pos,
-                            3,
-                            10,
-                            [10,25],
-                            250,
-                            'ease-out',
-                            {backgroundColor: 'white'}
-                        )
-
-                        if(doge('area').children.length < 500) {
-                            const bounceEffect = explosionEffectBase.cloneNode()
-                            bounceEffect.style.setProperty('--explosionEffectScale','2')
-                            addStyles(bounceEffect, {
-                                left: bullet.pos[0]+'px',
-                                top: bullet.pos[1]+'px',
-                                width: '25px',
-                                translate: '-50% -50%'
-                            })
-                            doge('area').append(bounceEffect)
-    
-                            setTimeout(() => {
-                                bounceEffect.remove()
-                            }, 500);
-                        }
-
-                        bullet.bounces--
-                        bullet.damage *= 1.2
-                    } else {
-                        bullet.destroy(true) 
-                    }
-                }
-
-                //Grow
-                if(player.stats.bullet.grow !== 0) {
-                    bullet.damage *= 1 + 0.01 * player.stats.bullet.grow
-                    bullet.size *= 1 + 0.01 * player.stats.bullet.grow
-                }
-
-                //Speed div
-
-                bullet.speed /= player.stats.bullet.speedDiv
-
-                bullet.style.left = bullet.pos[0]+'px'
-                bullet.style.top = bullet.pos[1]+'px'
-                bullet.style.width = bullet.size+'px'
-                bullet.style.height = bullet.size+'px'
-
-                let closestEnemy = {elem: undefined, dist: Infinity}
-                enemies.forEach(enemy => {
-
-                    if(player.stats.bullet.magnetStrength > 0 && enemies.length > 0) {
-                        const enemyDist = Math.sqrt(
-                            Math.pow(bullet.pos[0] - enemy.centerPos[0],2),
-                            Math.pow(bullet.pos[1] - enemy.centerPos[1],2)
-                        )
-
-                        if(enemyDist < closestEnemy.dist) {
-                            closestEnemy.elem = enemy
-                            closestEnemy.dist = enemyDist
-                        }
-                    }
-
-                    if(isColliding(bullet, enemy) && enemy.active && !enemy.friendly) {
-                        player.damage(-player.stats.bullet.heal)
-                        bullet.drillTicks++
-                        bullet.hasHitEnemy = true
-
-                        if(DeBread.round(bullet.damage) > 0) {
-                            const popup = createPopupText(DeBread.round(bullet.damage), [bullet.pos[0],bullet.pos[1]])
-                            if(bullet.isCrit) {
-                                popup.style.color = 'yellow'
-                                popup.innerText += '!'
-                            } else {
-                                popup.style.color = 'white'
-                            }
-                            popup.style.fontSize = Math.min(Math.max(bullet.damage / 5, 15), 50) + 'px'
-                            doge('area').append(popup)
-                        }
-                        
-                        enemy.dirVels.push({angle: bullet.angle - Math.PI, speed: player.stats.bullet.knockback, div: 1.1})
-                        if(player.stats.bullet.slow) {
-                            enemy.speedMult *= (0.75 / (1 + player.stats.bullet.slow / 10))
-                            enemy.statusEffects.push({
-                                duration: 50 + (10*player.stats.bullet.slow),
-                                end: () => {
-                                    enemy.speedMult /= (0.75 / (1 + player.stats.bullet.slow / 10))
-                                }
-                            })
-                        }
-                        
-                        if(bullet.damage > enemy.health && player.stats.ammo.penetratingRounds) {
-                            bullet.drillTicks--
-                            bullet.damage -= enemy.health
-                        }
-
-                        if(bullet.drillTicks > player.stats.bullet.drillTicks) {
-                            bullet.destroy()
-                        }
-
-                        enemy.damage(bullet.damage)
-                        if(bullet.isCrit) {
-                            getStyle(styles.crit)
-                        }
-                        
-                        if(bullet.damage > enemy.maxHealth) {
-                            getStyle(styles.overkill)
-                        }
-
-                        for(let i = 0; i < player.stats.bullet.bounces - bullet.bounces; i++) {
-                            getStyle(styles.ricochet)
-                        }
-
-                        if(player.stats.bullet.coinChance > 0) {
-                            function getCoin() {
-                                if(elems.pickups.length > 100) {
-                                    player.getMoney(1)
-                                } else {
-                                    pickups.coin(0,bullet.pos,5,1)
-                                }
-                            }
-
-                            //Spawn additional coins for a coinChance above 100%
-                            for(let i = 0; i < Math.floor(player.stats.bullet.coinChance / 100); i++) {
-                                getCoin()
-                            }
-                            if(DeBread.randomNum(1,100) < player.stats.bullet.coinChance - Math.floor(player.stats.bullet.coinChance / 100) * 100) {
-                                getCoin()
-                            }
-                        }
-
-                        if(player.stats.bullet.electricChainLength > 0) {
-                            let enemiesHit = [enemy]
-                            let currentEnemy = enemy
-                            
-                            for(let i = 0; i < player.stats.bullet.electricChainLength; i++) {
-                                let shortestEnemy = {enemy: undefined, distance: Infinity, d: []}
-                                enemies.forEach(otherEnemy => {
-                                    if(currentEnemy !== otherEnemy && !enemiesHit.includes(otherEnemy) && otherEnemy.active) {
-                                        const dx = currentEnemy.pos[0] - otherEnemy.pos[0]
-                                        const dy = currentEnemy.pos[1] - otherEnemy.pos[1]
-        
-                                        const distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
-                                        if(distance < shortestEnemy.distance && distance <= player.stats.bullet.electricChainReach + 100) {
-                                            shortestEnemy.enemy = otherEnemy
-                                            shortestEnemy.distance = distance
-                                            shortestEnemy.d = [dx, dy]
-                                        }
-                                    }
-                                })
-
-                                if(shortestEnemy.enemy === undefined) break
-                                
-                                const fromEnemy = currentEnemy
-                                currentEnemy = shortestEnemy.enemy
-                                const toEnemy = currentEnemy
-
-                                const damage = player.stats.bullet.damage / (i + 1)
-                                shortestEnemy.enemy.damage(damage)
-    
-                                const popup = createPopupText(DeBread.round(damage), [shortestEnemy.enemy.centerPos[0],shortestEnemy.enemy.centerPos[1]])
-                                popup.style.color = 'aqua'
-                                popup.style.fontSize = Math.min(Math.max(damage / 5, 15), 50) + 'px'
-                                doge('area').append(popup)
-
-                                getStyle(styles.shocked)
-                                
-                                const enemiesAngle = Math.atan2(fromEnemy.centerPos[1] - toEnemy.centerPos[1], fromEnemy.centerPos[0] - toEnemy.centerPos[0])
-                                const enemiesDist = Math.sqrt(
-                                    Math.pow(fromEnemy.centerPos[0] - toEnemy.centerPos[0],2) + 
-                                    Math.pow(fromEnemy.centerPos[1] - toEnemy.centerPos[1],2)
-                                )
-
-                                const chain = document.createElement('div')
-                                addStyles(chain, {
-                                    width: enemiesDist+'px',
-                                    height: '10px',
-                                    translate: '-50% -50%',
-                                    position: 'absolute',
-                                    left: (fromEnemy.centerPos[0]+toEnemy.centerPos[0])/2+'px',
-                                    top: (fromEnemy.centerPos[1]+toEnemy.centerPos[1])/2+'px',
-                                    rotate: enemiesAngle+'rad',
-                                    backgroundImage: 'url(graphics/electricityChain.gif)',
-                                    backgroundSize: 'contain',
-                                    filter: 'drop-shadow(0px 0px 5px rgba(0,255,255,0.5))',
-                                    animation: 'electricityChain 250ms ease-out 1 forwards',
-                                    zIndex: 5,
-                                })
-                                setTimeout(() => {
-                                    chain.remove()
-                                }, 250);
-                                doge('area').append(chain)
-
-                                enemiesHit.push(shortestEnemy.enemy)
-                            }
-                        }
-                    }
-                })
-
-                //Magnet stuff
-                if(closestEnemy.elem) {
-                    const enemyMagAngle = Math.atan2(
-                        bullet.pos[1] - closestEnemy.elem.centerPos[1],
-                        bullet.pos[0] - closestEnemy.elem.centerPos[0]
-                    )
-
-                    let delta = enemyMagAngle - bullet.angle
-
-                    delta = Math.atan2(Math.sin(delta), Math.cos(delta))
-
-                    bullet.angle += delta * 0.1 * player.stats.bullet.magnetStrength
-                    if(player.stats.bullet.spin > 0) {
-                        bullet.style.rotate = bullet.spin + 'deg'
-                    } else {
-                        bullet.style.rotate = bullet.angle + 'rad'
-                    }
-                }
-
-                bullet.ticks++
-
-                if(bullet.ticks >= player.stats.bullet.range) bullet.destroy()
-            }
-
-            doge('area').append(bullet)
-        },
-
         damage: (amount, light) => {
             let idolAlive = false
             for(const enemy of elems.enemies) {
@@ -638,15 +272,15 @@ function createPlayer() {
             if(amount > 0 && !player.immune && e.gameUpdates - player.lastHitDate >= player.stats.player.immunityTime) {
                 player.gameOverStats.damageTaken += -(player.health - startAmount)
                 player.lastHitDate = e.gameUpdates
-                DeBread.playSound('audio/hit.mp3', 0.25)
-
+                
                 player.elem.style.animation = 'none'
                 setTimeout(() => {
                     player.elem.style.animation = 'playerHit 250ms ease-out 1 forwards'
                 }, e.gameUpdateInterval)
-
+                
                 if(!light) {
                     player.getPower(-(Math.min(amount / 2, 15)))
+                    DeBread.playSound('audio/hit.mp3', 0.25)
                 }
 
                 //Explosive Damage
@@ -674,7 +308,7 @@ function createPlayer() {
 
             player.perfectWave = false
 
-            if(amount < 0) {
+            if(amount < 0 && Math.abs(DeBread.round(amount, 1)) !== 0) {
                 if(!idolAlive) {
                     const popup = createPopupText('+'+DeBread.round(Math.abs(amount), 1), player.centerPos)
                     popup.style.color = 'lime'
@@ -751,8 +385,8 @@ function createPlayer() {
             if(e.gameUpdates - player.lastMeleeDate >= player.stats.melee.cooldown) {
                 doge('meleeHitbox').style.animation = 'meleeHitboxHit 500ms ease-out 1 forwards'
                 elems.enemies.forEach(enemy => {
-                    if(isColliding(doge('meleeHitbox'), enemy) && enemy.active) {
-                        enemy.damage(player.stats.melee.damage * player.stats.melee.damageMult)
+                    if(isColliding(doge('meleeHitbox'), enemy) && enemy.data.active) {
+                        enemy.data.damage(player.stats.melee.damage * player.stats.melee.damageMult)
                         player.damage(-player.stats.melee.heal)
 
                         getStyle(styles.punch)
@@ -762,8 +396,8 @@ function createPlayer() {
                         }
 
                         if(player.stats.melee.knockback > 0) {
-                            enemy.dirVels.push({
-                                angle: Math.atan2(enemy.centerPos[1] - player.centerPos[1], enemy.centerPos[0] - player.centerPos[0]),
+                            enemy.data.dirVels.push({
+                                angle: Math.atan2(enemy.data.centerPos[1] - player.centerPos[1], enemy.data.centerPos[0] - player.centerPos[0]),
                                 speed: player.stats.melee.knockback,
                                 div: 1.25,
                             })
@@ -777,7 +411,7 @@ function createPlayer() {
                 })
 
                 let projectileHit = false
-                doge('area').querySelectorAll('.enemyProjectile').forEach(projectile => {
+                doge('area').querySelectorAll('.projectile').forEach(projectile => {
                     if(isColliding(doge('meleeHitbox'), projectile)) {
                         player.damage(-player.stats.player.parryHeal)
                         player.getPower(5)
@@ -791,10 +425,9 @@ function createPlayer() {
 
                         projectile.angle = Math.atan2(projectile.pos[1] - e.relCursorPos[1], projectile.pos[0] - e.relCursorPos[0])
                         projectile.speed *= 3
-                        projectile.explosive = true
-                        projectile.explosionSize = 100
-                        projectile.canHitEnemy = true
-                        projectile.parried = true
+                        projectile.data.explosionSize = 100
+                        projectile.targetList = elems.enemies
+                        projectile.isParried = true
 
                         projectileHit = true
 
@@ -1049,7 +682,6 @@ function createPlayer() {
                 }
             }
         }
-
     }
 }
 let player = createPlayer()
@@ -1070,6 +702,7 @@ function startGame() {
     player.pos[1] = doge('area').offsetHeight / 2 - player.elem.offsetWidth / 2
 
     player = createPlayer()
+    player.elem.data = player
     player.elem.style.opacity = '1'
     doge('weapon').style.opacity = '1'
     player.characterWeapon = characters[saveData.selectedCharacter].weapon
@@ -1093,6 +726,22 @@ function startGame() {
 
     renderStats()
     updateShopTab()
+    doge('gameShopContainer').style.display = 'none'
+    player.elem.style.scale = '1'
+    doge('weapon').style.scale = '1'
+    
+    addStyles(doge('continueButton'), {
+        opacity: '1',
+        pointerEvents: 'unset'
+    })
+
+    addStyles(doge('gameShopUpgradesButtons'), {
+        opacity: '1',
+        pointerEvents: 'unset'
+    })
+
+    doge('gameShopContainer').style.pointerEvents = 'unset'
+    
     if(saveData.gameSettings.gamemode === 3) {
         modifyStat(['melee','size'], '=0')
         modifyStat(['melee','damage'],'=0')
@@ -1167,7 +816,6 @@ function startGame() {
         clearInterval(tutorialistInterval)
     }
 
-    
     fixStats()
     updateUI()
     updateArea()
@@ -1229,7 +877,8 @@ const weapons = {
                                     const t = (i - (DeBread.round(player.stats.bullet.multishot) - 1) / 2)
                                     const offset = (t / DeBread.round(player.stats.bullet.multishot)) * Math.PI / 12
                                     
-                                    player.createBullet(bulletPos, bulletAngle + offset)
+                                    // createBullet(bulletPos, bulletAngle + offset)
+                                    createProjectile(player.stats.bullet.style, bulletPos, bulletAngle + offset, player.stats.bullet, elems.enemies, player)
             
                                     
                                     if(player.health > 1) {
@@ -1252,7 +901,7 @@ const weapons = {
                                             e.relCursorPos[0] + player.stats.bullet.accuracy / 2 * cursorDist
                                         ) 
                                     )
-                                    player.createBullet([...wisp.pos], angle, {damage: player.stats.bullet.damage / 2})
+                                    createProjectile(player.stats.bullet.style, [...wisp.pos], angle, player.stats.bullet, elems.enemies, {damage: player.stats.bullet.damage / 2})
                                 })
                                 updateUI()
                                 player.stats.bullet.lastShotDate = e.gameUpdates
@@ -1276,7 +925,7 @@ const weapons = {
                                     e.relCursorPos[0] + player.stats.bullet.accuracy / 2 * cursorDist
                                 ) 
                             )
-                            player.createBullet([...walfling.pos], angle)
+                            createProjectile(0, [...walfling.pos], angle, player.stats.bullet, elems.enemies, player.elem)
                             player.damage(player.stats.bullet.thornDamage, true)
                         })
                     }
@@ -1394,6 +1043,883 @@ const weapons = {
     }
 }
 
+function createBullet(pos, angle, extraData = {}) {
+    const bullet = bulletBase.cloneNode()
+    bullet.angle = angle
+    bullet.pos = [...pos]
+    bullet.ticks = 0
+    bullet.speed = player.stats.bullet.speed
+    bullet.size = player.stats.bullet.size
+    bullet.damage = extraData.damage ?? player.stats.bullet.damage
+    bullet.bounces = player.stats.bullet.bounces
+    bullet.onFire = false
+
+    bullet.spin = 0
+
+    bullet.hasHitEnemy = false
+
+    //Apply damage multiplier
+    bullet.damage *= player.stats.bullet.damageMult
+
+    //Additional crit mults for crit chance above 100%
+    for(let i = 0; i < Math.floor(player.stats.bullet.critChance / 100); i++) {
+        bullet.damage *= player.stats.bullet.critDamageMult
+        bullet.isCrit = true
+    }
+
+    if(DeBread.randomNum(0,100,5) <= player.stats.bullet.critChance % 100) {
+        bullet.damage *= player.stats.bullet.critDamageMult
+        bullet.isCrit = true
+    }
+
+    bullet.damage *= DeBread.randomNum(1, player.stats.bullet.randDmgMult,10) * player.chargeDmgMult
+
+    if(player.stats.ammo.chargeShot) {
+        bullet.size *= 1 + (player.chargeDmgMult / player.stats.ammo.chargeMultCap)
+    }
+
+    bullet.splits = extraData.splits ?? 0
+    bullet.drillTicks = extraData.drillTicks ?? 1
+    bullet.classList.add('bullet')
+    bullet.style.transition = `left linear ${e.gameUpdateInterval}ms, top linear ${e.gameUpdateInterval}ms`
+    addStyles(bullet, {
+        left: bullet.pos[0] + 'px',
+        top: bullet.pos[1] + 'px',
+        width: bullet.size + 'px',
+        height: bullet.size + 'px',
+        rotate: bullet.angle + 'rad',
+        backgroundImage: 'url(graphics/bullet.png)',
+        backgroundSize: 'cover'
+    })
+
+    if(characters[saveData.selectedCharacter].weapon.bulletTexture) {
+        bullet.style.backgroundImage = `url(graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.replaceAll(' ','_').toLowerCase()}_bullet.png)`
+    }
+
+    if(characters[saveData.selectedCharacter].weapon.animatedBulletTexture) {
+        bullet.style.backgroundImage = `url(graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.replaceAll(' ','_').toLowerCase()}_bullet.gif)`
+    }
+
+    for(const key in extraData) {
+        bullet[key] = extraData[key]
+    }
+
+    bullet.destroy = offset => {
+        if(!bullet.splits) {
+            let particleOffset = [0,0]
+            if(offset) {
+                particleOffset = [
+                    Math.cos(bullet.angle) * player.stats.bullet.speed,
+                    Math.sin(bullet.angle) * player.stats.bullet.speed
+                ]
+            }
+
+            createParticles(
+                [bullet.pos[0]-particleOffset[0],bullet.pos[1]-particleOffset[1]],
+                5,
+                bullet.size,
+                [10,25],
+                250,
+                'ease-out',
+                {backgroundColor: 'white'}
+            )
+        }
+
+        if(player.stats.bullet.explosionSize > 0) {
+            createExplosion(bullet.pos, player.stats.bullet.explosionSize, player.stats.bullet.damage, player.stats.bullet.knockback * 10, false)
+        }
+
+        if(DeBread.randomNum(1,100) <= player.stats.bullet.poisonFieldChance) {
+            createPoisonField(bullet.pos, player.stats.bullet.poisonFieldSize, player.stats.bullet.damage * player.stats.bullet.poisonFieldDmgPercent / 100, player.stats.bullet.poisonFieldTicks, 20, false, player.stats.bullet.poisonFieldColor)
+        }
+
+        if(player.stats.bullet.split > 0 && bullet.splits < player.stats.bullet.splits) {
+            for(let i = 0; i < player.stats.bullet.split; i++) {
+                createBullet(
+                    [bullet.pos[0],bullet.pos[1]],
+                    (2*Math.PI / player.stats.bullet.split) * i + bullet.angle + Math.PI / 2,
+                    {
+                        splits: bullet.splits + 1,
+                        damage: bullet.damage / 2
+                    }
+                )
+            }
+        }
+
+        if(bullet.hasHitEnemy) {
+            player.bulletsHit++
+        }
+
+        bullet.remove()
+    }
+
+    bullet.updatePosition = enemies => {
+        bullet.pos[0] += -Math.cos(bullet.angle) * bullet.speed
+        bullet.pos[1] += -Math.sin(bullet.angle) * bullet.speed
+        bullet.spin += player.stats.bullet.spin
+
+        if(player.stats.bullet.spin > 0) {
+            bullet.style.rotate = bullet.spin + 'deg'
+        }
+
+        if(
+            bullet.pos[0] + -Math.cos(bullet.angle) * bullet.speed < 0 ||
+            bullet.pos[0] + -Math.cos(bullet.angle) * bullet.speed > doge('area').offsetWidth ||
+            bullet.pos[1] + -Math.sin(bullet.angle) * bullet.speed < 0 ||
+            bullet.pos[1] + -Math.sin(bullet.angle) * bullet.speed > doge('area').offsetHeight
+        ) { 
+            if(bullet.bounces > 0) {
+                if( //X axis
+                    bullet.pos[0] + -Math.cos(bullet.angle) * bullet.speed < 0 ||
+                    bullet.pos[0] + -Math.cos(bullet.angle) * bullet.speed > doge('area').offsetWidth
+                ) {
+                    bullet.angle = Math.PI - bullet.angle
+                }
+
+                if( //Y axis
+                    bullet.pos[1] + -Math.sin(bullet.angle) * bullet.speed < 0 ||
+                    bullet.pos[1] + -Math.sin(bullet.angle) * bullet.speed > doge('area').offsetHeight
+                ) {
+                    bullet.angle = -bullet.angle
+                }
+
+                if(player.stats.bullet.spin > 0) {
+                    bullet.style.rotate = player.stats.bullet.spin + 'deg'
+                } else {
+                    bullet.style.rotate = bullet.angle + 'rad'
+                }
+
+                createParticles(
+                    bullet.pos,
+                    3,
+                    10,
+                    [10,25],
+                    250,
+                    'ease-out',
+                    {backgroundColor: 'white'}
+                )
+
+                if(doge('area').children.length < 500) {
+                    const bounceEffect = explosionEffectBase.cloneNode()
+                    bounceEffect.style.setProperty('--explosionEffectScale','2')
+                    addStyles(bounceEffect, {
+                        left: bullet.pos[0]+'px',
+                        top: bullet.pos[1]+'px',
+                        width: '25px',
+                        translate: '-50% -50%'
+                    })
+                    doge('area').append(bounceEffect)
+
+                    setTimeout(() => {
+                        bounceEffect.remove()
+                    }, 500);
+                }
+
+                bullet.bounces--
+                bullet.damage *= 1.2
+            } else {
+                bullet.destroy(true) 
+            }
+        }
+
+        //Grow
+        if(player.stats.bullet.grow !== 0) {
+            bullet.damage *= 1 + 0.01 * player.stats.bullet.grow
+            bullet.size *= 1 + 0.01 * player.stats.bullet.grow
+        }
+
+        //Speed div
+
+        bullet.speed /= player.stats.bullet.speedDiv
+
+        bullet.style.left = bullet.pos[0]+'px'
+        bullet.style.top = bullet.pos[1]+'px'
+        bullet.style.width = bullet.size+'px'
+        bullet.style.height = bullet.size+'px'
+
+        let closestEnemy = {elem: undefined, dist: Infinity}
+        enemies.forEach(enemy => {
+            if(player.stats.bullet.magnetStrength > 0 && enemies.length > 0) {
+                const enemyDist = Math.sqrt(
+                    Math.pow(bullet.pos[0] - enemy.centerPos[0],2),
+                    Math.pow(bullet.pos[1] - enemy.centerPos[1],2)
+                )
+
+                if(enemyDist < closestEnemy.dist) {
+                    closestEnemy.elem = enemy
+                    closestEnemy.dist = enemyDist
+                }
+            }
+
+            if(isColliding(bullet, enemy) && enemy.active && !enemy.friendly) {
+                player.damage(-player.stats.bullet.heal)
+                bullet.drillTicks++
+                bullet.hasHitEnemy = true
+
+                if(DeBread.round(bullet.damage) > 0) {
+                    const popup = createPopupText(DeBread.round(bullet.damage), [bullet.pos[0],bullet.pos[1]])
+                    if(bullet.isCrit) {
+                        popup.style.color = 'yellow'
+                        popup.innerText += '!'
+                    } else {
+                        popup.style.color = 'white'
+                    }
+                    popup.style.fontSize = Math.min(Math.max(bullet.damage / 5, 15), 50) + 'px'
+                    doge('area').append(popup)
+                }
+                
+                enemy.dirVels.push({angle: bullet.angle - Math.PI, speed: player.stats.bullet.knockback, div: 1.1})
+                if(player.stats.bullet.slow) {
+                    enemy.speedMult *= (0.75 / (1 + player.stats.bullet.slow / 10))
+                    enemy.statusEffects.push({
+                        duration: 50 + (10*player.stats.bullet.slow),
+                        end: () => {
+                            enemy.speedMult /= (0.75 / (1 + player.stats.bullet.slow / 10))
+                        }
+                    })
+                }
+                
+                if(bullet.damage > enemy.health && player.stats.ammo.penetratingRounds) {
+                    bullet.drillTicks--
+                    bullet.damage -= enemy.health
+                }
+
+                if(bullet.drillTicks > player.stats.bullet.drillTicks) {
+                    bullet.destroy()
+                }
+
+                enemy.damage(bullet.damage)
+                if(bullet.isCrit) {
+                    getStyle(styles.crit)
+                }
+                
+                if(bullet.damage > enemy.maxHealth) {
+                    getStyle(styles.overkill)
+                }
+
+                for(let i = 0; i < player.stats.bullet.bounces - bullet.bounces; i++) {
+                    getStyle(styles.ricochet)
+                }
+
+                if(player.stats.bullet.coinChance > 0) {
+                    function getCoin() {
+                        if(elems.pickups.length > 100) {
+                            player.getMoney(1)
+                        } else {
+                            pickups.coin(0,bullet.pos,5,1)
+                        }
+                    }
+
+                    //Spawn additional coins for a coinChance above 100%
+                    for(let i = 0; i < Math.floor(player.stats.bullet.coinChance / 100); i++) {
+                        getCoin()
+                    }
+                    if(DeBread.randomNum(1,100) < player.stats.bullet.coinChance - Math.floor(player.stats.bullet.coinChance / 100) * 100) {
+                        getCoin()
+                    }
+                }
+
+                if(player.stats.bullet.electricChainLength > 0) {
+                    let enemiesHit = [enemy]
+                    let currentEnemy = enemy
+                    
+                    for(let i = 0; i < player.stats.bullet.electricChainLength; i++) {
+                        let shortestEnemy = {enemy: undefined, distance: Infinity, d: []}
+                        enemies.forEach(otherEnemy => {
+                            if(currentEnemy !== otherEnemy && !enemiesHit.includes(otherEnemy) && otherEnemy.active) {
+                                const dx = currentEnemy.pos[0] - otherEnemy.pos[0]
+                                const dy = currentEnemy.pos[1] - otherEnemy.pos[1]
+
+                                const distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
+                                if(distance < shortestEnemy.distance && distance <= player.stats.bullet.electricChainReach + 100) {
+                                    shortestEnemy.enemy = otherEnemy
+                                    shortestEnemy.distance = distance
+                                    shortestEnemy.d = [dx, dy]
+                                }
+                            }
+                        })
+
+                        if(shortestEnemy.enemy === undefined) break
+                        
+                        const fromEnemy = currentEnemy
+                        currentEnemy = shortestEnemy.enemy
+                        const toEnemy = currentEnemy
+
+                        const damage = player.stats.bullet.damage / (i + 1)
+                        shortestEnemy.enemy.damage(damage)
+
+                        const popup = createPopupText(DeBread.round(damage), [shortestEnemy.enemy.centerPos[0],shortestEnemy.enemy.centerPos[1]])
+                        popup.style.color = 'aqua'
+                        popup.style.fontSize = Math.min(Math.max(damage / 5, 15), 50) + 'px'
+                        doge('area').append(popup)
+
+                        getStyle(styles.shocked)
+                        
+                        const enemiesAngle = Math.atan2(fromEnemy.centerPos[1] - toEnemy.centerPos[1], fromEnemy.centerPos[0] - toEnemy.centerPos[0])
+                        const enemiesDist = Math.sqrt(
+                            Math.pow(fromEnemy.centerPos[0] - toEnemy.centerPos[0],2) + 
+                            Math.pow(fromEnemy.centerPos[1] - toEnemy.centerPos[1],2)
+                        )
+
+                        const chain = document.createElement('div')
+                        addStyles(chain, {
+                            width: enemiesDist+'px',
+                            height: '10px',
+                            translate: '-50% -50%',
+                            position: 'absolute',
+                            left: (fromEnemy.centerPos[0]+toEnemy.centerPos[0])/2+'px',
+                            top: (fromEnemy.centerPos[1]+toEnemy.centerPos[1])/2+'px',
+                            rotate: enemiesAngle+'rad',
+                            backgroundImage: 'url(graphics/electricityChain.gif)',
+                            backgroundSize: 'contain',
+                            filter: 'drop-shadow(0px 0px 5px rgba(0,255,255,0.5))',
+                            animation: 'electricityChain 250ms ease-out 1 forwards',
+                            zIndex: 5,
+                        })
+                        setTimeout(() => {
+                            chain.remove()
+                        }, 250);
+                        doge('area').append(chain)
+
+                        enemiesHit.push(shortestEnemy.enemy)
+                    }
+                }
+            }
+        })
+
+        //Magnet stuff
+        if(closestEnemy.elem) {
+            const enemyMagAngle = Math.atan2(
+                bullet.pos[1] - closestEnemy.elem.centerPos[1],
+                bullet.pos[0] - closestEnemy.elem.centerPos[0]
+            )
+
+            let delta = enemyMagAngle - bullet.angle
+
+            delta = Math.atan2(Math.sin(delta), Math.cos(delta))
+
+            bullet.angle += delta * 0.1 * player.stats.bullet.magnetStrength
+            if(player.stats.bullet.spin > 0) {
+                bullet.style.rotate = bullet.spin + 'deg'
+            } else {
+                bullet.style.rotate = bullet.angle + 'rad'
+            }
+        }
+
+        bullet.ticks++
+
+        if(bullet.ticks >= player.stats.bullet.range) bullet.destroy()
+    }
+
+    doge('area').append(bullet)
+}
+
+const projectileBase = document.createElement('div')
+projectileBase.classList.add('projectile')
+
+function createProjectile(style, pos, angle, data, targetList, origin, extraData = {}) {
+    const proj = projectileBase.cloneNode(true)
+    proj.classList.add('entity')
+    proj.pos = [...pos]
+    proj.size = extraData.size ?? data.size
+    proj.angle = angle
+    proj.dateSpawned = e.gameUpdates
+    proj.origin = origin
+    
+    proj.data = {...data}
+    const pData = proj.data
+
+    proj.targetList = extraData.targetList ?? targetList
+    proj.damage = extraData.damage ?? data.damage
+    //Apply damage multiplier
+    proj.damage *= data.damageMult ?? 1
+    
+    //Additional crit mults for crit chance above 100%
+    for(let i = 0; i < Math.floor(data.critChance / 100); i++) {
+        proj.damage *= data.critDamageMult ?? 1
+        proj.isCrit = true
+    }
+    
+    //Apply crit mult
+    if(DeBread.randomNum(0,100,5) <= data.critChance % 100) {
+        proj.damage *= data.critDamageMult ?? 1 
+        proj.isCrit = true
+    }
+    
+    //Rigged dice mult
+    if(origin === player) {
+        proj.damage *= DeBread.randomNum(1, data.randDmgMult ?? 1,10) * player.chargeDmgMult
+    } else {
+        proj.damage *= DeBread.randomNum(1, data.randDmgMult ?? 1,10)
+    }
+    
+    //Charging rounds size increase
+    if(player.stats.ammo.chargeShot) {
+        proj.size *= 1 + (player.chargeDmgMult / player.stats.ammo.chargeMultCap)
+    }
+
+    proj.speed = data.speed
+    
+    proj.bounces = data.bounces ?? 0
+    proj.splits = extraData.splits ?? 0
+    proj.drillTicks = data.drillTicks ?? 0
+    proj.isParried = false
+    
+    addStyles(proj, {
+        left: proj.pos[0]+'px',
+        top: proj.pos[1]+'px',
+        width: data.size + 'px',
+        height: data.size + 'px',
+        rotate: proj.angle + 'rad',
+    })
+
+    const overlayBase = document.createElement('img')
+    addStyles(overlayBase, {
+        position: 'absolute',
+        width: '200%',
+        height: '200%',
+        rotate: `-${proj.angle}rad`,
+    })
+
+    //Add bullet overlays
+    if(data.electricChainLength > 0) {
+        const overlay = overlayBase.cloneNode()
+        overlay.src = 'graphics/electricBullet.gif'
+        proj.append(overlay)
+    }
+
+    if(data.magnetStrength > 0) {
+        const overlay = overlayBase.cloneNode()
+        overlay.src = 'graphics/magneticBullet.png'
+        proj.append(overlay)
+    }
+
+    if(data.explosionSize > 0) {
+        const overlay = document.createElement('div')
+        addStyles(overlay, {
+            position: 'absolute',
+            borderRadius: '50%',
+            width: data.explosionSize+'px',
+            height: data.explosionSize+'px',
+            outline: '2px solid rgb(255,0,0,0.25)'
+        })
+        proj.append(overlay)
+    }
+
+    if(data.radiationSize > 0) {
+        const overlay = document.createElement('div')
+        addStyles(overlay, {
+            position: 'absolute',
+            borderRadius: '50%',
+            width: data.radiationSize*2+'px',
+            height: data.radiationSize*2+'px',
+            outline: '2px solid rgb(0,255,0,0.25)'
+        })
+        proj.append(overlay)
+    }
+    
+    if(style === 0) {
+        proj.color = 'white'
+        addStyles(proj, {
+            backgroundImage: 'url(graphics/bullet.png)',
+            backgroundSize: 'cover'
+        })
+        
+        if(characters[saveData.selectedCharacter].weapon.bulletTexture) {
+            proj.style.backgroundImage = `url(graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.replaceAll(' ','_').toLowerCase()}_bullet.png)`
+        } else if(characters[saveData.selectedCharacter].weapon.animatedBulletTexture) {
+            proj.style.backgroundImage = `url(graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.replaceAll(' ','_').toLowerCase()}_bullet.gif)`
+        }
+    } else {
+        proj.color = 'rgb(255,100,100)'
+        addStyles(proj, {
+            backgroundColor: 'rgb(255,100,100)',
+            outline: '2px solid black',
+            borderRadius: '50%',
+            zIndex: '7',
+            animation: 'projectileIn 250ms ease-out 1 forwards'
+        })
+    }
+
+    proj.tick = () => {
+        proj.beforePos = [...proj.pos]
+        proj.pos[0] += -Math.cos(proj.angle) * proj.speed
+        proj.pos[1] += -Math.sin(proj.angle) * proj.speed
+        
+        if(
+            proj.pos[0] + -Math.cos(proj.angle) * proj.speed < 0 ||
+            proj.pos[0] + -Math.cos(proj.angle) * proj.speed > doge('area').offsetWidth ||
+            proj.pos[1] + -Math.sin(proj.angle) * proj.speed < 0 ||
+            proj.pos[1] + -Math.sin(proj.angle) * proj.speed > doge('area').offsetHeight
+        ) {
+            if(proj.bounces > 0) {
+                if( //X axis
+                    proj.pos[0] + -Math.cos(proj.angle) * proj.speed < 0 ||
+                    proj.pos[0] + -Math.cos(proj.angle) * proj.speed > doge('area').offsetWidth
+                ) {
+                    proj.angle = Math.PI - proj.angle
+                }
+
+                if( //Y axis
+                    proj.pos[1] + -Math.sin(proj.angle) * proj.speed < 0 ||
+                    proj.pos[1] + -Math.sin(proj.angle) * proj.speed > doge('area').offsetHeight
+                ) {
+                    proj.angle = -proj.angle
+                }
+                
+                if(pData.spin > 0) {
+                    proj.style.rotate = pData.spin + 'deg'
+                } else {
+                    proj.style.rotate = proj.angle + 'rad'
+                }
+                
+                createParticles(
+                    proj.pos,
+                    3,
+                    10,
+                    [10,25],
+                    250,
+                    'ease-out',
+                    {backgroundColor: proj.color}
+                )
+                
+                if(doge('area').children.length < 500) {
+                    const bounceEffect = explosionEffectBase.cloneNode()
+                    bounceEffect.style.setProperty('--explosionEffectScale','2')
+                    addStyles(bounceEffect, {
+                        left: proj.pos[0]+'px',
+                        top: proj.pos[1]+'px',
+                        width: '25px',
+                        translate: '-50% -50%'
+                    })
+                    doge('area').append(bounceEffect)
+                    
+                    setTimeout(() => {
+                        bounceEffect.remove()
+                    }, 500);
+                }
+
+                proj.bounces--
+                proj.damage *= 1.2
+            } else {
+                proj.destroy() 
+            }
+        }
+
+        //Grow
+        if(data.grow !== 0) {
+            proj.damage *= 1 + 0.01 * (data.grow ?? 0)
+            proj.size *= 1 + 0.01 * (data.grow ?? 0)
+        }
+        
+        //Speed div
+        proj.speed /= data.speedDiv ?? 1
+
+        //Range
+        if(e.gameUpdates - proj.dateSpawned >= data.range) {
+            proj.destroy()
+        }
+
+        //Parry particles
+        if(proj.isParried) {
+            createParticles(
+                [...proj.pos], 
+                1, 
+                proj.size, 
+                [0,5], 
+                1000, 
+                'ease-out', 
+                {
+                    backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`
+                }
+            )
+        }
+
+        //Split particles
+        if(extraData.splits !== data.splits && data.splits > 0) {
+            createParticles(
+                [...proj.beforePos],
+                1,
+                10,
+                [10,25],
+                250,
+                'ease-out',
+                {backgroundColor: proj.color}
+            )
+        }
+
+        //Split particles
+        if(data.magnetStrength > 0 && e.gameUpdates % 3 === 0) {
+            createParticles(
+                [...proj.beforePos],
+                1,
+                10,
+                [10,25],
+                500,
+                'ease-out',
+                {backgroundColor: '#b830ff'}
+            )
+        }
+        
+        addStyles(proj, {
+            left: proj.pos[0]+'px',
+            top: proj.pos[1]+'px',
+            width: proj.size+'px',
+            height: proj.size+'px',
+        })
+
+        proj.querySelectorAll('img').forEach(overlay => {
+            overlay.style.rotate = `${proj.angle*-1}rad`
+        })
+
+        let closestTarget = {elem: undefined, dist: Infinity}
+        proj.targetList.forEach(target => {
+            //Get closest enemy for magnetic ammo 
+            if(data.magnetStrength > 0 && proj.targetList.length > 0) {
+                const targetDist = Math.sqrt(
+                    Math.pow(proj.pos[0] - target.data.centerPos[0],2),
+                    Math.pow(proj.pos[1] - target.data.centerPos[1],2)
+                )
+
+                if(targetDist < closestTarget.dist) {
+                    closestTarget.elem = target
+                    closestTarget.dist = targetDist
+                }
+            }
+
+            //Target collision check
+            if(isColliding(proj, target)) {
+                if(target.data.active) {
+                    target.data.damage(proj.damage)
+                    const popup = createPopupText(DeBread.round(proj.damage), [...proj.pos])
+                    if(proj.isCrit) {
+                        popup.style.color = 'yellow'
+                        popup.innerText += '!'
+                    } else {
+                        popup.style.color = 'white'
+                    }
+    
+                    if(origin !== player) {
+                        popup.style.color = '#ff6464'
+                    }
+                    popup.style.fontSize = Math.min(Math.max(proj.damage / 5, 15), 50) + 'px'
+                    doge('area').append(popup)
+    
+                    //Drill ticks
+                    if(proj.drillTicks <= 0) {
+                        proj.destroy()
+                    }
+                    proj.drillTicks--
+    
+                    //Heal
+                    if(data.heal) {
+                        origin.damage(-data.heal)
+                    }
+    
+                    //Knockback
+                    target.data.dirVels.push({angle: proj.angle - Math.PI, speed: data.knockback ?? 0, div: 1.1})
+    
+                    //Coins
+                    if(pData.coinChance > 0) {
+                        function getCoin() {
+                            if(elems.pickups.length > 100) {
+                                player.getMoney(1)
+                            } else {
+                                pickups.coin(0,[...proj.pos],5,1)
+                            }
+                        }
+    
+                        //Spawn additional coins for a coinChance above 100%
+                        for(let i = 0; i < Math.floor(pData.coinChance / 100); i++) {
+                            getCoin()
+                        }
+                        if(DeBread.randomNum(1,100) < pData.coinChance - Math.floor(pData.coinChance / 100) * 100) {
+                            getCoin()
+                        }
+                    }
+    
+                    //Electric chains
+                    if(data.electricChainLength > 0) {
+                        let targetsHit = [target]
+                        let currentTarget = target
+                        
+                        for(let i = 0; i < data.electricChainLength; i++) {
+                            let shortestTarget = {target: undefined, distance: Infinity, d: []}
+                            proj.targetList.forEach(otherTarget => {
+                                if(currentTarget !== otherTarget && !targetsHit.includes(otherTarget) && otherTarget.data.active) {
+                                    const dx = currentTarget.data.pos[0] - otherTarget.data.pos[0]
+                                    const dy = currentTarget.data.pos[1] - otherTarget.data.pos[1]
+                                    
+                                    const distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
+                                    if(distance < shortestTarget.distance && distance <= data.electricChainReach + 100) {
+                                        shortestTarget.target = otherTarget
+                                        shortestTarget.distance = distance
+                                        shortestTarget.d = [dx, dy]
+                                    }
+                                }
+                            })
+                            
+                            if(shortestTarget.target === undefined) break
+                            
+                            const fromTarget = currentTarget
+                            currentTarget = shortestTarget.target
+                            const toTarget = currentTarget
+    
+                            const damage = data.damage / (i + 1)
+                            shortestTarget.target.data.damage(damage)
+    
+                            const popup = createPopupText(DeBread.round(damage), [shortestTarget.target.data.centerPos[0],shortestTarget.target.data.centerPos[1]])
+                            popup.style.color = 'aqua'
+                            popup.style.fontSize = Math.min(Math.max(damage / 5, 15), 50) + 'px'
+                            doge('area').append(popup)
+    
+                            if(origin === player) {
+                                getStyle(styles.shocked)
+                            }
+                            
+                            const targetsAngle = Math.atan2(fromTarget.data.centerPos[1] - toTarget.data.centerPos[1], fromTarget.data.centerPos[0] - toTarget.data.centerPos[0])
+                            const targetsDist = Math.sqrt(
+                                Math.pow(fromTarget.data.centerPos[0] - toTarget.data.centerPos[0],2) + 
+                                Math.pow(fromTarget.data.centerPos[1] - toTarget.data.centerPos[1],2)
+                            )
+    
+                            const chain = document.createElement('div')
+                            addStyles(chain, {
+                                width: targetsDist+'px',
+                                height: '10px',
+                                translate: '-50% -50%',
+                                position: 'absolute',
+                                left: (fromTarget.data.centerPos[0]+toTarget.data.centerPos[0])/2+'px',
+                                top: (fromTarget.data.centerPos[1]+toTarget.data.centerPos[1])/2+'px',
+                                rotate: targetsAngle+'rad',
+                                backgroundImage: 'url(graphics/electricityChain.gif)',
+                                backgroundSize: 'contain',
+                                filter: 'drop-shadow(0px 0px 5px rgba(0,255,255,0.5))',
+                                animation: 'electricityChain 250ms ease-out 1 forwards',
+                                zIndex: 5,
+                            })
+                            setTimeout(() => {
+                                chain.remove()
+                            }, 250);
+                            doge('area').append(chain)
+    
+                            targetsHit.push(shortestTarget.target)
+                        }
+                    }
+                }
+            }
+        })
+
+        //Magnet stuff
+        if(closestTarget.elem) {
+            const targetMagAngle = Math.atan2(
+                proj.pos[1] - closestTarget.elem.data.centerPos[1],
+                proj.pos[0] - closestTarget.elem.data.centerPos[0]
+            )
+
+            let delta = targetMagAngle - proj.angle
+
+            delta = Math.atan2(Math.sin(delta), Math.cos(delta))
+
+            proj.angle += delta * 0.1 * data.magnetStrength
+            if(data.spin > 0) {
+                proj.style.rotate = proj.spin + 'deg'
+            } else {
+                proj.style.rotate = proj.angle + 'rad'
+            }
+        }
+
+        //Supermagnet stuff
+        if(document.querySelectorAll('.superMagnet').length > 0) {
+            doge('area').querySelectorAll('.superMagnet').forEach(magnet => {
+                const angle = Math.atan2(
+                    projectile.data.pos[1] - magnet.pos[1],
+                    projectile.data.pos[0] - magnet.pos[0]
+                )
+
+                let delta = angle - projectile.data.angle
+
+                delta = Math.atan2(Math.sin(delta), Math.cos(delta))
+
+                projectile.angle += delta * 0.05
+
+                const dis = Math.sqrt(
+                    Math.pow(projectile.pos[0] - magnet.pos[0],2) + 
+                    Math.pow(projectile.pos[1] - magnet.pos[1],2)
+                )
+
+                if(dis <= 100) {
+                    projectile.speed /= 1.01
+                }
+            })
+        }
+
+        //Radiation stuff
+        if(data.radiationSize) {
+            targetList.forEach(target => {
+                const dis = Math.sqrt(
+                    Math.pow(proj.pos[0] - target.data.centerPos[0],2) +
+                    Math.pow(proj.pos[1] - target.data.centerPos[1],2)
+                )
+
+                const percent = Math.max(1 - dis / data.radiationSize, 0)
+                
+                if(percent > 0 && e.gameUpdates % 3 === 0) {
+                    target.data.damage(proj.damage * percent)
+
+                    const popup = createPopupText(DeBread.round(proj.damage * percent + 0.5), [...target.data.centerPos])
+                    popup.style.color = 'lime'
+                    popup.style.fontSize = Math.min(Math.max((proj.damage * percent + 0.5) / 5, 15), 50) + 'px'
+                    doge('area').append(popup)
+                }
+            })
+        }
+    }
+
+    proj.destroy = () => {
+        proj.remove()
+
+        if(data.split > 0 && proj.splits < data.splits) {
+            for(let i = 0; i < data.split; i++) {
+                createProjectile(
+                    data.style,
+                    [proj.pos[0],proj.pos[1]],
+                    (2*Math.PI / data.split) * i + proj.angle + Math.PI / 2,
+                    data,
+                    targetList,
+                    player,
+                    {
+                        splits: proj.splits + 1,
+                        damage: proj.damage / 2,
+                    }
+                )
+            }
+        }
+
+        //Explosion
+        if(proj.data.explosionSize > 0) {
+            createExplosion(proj.pos, proj.data.explosionSize, proj.damage, (data.knockback ?? 2) * 10, false)
+        }
+
+        //Poison field
+        if(DeBread.randomNum(1,100) <= data.poisonFieldChance) {
+            createPoisonField([...proj.pos], data.poisonFieldSize, data.damage * data.poisonFieldDmgPercent / 100, data.poisonFieldTicks, 20, false, data.poisonFieldColor)
+        }
+
+        createParticles(
+            [...proj.pos],
+            5,
+            proj.size,
+            [10,25],
+            250,
+            'ease-out',
+            {backgroundColor: proj.color}
+        )
+    }
+
+    doge('area').append(proj)
+}
+
 const area = {
     createNotice: content => {
         const notice = document.createElement('div')
@@ -1427,7 +1953,7 @@ function updateUI() {
 
     if(player.powerItem) {
         doge('lowerPowerBar').style.width = player.powerItem.charge / player.stats.player.maxPower * 100 + '%'
-        doge('powerItem').src = `graphics/powerItems/${player.powerItem.name.toLowerCase().replaceAll(' ','_')}.png`
+        doge('powerItem').src = `graphics/powerItems/${player.powerItem.id ?? player.powerItem.name.toLowerCase().replaceAll(' ','_')}.png`
         doge('powerItem').style.opacity = '1'
         doge('powerItemContainer').style.width = 'unset'
         doge('gameTopLeft').style.gap = '25px'
@@ -1619,7 +2145,7 @@ const updateInterval = DeBread.createInterval(() => {
         }
 
         //Update bullet positions
-        doge('area').querySelectorAll('.bullet').forEach(bullet => {bullet.updatePosition(elems.enemies)})
+        // doge('area').querySelectorAll('.bullet').forEach(bullet => {bullet.updatePosition(elems.enemies)})
 
         //Autofire
         if(
@@ -1648,19 +2174,6 @@ const updateInterval = DeBread.createInterval(() => {
 
         //Update enemies and thier projectiles
         elems.enemies.forEach(enemy => {
-            if((e.gameUpdates - enemy.spawnDate) * e.gameUpdateInterval > enemy.spawnTime && !enemy.active) {
-                enemy.init()
-            }
-
-            if(enemy.active) {
-                if(enemy.move) enemy.move()
-
-                if(enemy.hasProjectiles) {
-                    if((e.gameUpdates - enemy.lastShotDate) * e.gameUpdateInterval >= enemy.shotCooldown / player.stats.enemy.speedMult) {
-                        enemy.shoot()
-                    }
-                }
-            }
 
             if(isColliding(enemy, doge('weapon')) && player.stats.player.weaponContactDamage > 0) {
                 enemy.damage(player.stats.player.weaponContactDamage)
@@ -1675,42 +2188,8 @@ const updateInterval = DeBread.createInterval(() => {
             }
         })
 
-        doge('area').querySelectorAll('.enemyProjectile').forEach(projectile => {
-            projectile.pos[0] -= Math.cos(projectile.angle) * projectile.speed * player.stats.enemy.speedMult
-            projectile.pos[1] -= Math.sin(projectile.angle) * projectile.speed * player.stats.enemy.speedMult
-
-            if(projectile.explosive && e.gameUpdates % 5 === 0) {
-                createParticles(
-                    [projectile.pos[0],projectile.pos[1]],
-                    2,
-                    10,
-                    [10,25],
-                    250,
-                    'ease-out',
-                    {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`}
-                )
-            }
-
-            if(projectile.canHitEnemy) {
-                elems.enemies.forEach(enemy => {
-                    if(isColliding(enemy, projectile) && enemy.active) {
-                        enemy.damage(projectile.damage)
-                        projectile.destroy()
-                    }
-                })
-            }
-
-            if(
-                projectile.pos[0] >= doge('area').offsetWidth ||
-                projectile.pos[1] >= doge('area').offsetHeight ||
-                projectile.pos[0] <= 0 ||
-                projectile.pos[1] <= 0 || 
-                isColliding(projectile, projectile.target.elem)
-            ) {
-                projectile.destroy()
-            }
-
-            if(isColliding(doge('grazeHitbox'), projectile) && e.gameUpdates - player.lastGrazeDate >= player.stats.player.grazeCooldown && player.power < 100) {
+        doge('area').querySelectorAll('.projectile').forEach(projectile => {
+            if(isColliding(doge('grazeHitbox'), projectile) && e.gameUpdates - player.lastGrazeDate >= player.stats.player.grazeCooldown && player.power < 100 && projectile.origin !== player) {
                 player.getPower(1)
                 getStyle(styles.grazed)
                 doge('grazeHitbox').style.animation = 'none'
@@ -1727,43 +2206,12 @@ const updateInterval = DeBread.createInterval(() => {
                 DeBread.playSound('audio/graze.wav',0.1,1 + Math.max(player.power / 200, 0))
             }
 
-            if(isColliding(doge('meleeHitbox'), projectile) && e.gameUpdates - player.lastMeleeDate >= player.stats.melee.cooldown) {
-                projectile.style.outline = '2px solid white'
-            } else {
-                projectile.style.outline = '2px solid black'
-            }
-
-            addStyles(projectile, {
-                left: projectile.pos[0]+'px',
-                top: projectile.pos[1]+'px'
-            })
-
-            if(projectile.parried) {
-                createParticles(projectile.pos, 1, projectile.size, [0,5], 1000, 'ease-out', {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`})
-            }
-
-            if(document.querySelectorAll('.superMagnet').length > 0) {
-                doge('area').querySelectorAll('.superMagnet').forEach(magnet => {
-                    const angle = Math.atan2(
-                        projectile.pos[1] - magnet.pos[1],
-                        projectile.pos[0] - magnet.pos[0]
-                    )
-    
-                    let delta = angle - projectile.angle
-    
-                    delta = Math.atan2(Math.sin(delta), Math.cos(delta))
-    
-                    projectile.angle += delta * 0.05
-
-                    const dis = Math.sqrt(
-                        Math.pow(projectile.pos[0] - magnet.pos[0],2) + 
-                        Math.pow(projectile.pos[1] - magnet.pos[1],2)
-                    )
-
-                    if(dis <= 100) {
-                        projectile.speed /= 1.01
-                    }
-                })
+            if(projectile.origin !== player) {
+                if(isColliding(doge('meleeHitbox'), projectile) && e.gameUpdates - player.lastMeleeDate >= player.stats.melee.cooldown) {
+                    projectile.style.outline = '2px solid white'
+                } else {
+                    projectile.style.outline = '2px solid black'
+                }
             }
         })
 
@@ -1861,12 +2309,12 @@ const updateInterval = DeBread.createInterval(() => {
     bottomCtx.clearRect(0, 0, doge('areaCanvasBottom').width, doge('areaCanvasBottom').height);
 
     elems.enemies.forEach(enemy => {
-        if(enemy.data.beamWidth && enemy.active) {
+        if(enemy.data.data.beamWidth && enemy.data.active) {
             bottomCtx.beginPath()
-            bottomCtx.lineWidth = enemy.data.beamWidth
-            bottomCtx.moveTo(enemy.centerPos[0],enemy.centerPos[1])
+            bottomCtx.lineWidth = enemy.data.data.beamWidth
+            bottomCtx.moveTo(enemy.data.centerPos[0],enemy.data.centerPos[1])
             bottomCtx.lineTo(player.centerPos[0],player.centerPos[1])
-            bottomCtx.strokeStyle = `rgba(${enemy.data.color},0.5)`
+            bottomCtx.strokeStyle = `rgba(${enemy.data.data.color},0.5)`
             bottomCtx.stroke()
         }
     })
@@ -1980,7 +2428,7 @@ const updateInterval = DeBread.createInterval(() => {
     })
 
     if(player.onFire) {
-        player.damage(0.1)
+        player.damage(0.1, true)
         createParticles(
             [...player.centerPos],
             2,
@@ -2002,7 +2450,7 @@ const updateInterval = DeBread.createInterval(() => {
     //Special enemies
     let leechAlive = false
     for(const enemy of elems.enemies) {
-        if(enemy.data.name === 'Leech' && enemy.active) {
+        if(enemy.data.data.name === 'Leech' && enemy.data.active) {
             leechAlive = true
             break
         }
@@ -2010,7 +2458,7 @@ const updateInterval = DeBread.createInterval(() => {
 
     let idolAlive = false
     for(const enemy of elems.enemies) {
-        if(enemy.data.name === 'Idol' && enemy.active) {
+        if(enemy.data.data.name === 'Idol' && enemy.data.active) {
             idolAlive = true
             break
         }
@@ -2111,7 +2559,7 @@ const updateInterval = DeBread.createInterval(() => {
             const offset = (t / player.stats.player.thirdEye) * Math.PI / 12
             const bulletPos = player.centerPos
 
-            player.createBullet(bulletPos, enemyAngle + offset)
+            createBullet(bulletPos, enemyAngle + offset)
         }
     }
 
@@ -2165,6 +2613,12 @@ const updateInterval = DeBread.createInterval(() => {
         player.getPower(player.stats.player.powerRegen)
     }
 
+    for(let i = elems.enemies.length - 1; i >= 0; i--) {
+        if(!elems.enemies[i].data.alive) {
+            elems.enemies.splice(elems.enemies.indexOf(elems.enemies[i]),1)
+        }
+    }
+
     //Restart
     const lastRestartProgress = player.restartProgress
     if(e.keysDown.includes('r') && e.keysDown.includes('shift') && e.gameUpdates >= 20) {
@@ -2212,7 +2666,7 @@ document.addEventListener('mousedown', ev => {
         const weapon = weapons[player.weapon]
         if(weapon.leftClick && ev.button === 0 && !isHoveringOnSandbox) {
             if(sandBoxEnemy) {
-                spawnEnemy([e.relCursorPos[0] - sandBoxEnemy.size / 2, e.relCursorPos[1] - sandBoxEnemy.size / 2], sandBoxEnemy, 0, 1000)
+                spawnEnemy([e.relCursorPos[0] - sandBoxEnemy.size / 2, e.relCursorPos[1] - sandBoxEnemy.size / 2], sandBoxEnemy, 0)
                 if(!e.keysDown.includes('shift')) {
                     sandBoxEnemy = undefined
                 }
@@ -2327,7 +2781,7 @@ function createFire(pos, ticks, ignorePlayer) {
     })
 
     fire.ticksActive = 0
-    fire.move = () => {
+    fire.tick = () => {
         fire.ticksActive++
 
         if(fire.ticksActive > ticks) {
@@ -2363,7 +2817,7 @@ addStyles(explosionEffectBase, {
 
 function createExplosion(pos, size, dmg, kb, ignorePlayer, col = [[255,255],[0,255],[0,0]]) {
     const explosion = explosionBase.cloneNode()
-    const randomColor = `rgb(${DeBread.randomNum(col[0][0],col[0][1])},${DeBread.randomNum(col[1][0],col[1][1])},${DeBread.randomNum(col[2][0],col[2][1])})`
+    const randomColor = `rgb(${DeBread.randomNum(col[0][0],col[0][1])},${DeBread.randomNum(col[1][0],col[1][1])},${DeBread.randomNum(col[2][0],col[2][1])},${col[3] ?? 1})`
     addStyles(explosion, {
         left: pos[0] - size / 2 + 'px',
         top: pos[1] - size / 2 + 'px',
@@ -2395,6 +2849,8 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer, col = [[255,255],[0,2
     doge('area').append(explosionEffect)
     doge('area').append(largeExplosionEffect)
 
+    DeBread.playSound('audio/explosion.mp3')
+
     setTimeout(() => {
         explosion.remove()
         explosionEffect.remove()
@@ -2403,33 +2859,33 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer, col = [[255,255],[0,2
 
     elems.enemies.forEach(enemy => {
         const distance = Math.sqrt(
-            Math.pow((pos[0]) - (enemy.pos[0] + enemy.size / 2),2) +
-            Math.pow((pos[1]) - (enemy.pos[1] + enemy.size / 2),2)
+            Math.pow((pos[0]) - (enemy.data.pos[0] + enemy.data.size / 2),2) +
+            Math.pow((pos[1]) - (enemy.data.pos[1] + enemy.data.size / 2),2)
         ) / 1.1 //Grace
         const distanceEffect = 1 - distance / size
 
-        if(distance < size && enemy.active) {
-            enemy.damage(dmg * distanceEffect)
+        if(distance < size && enemy.data.active) {
+            enemy.data.damage(dmg * distanceEffect)
             if(dmg * distanceEffect > 0) {
-                const popup = createPopupText(DeBread.round(dmg * distanceEffect), [(enemy.pos[0]),(enemy.pos[1])])
+                const popup = createPopupText(DeBread.round(dmg * distanceEffect), [(enemy.data.pos[0]),(enemy.data.pos[1])])
                 popup.style.color = 'red'
                 popup.style.fontSize = Math.min(Math.max(dmg * distanceEffect / 5, 15), 50) + 'px'
                 doge('area').append(popup)
             }
 
-            if(!enemy.alive) {
+            if(!enemy.data.alive) {
                 getStyle(styles.exploded)
             }
         }
 
         if(distance / 2 < size && distanceEffect > 0) {
             const kbAngle = Math.atan2(
-                pos[1] - enemy.pos[1] - enemy.size / 2,
-                pos[0] - enemy.pos[0] - enemy.size / 2
+                pos[1] - enemy.data.pos[1] - enemy.data.size / 2,
+                pos[0] - enemy.data.pos[0] - enemy.data.size / 2
             )
 
-            if(enemy.speed > 0 && enemy.active) {
-                enemy.dirVels.push({angle: kbAngle - Math.PI, speed: kb / 2, div: 1.2})
+            if(enemy.data.speed > 0 && enemy.data.active) {
+                enemy.data.dirVels.push({angle: kbAngle - Math.PI, speed: kb / 2, div: 1.2})
             }
         }
     })

@@ -113,6 +113,7 @@ addStyles(popupTextBase, {
     filter: 'drop-shadow(0px 0px 5px black)',
     animation: 'popupMove 2s ease-out 1 forwards',
     color: 'transparent',
+    translate: '-50% -50%',
     zIndex: 10,
 })
 function createPopupText(text, pos) {
@@ -732,7 +733,7 @@ const weaponPresets = {
             modifyStat(['ammo','burst'], '=3')
         }
     },
-    firePaws: {
+    fire_paws: {
         name: 'Fire Paws',
         desc: 'Hot firey paws, living grill and barbecue',
         ammoChar: '🔥',
@@ -755,6 +756,37 @@ const weaponPresets = {
             modifyStat(['bullet','explosionSize'],'=75')
             modifyStat(['player','maxWeaponDistance'],'=25')
             modifyStat(['player','explosiveHeal'], '=0.00001')
+        }
+    },
+    horse_weapon: {
+        name: 'horse weapon',
+        desc: 'horse weapon description',
+        ammoChar: '🐎',
+        textureSize: [32,16],
+        bulletTexture: true,
+
+        pros: [
+            'Stat up per wave'
+        ],
+        cons: [],
+
+        apply: () => {
+            modifyStat(['bullet','spin'],'=10')
+            modifyStat(['misc','horseWeapon'],'=true')
+        }
+    },
+    quiver_of_malice: {
+        name: 'Quiver of Malice',
+        desc: 'horse weapon description',
+        ammoChar: '🏹',
+        textureSize: [0,0],
+        bulletTexture: true,
+
+        pros: [],
+        cons: [],
+
+        apply: () => {
+            modifyStat(['ammo','burst'],'=Infinity')
         }
     }
 }
@@ -994,6 +1026,27 @@ const characters = {
     //         },
     //     ]
     // },
+    the_horse: {
+        name: 'The Horse',
+        desc: 'run',
+        taunts: 1,
+        tag: 'The Horse',
+        tagCol: 'black',
+
+        weapon: weaponPresets.horse_weapon,
+
+        pros: [
+            'So a horse walks into a bar',
+            'The horse asks for a drink',
+            'The bartender said no bro youre a horse',
+            'The horse says idc',
+            'The horse gets a drink anyways'
+        ],
+
+        applyStats: () => {
+            
+        },
+    },
     car: {
         name: 'car',
         desc: 'my name is car',
@@ -1107,6 +1160,59 @@ const characters = {
             {text: 'GS2',col: '#775db9'}
         ],
 
+        skins: [
+            {
+                name: 'Stew',
+                src: 'stew',
+                taunts: 1,
+            },
+            {
+                name: 'Noodle',
+                src: 'noodle',
+                taunts: 1,
+            },
+            // {
+            //     name: 'Spud', //beetle guy
+            //     src: 'Spud',
+            //     taunts: 1,
+            // },
+            // {
+            //     name: 'Yogurt', //blue dragon
+            //     src: 'yogurt',
+            //     taunts: 1,
+            // },
+            // {
+            //     name: 'Curry', //red dragon
+            //     src: 'curry',
+            //     taunts: 1,
+            // },
+            // {
+            //     name: 'Nickel', //brown wolf (?) (pumpernickel)
+            //     src: 'nickel',
+            //     taunt: 1,
+            // },
+            // {
+            //     name: 'Spaghetti', //yellow worm
+            //     src: 'spaghetti',
+            //     taunt: 1,
+            // },
+            {
+                name: 'Soup', //cat
+                src: 'soup',
+                taunt: 1,
+            },
+            // {
+            //     name: 'Lemon', //bee
+            //     src: 'lemon',
+            //     taunt: 1,
+            // },
+            // {
+            //     name: 'Marshmellow', //bee
+            //     src: 'marshmellow',
+            //     taunt: 1,
+            // },
+        ],
+
         weapon: weaponPresets.gun
     },
     phoenix: {
@@ -1135,14 +1241,14 @@ const characters = {
 
         applyStats: () => {
             modifyStat(['player','fireTouch'],'=true')
-            modifyStat(['player','speed'],'=true')
+            modifyStat(['player','speed'],'*=0.8')
             modifyStat(['player','explosiveHitChance'],'=50')
             modifyStat(['player','explosiveHitDamage'],'=1')  
 
             modifyStat(['melee','damage'], '=40')
         },
 
-        weapon: weaponPresets.firePaws
+        weapon: weaponPresets.fire_paws
     },
     allx: {
         name: 'Quantum',
@@ -1693,7 +1799,7 @@ const challenges = {
             <cg>+100</cg> Luck<br>
             <cg>+900</cg> Max POWER<br>
             <cg>+5</cg> POWER gain multiplier<br>
-            <cg>+2 Shop slots</cg><br>
+            <cg>+2</cg> Shop slots<br>
             <cg>+Infinity</cg> Shop rerolls<br>
             <cp>+$Infinity</cp><br>
             <br>

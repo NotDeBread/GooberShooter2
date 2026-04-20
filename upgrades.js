@@ -779,7 +779,9 @@ const upgrades = [
 
             apply: () => {
                 modifyStat(['bullet','split'], '+=3')
-                // modifyStat(['bullet','splits'], '+=1') //Wayyy too laggy
+                if(player.stats.bullet.splits === 0) {
+                    modifyStat(['bullet','splits'], '+=1')
+                }
             }
         },
         electric_ammo: {
@@ -897,6 +899,22 @@ const upgrades = [
 
             apply: () => {
                 modifyStat(['bullet','coinChance'], '+=1')
+            }
+        },
+        radioactive_ammo: {
+            name: 'Radioactive Ammo',
+            desc: `
+                Bullets gain a damaging aura, dealing up to <cg>+150%</cg> of your damage every 10 ticks<br>
+                <cg>+10</cg> Radiation size
+            `,
+            priceMult: 1.75,
+
+            apply: () => {
+                if(player.stats.bullet.radiationSize === 0) {
+                    modifyStat(['bullet','radiationSize'], '+=75')
+                } else {
+                    modifyStat(['bullet','radiationSize'], '+=10')
+                }
             }
         },
         third_eye: {
@@ -1670,10 +1688,10 @@ const powerItems = [
                     }
 
                     enemies.forEach(enemy => {
-                        if(isColliding(bottle, enemy) && enemy.active) {
-                            enemy.damage(player.stats.bullet.damage * 2)
-                            enemy.isBleeding = true
-                            enemy.speedMult /= 2
+                        if(isColliding(bottle, enemy) && enemy.data.active) {
+                            enemy.data.damage(player.stats.bullet.damage * 2)
+                            enemy.data.isBleeding = true
+                            enemy.data.speedMult /= 2
                             bottle.destroy()
                         }
                     })
@@ -1894,10 +1912,10 @@ const powerItems = [
                     }
 
                     enemies.forEach(enemy => {
-                        if(isColliding(bottle, enemy) && enemy.active) {
-                            enemy.damage(player.stats.bullet.damage * 2)
-                            enemy.onFire = true
-                            enemy.speedMult /= 2
+                        if(isColliding(bottle, enemy) && enemy.data.active) {
+                            enemy.data.damage(player.stats.bullet.damage * 2)
+                            enemy.data.onFire = true
+                            enemy.data.speedMult /= 2
                             bottle.destroy()
                         }
                     })
@@ -1991,6 +2009,7 @@ const powerItems = [
                 wisp.ticksActive = 0
                 wisp.pos = [...e.relCursorPos]
                 wisp.classList.add('entity')
+                wisp.classList.add('wisp')
                 addStyles(wisp, {
                     position: 'absolute',
                     left: wisp.pos[0]+'px',
@@ -2048,8 +2067,8 @@ const powerItems = [
 
                     if(teslaCoil.ticksActive % 10 === 0 && elems.enemies.length > 0) {
                         const randomEnemy = elems.enemies[DeBread.randomNum(0,elems.enemies.length-1)]
-                        const rdx = randomEnemy.centerPos[0] - teslaCoil.pos[0]
-                        const rdy = randomEnemy.centerPos[1] - teslaCoil.pos[1]
+                        const rdx = randomEnemy.data.centerPos[0] - teslaCoil.pos[0]
+                        const rdy = randomEnemy.data.centerPos[1] - teslaCoil.pos[1]
                         const rdis = Math.sqrt(rdx*rdx+rdy*rdy)
                         let closestStartingEnemy = {enemy: randomEnemy, distance: rdis, d: [rdx,rdy]}
 
@@ -2057,9 +2076,9 @@ const powerItems = [
                             let enemiesHit = [closestStartingEnemy.enemy]
                             let currentEnemy = closestStartingEnemy.enemy
     
-                            closestStartingEnemy.enemy.damage(player.stats.bullet.damage * 2)
+                            closestStartingEnemy.enemy.data.damage(player.stats.bullet.damage * 2)
     
-                            const popup = createPopupText(DeBread.round(player.stats.bullet.damage), [closestStartingEnemy.enemy.centerPos[0],closestStartingEnemy.enemy.centerPos[1]])
+                            const popup = createPopupText(DeBread.round(player.stats.bullet.damage), [...closestStartingEnemy.enemy.data.centerPos])
                             popup.style.color = 'aqua'
                             popup.style.fontSize = Math.min(Math.max(player.stats.bullet.damage / 5, 15), 50) + 'px'
                             doge('area').append(popup)
@@ -2071,8 +2090,8 @@ const powerItems = [
                                 height: '10px',
                                 translate: '-50% -50%',
                                 position: 'absolute',
-                                left: (teslaCoil.pos[0]+closestStartingEnemy.enemy.centerPos[0])/2+'px',
-                                top: (teslaCoil.pos[1]+closestStartingEnemy.enemy.centerPos[1])/2+'px',
+                                left: (teslaCoil.pos[0]+closestStartingEnemy.enemy.data.centerPos[0])/2+'px',
+                                top: (teslaCoil.pos[1]+closestStartingEnemy.enemy.data.centerPos[1])/2+'px',
                                 rotate: startingEnemyAngle+'rad',
                                 backgroundImage: 'url(graphics/electricityChain.gif)',
                                 backgroundSize: 'contain',
@@ -2090,9 +2109,9 @@ const powerItems = [
                             for(let i = 0; i < 10; i++) {
                                 let shortestEnemy = {enemy: undefined, distance: Infinity, d: []}
                                 elems.enemies.forEach(otherEnemy => {
-                                    if(currentEnemy !== otherEnemy && !enemiesHit.includes(otherEnemy) && otherEnemy.active) {
-                                        const dx = currentEnemy.pos[0] - otherEnemy.pos[0]
-                                        const dy = currentEnemy.pos[1] - otherEnemy.pos[1]
+                                    if(currentEnemy !== otherEnemy && !enemiesHit.includes(otherEnemy) && otherEnemy.data.active) {
+                                        const dx = currentEnemy.data.pos[0] - otherEnemy.data.pos[0]
+                                        const dy = currentEnemy.data.pos[1] - otherEnemy.data.pos[1]
         
                                         const distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
                                         if(distance < shortestEnemy.distance && distance <= 150) {
@@ -2110,19 +2129,19 @@ const powerItems = [
                                 const toEnemy = currentEnemy
     
                                 const damage = (player.stats.bullet.damage * 2) / (i + 1)
-                                shortestEnemy.enemy.damage(damage)
+                                shortestEnemy.enemy.data.damage(damage)
     
-                                const popup = createPopupText(DeBread.round(damage), [shortestEnemy.enemy.centerPos[0],shortestEnemy.enemy.centerPos[1]])
+                                const popup = createPopupText(DeBread.round(damage), [...shortestEnemy.enemy.data.centerPos])
                                 popup.style.color = 'aqua'
                                 popup.style.fontSize = Math.min(Math.max(damage / 5, 15), 50) + 'px'
                                 doge('area').append(popup)
     
                                 getStyle(styles.shocked)
 
-                                const enemiesAngle = Math.atan2(fromEnemy.centerPos[1] - toEnemy.centerPos[1], fromEnemy.centerPos[0] - toEnemy.centerPos[0])
+                                const enemiesAngle = Math.atan2(fromEnemy.data.centerPos[1] - toEnemy.data.centerPos[1], fromEnemy.data.centerPos[0] - toEnemy.data.centerPos[0])
                                 const enemiesDist = Math.sqrt(
-                                    Math.pow(fromEnemy.centerPos[0] - toEnemy.centerPos[0],2) + 
-                                    Math.pow(fromEnemy.centerPos[1] - toEnemy.centerPos[1],2)
+                                    Math.pow(fromEnemy.data.centerPos[0] - toEnemy.data.centerPos[0],2) + 
+                                    Math.pow(fromEnemy.data.centerPos[1] - toEnemy.data.centerPos[1],2)
                                 )
 
                                 const chain = document.createElement('div')
@@ -2131,8 +2150,8 @@ const powerItems = [
                                     height: '10px',
                                     translate: '-50% -50%',
                                     position: 'absolute',
-                                    left: (fromEnemy.centerPos[0]+toEnemy.centerPos[0])/2+'px',
-                                    top: (fromEnemy.centerPos[1]+toEnemy.centerPos[1])/2+'px',
+                                    left: (fromEnemy.data.centerPos[0]+toEnemy.data.centerPos[0])/2+'px',
+                                    top: (fromEnemy.data.centerPos[1]+toEnemy.data.centerPos[1])/2+'px',
                                     rotate: enemiesAngle+'rad',
                                     backgroundImage: 'url(graphics/electricityChain.gif)',
                                     backgroundSize: 'contain',
@@ -2159,6 +2178,74 @@ const powerItems = [
                     createExplosion(teslaCoil.pos, 100, 100, 25, true, [[0,50],[155,255],[255,255]])
                     teslaCoil.remove()
                 }
+            }
+        },
+        pringles_can: {
+            name: 'Pringles™ Can',
+            id: 'pringles_can',
+            desc: `
+                Uses <cp>100</cp> POWER<br>
+                Throws a pringles can towards your cursor, dealing <cg>1000%</cg> of your damage on impact and pushes enemies away.
+            `,
+            charge: 100,
+
+            use: () => {
+                const bottle = document.createElement('div')
+                bottle.classList.add('entity')
+                bottle.pos = [...player.centerPos]
+                bottle.angle = Math.atan2(e.relCursorPos[1] - bottle.pos[1], e.relCursorPos[0] - bottle.pos[0])
+                bottle.speed = 10
+                bottle.grav = -5
+                bottle.rot = 0
+                addStyles(bottle, {
+                    position: 'absolute',
+                    left: bottle.pos[0]+'px',
+                    top: bottle.pos[1]+'px',
+                    width: '25px',
+                    height: '25px',
+                    translate: '-50% -50%',
+                    backgroundImage: 'url(graphics/pringles_can.png)',
+                    backgroundSize: '16px',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                })
+
+                bottle.tick = (enemies) => {
+                    bottle.rot += 10
+                    bottle.pos[0] += Math.cos(bottle.angle) * bottle.speed
+                    bottle.pos[1] += Math.sin(bottle.angle) * bottle.speed + bottle.grav
+                    
+                    bottle.grav += 0.35
+
+                    addStyles(bottle, {
+                        left: bottle.pos[0]+'px',
+                        top: bottle.pos[1]+'px',
+                        rotate: bottle.rot+'deg'
+                    })
+
+                    bottle.destroy = () => {
+                        createParticles([...bottle.pos], 5, 10, [25,50], 250, 'ease-out',{backgroundColor: 'white'})
+                        createExplosion([...bottle.pos], 250, 0, 100, true, [[0,0],[0,0],[0,0],0])
+                        DeBread.playSound('audio/pringlesCan.mp3',0.05,DeBread.randomNum(0.95,1.05,5),false)
+                        bottle.remove()
+                    }
+
+                    if(bottle.pos[1] > doge('area').offsetHeight ||
+                        bottle.pos[0] < 0 ||
+                        bottle.pos[0] > doge('area').offsetWidth
+                    ) {
+                        bottle.destroy()
+                    }
+
+                    enemies.forEach(enemy => {
+                        if(isColliding(bottle, enemy) && enemy.data.active) {
+                            enemy.data.damage(player.stats.bullet.damage * 10)
+                            bottle.destroy()
+                        }
+                    })
+                }
+
+                doge('area').append(bottle)
             }
         },
     },
@@ -3005,8 +3092,8 @@ function closeShop() {
         setTimeout(() => {
             portal.remove()
             player.elem.style.scale = '1'
-            player.stats.player.pickupRange -= 10
             doge('weapon').style.scale = '1'
+            player.stats.player.pickupRange -= 10
         }, 1000);
     })
 

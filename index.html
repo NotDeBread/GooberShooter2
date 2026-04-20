@@ -59,7 +59,7 @@
             <span id="menuTitle1">Goober</span>
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
-            <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest8</a></span>
+            <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest9</a></span>
         </div>
         <div id="menuButtons">
             <button onclick="tryPlay()" style="height: 40px;">PLAY</button>
@@ -392,7 +392,7 @@
                     <div id="sandboxMenu-elixirs"></div>
                     <div id="sandboxMenu-stats"></div>
                     <div id="sandboxMenu-tools">
-                        <button onclick="doge('area').querySelectorAll('.enemy').forEach(enemy => {enemy.kill(100)})">Kill all enemies</button>
+                        <button onclick="elems.enemies.forEach(enemy => {enemy.data.kill()})">Kill all enemies</button>
                         <button onclick="player.health = player.stats.player.maxHealth; updateUI()">Heal player</button>
                         <button onclick="spawnPortal()">Spawn portal</button>
                         <button onclick="player = createPlayer()">Reset player</button>
@@ -527,6 +527,12 @@
                 <div>
                     <div id="gameMoneyCount">$0</div>
                 </div>
+            </div>
+            <div id="gameBossbarContainer">
+                <!-- <div class="gameBossbar">
+                    <span>SUPER COOL BOSS</span>
+                    <div></div>
+                </div> -->
             </div>
             <div id="gameStatsContainer">
                 <!-- <div class="gameStatContainer">

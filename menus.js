@@ -461,7 +461,7 @@ function updateCharacterCustomization() {
         
         const buttonRect = button.getBoundingClientRect()
         button.onmouseenter = () => {
-            tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], playerSkins[skin].name, [{text: 'SKIN', col: '#973a3a'}], 'desc')
+            tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], playerSkins[skin].name, [{text: 'SKIN', col: '#973a3a'}], '')
         }
 
         button.onmouseleave = () => {
