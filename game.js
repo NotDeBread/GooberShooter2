@@ -157,6 +157,7 @@ function createPlayer() {
                 drillTicks: 0, //The amount of times a bullet can hit an enemy before being destroyed.
                 
                 explosionSize: 0, //The size (in pixels) of the explosion a bullet creates when being destroyed.
+                fireyAmmo: false,
 
                 heal: 0, //The amount of HP a bullet heals the player when hitting an enemy.
 
@@ -387,6 +388,12 @@ function createPlayer() {
                 elems.enemies.forEach(enemy => {
                     if(isColliding(doge('meleeHitbox'), enemy) && enemy.data.active) {
                         enemy.data.damage(player.stats.melee.damage * player.stats.melee.damageMult)
+
+                        const popup = createPopupText(DeBread.round(player.stats.melee.damage), [...enemy.data.centerPos])
+                        popup.style.color = 'white'
+                        popup.style.fontSize = Math.min(Math.max(player.stats.melee.damage / 5, 15), 50) + 'px'
+                        doge('area').append(popup)
+
                         player.damage(-player.stats.melee.heal)
 
                         getStyle(styles.punch)
@@ -669,8 +676,8 @@ function createPlayer() {
                 if(player.stats.player.contactDamage || player.stats.player.fireTouch) {
                     elems.enemies.forEach(enemy => {
                         if(isColliding(player.elem, enemy)) {
-                            enemy.damage(player.stats.player.contactDamage, true)
-                            if(!enemy.alive) {
+                            enemy.data.damage(player.stats.player.contactDamage, true)
+                            if(!enemy.data.alive) {
                                 getStyle(styles.trampled)
                             }
 
@@ -1478,6 +1485,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
         position: 'absolute',
         width: '200%',
         height: '200%',
+        pointerEvents: 'none',
         rotate: `-${proj.angle}rad`,
     })
 
@@ -1504,6 +1512,16 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
             outline: '2px solid rgb(255,0,0,0.25)'
         })
         proj.append(overlay)
+    }
+
+    if(data.fireyAmmo) {
+        const overlay = overlayBase.cloneNode()
+        overlay.src = 'graphics/fireLargeCentered.gif'
+        addStyles(overlay, {
+            scale: '4',
+            opacity: '0.5',
+        })
+        proj.append(overlay)    
     }
 
     if(data.radiationSize > 0) {
@@ -1648,7 +1666,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
             )
         }
 
-        //Split particles
+        //Seeking particles
         if(data.magnetStrength > 0 && e.gameUpdates % 3 === 0) {
             createParticles(
                 [...proj.beforePos],
@@ -1658,6 +1676,19 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
                 500,
                 'ease-out',
                 {backgroundColor: '#b830ff'}
+            )
+        }
+
+        //Firey particles
+        if(data.fireyAmmo > 0 && e.gameUpdates % 3 === 0) {
+            createParticles(
+                [...proj.beforePos],
+                1,
+                10,
+                [10,25],
+                250,
+                'ease-out',
+                {backgroundColor: 'red'}
             )
         }
         
@@ -1719,6 +1750,11 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
                     //Knockback
                     target.data.dirVels.push({angle: proj.angle - Math.PI, speed: data.knockback ?? 0, div: 1.1})
     
+                    //Apply fire
+                    if(data.fireyAmmo) {
+                        target.data.onFire = true
+                    }
+
                     //Coins
                     if(pData.coinChance > 0) {
                         function getCoin() {
@@ -1830,26 +1866,25 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
         }
 
         //Supermagnet stuff
-        if(document.querySelectorAll('.superMagnet').length > 0) {
+        if(document.querySelectorAll('.superMagnet').length > 0 && origin !== player) {
             doge('area').querySelectorAll('.superMagnet').forEach(magnet => {
                 const angle = Math.atan2(
-                    projectile.data.pos[1] - magnet.pos[1],
-                    projectile.data.pos[0] - magnet.pos[0]
+                    proj.pos[1] - magnet.pos[1],
+                    proj.pos[0] - magnet.pos[0]
                 )
 
-                let delta = angle - projectile.data.angle
-
+                let delta = angle - proj.angle
                 delta = Math.atan2(Math.sin(delta), Math.cos(delta))
 
-                projectile.angle += delta * 0.05
+                proj.angle += delta * 0.05
 
                 const dis = Math.sqrt(
-                    Math.pow(projectile.pos[0] - magnet.pos[0],2) + 
-                    Math.pow(projectile.pos[1] - magnet.pos[1],2)
+                    Math.pow(proj.pos[0] - magnet.pos[0],2) + 
+                    Math.pow(proj.pos[1] - magnet.pos[1],2)
                 )
 
                 if(dis <= 100) {
-                    projectile.speed /= 1.01
+                    proj.speed /= 1.01
                 }
             })
         }
@@ -2343,18 +2378,23 @@ const updateInterval = DeBread.createInterval(() => {
             } else {
                 if(isColliding(player.elem, field) && e.gameUpdates - field.lastTick >= field.tickRate) {
                     player.damage(field.damage)
+
+                    const popup = createPopupText(DeBread.round(field.damage), [...player.centerPos])
+                    popup.style.color = '#ff6464'
+                    popup.style.fontSize = Math.min(Math.max(field.damage / 5, 15), 50) + 'px'
+                    doge('area').append(popup)
     
                     // field.lastTick = e.gameUpdates
                 }
     
                 elems.enemies.forEach(enemy => {
-                    if(isColliding(enemy, field) && e.gameUpdates - field.lastTick >= field.tickRate && enemy.active && !field.ignoreEnemies) {
-                        enemy.damage(field.damage)
+                    if(isColliding(enemy, field) && e.gameUpdates - field.lastTick >= field.tickRate && enemy.data.active && !field.ignoreEnemies) {
+                        enemy.data.damage(field.damage)
                         if(!enemy.alive) {
                             getStyle(styles.poisoned)
                         }
 
-                        const popup = createPopupText(DeBread.round(field.damage), [enemy.pos[0] + enemy.size / 2, enemy.pos[1] + enemy.size / 2])
+                        const popup = createPopupText(DeBread.round(field.damage), [...enemy.data.centerPos])
                         addStyles(popup, {
                             color: 'red'
                         })
@@ -2537,8 +2577,8 @@ const updateInterval = DeBread.createInterval(() => {
     //Passive items
     if(e.gameUpdates % Math.max(DeBread.round((100 / player.stats.player.passiveAbilityMult)), 1) === 0 && player.stats.player.socksDamage > 0 && elems.enemies.length > 0) {
         const targetEnemy = elems.enemies[DeBread.randomNum(0,elems.enemies.length-1)]
-        if(targetEnemy.active) {
-            createPoisonField([targetEnemy.centerPos[0], targetEnemy.centerPos[1]], 100, player.stats.bullet.damage * player.stats.player.socksDamage, 1, 10, false, [0,100,255])
+        if(targetEnemy.data.active) {
+            createPoisonField([targetEnemy.data.centerPos[0], targetEnemy.data.centerPos[1]], 100, player.stats.bullet.damage * player.stats.player.socksDamage, 1, 10, false, [0,100,255])
         }
     }
     
@@ -3799,9 +3839,9 @@ const tutorialEnemies = {
         mounted: true,
 
         projectile: {
-            cooldown: 2500,
+            cooldown: 75,
             size: 10,
-            dmg: 0,
+            damage: 0,
             speed: 4,
         },
     },
@@ -3814,9 +3854,9 @@ const tutorialEnemies = {
         mounted: true,
 
         projectile: {
-            cooldown: 1000,
+            cooldown: 40,
             size: 10,
-            dmg: 0,
+            damage: 0,
             speed: 5,
         },
     }
@@ -3838,7 +3878,7 @@ const tutorial = [
         run: () => {
             player.stats.ammo.current = 10
             updateUI()
-            spawnEnemy([400, doge('area').offsetHeight / 2 - 25], tutorialEnemies.dummy0, 0, 1000)
+            spawnEnemy([400, doge('area').offsetHeight / 2 - 25], tutorialEnemies.dummy0, 0, 25)
             DeBread.pauseInterval(1, false)
         }
     },
@@ -3871,7 +3911,7 @@ const tutorial = [
         goal: 'Perform melees',
         goalTarget: 3,
         run: () => {
-            spawnEnemy([400, doge('area').offsetHeight / 2 - 25], tutorialEnemies.dummy1, 0, 1000)
+            spawnEnemy([400, doge('area').offsetHeight / 2 - 25], tutorialEnemies.dummy1, 0, 25)
         }
     },
     {
@@ -3879,14 +3919,14 @@ const tutorial = [
         goal: 'Perform parries',
         goalTarget: 3,
         run: () => {
-            elems.enemies.forEach(enemy => {enemy.kill()})
-            spawnEnemy([400, doge('area').offsetHeight / 2 - 25], tutorialEnemies.dummy2, 0, 1000)
+            elems.enemies.forEach(enemy => {enemy.data.kill()})
+            spawnEnemy([400, doge('area').offsetHeight / 2 - 25], tutorialEnemies.dummy2, 0, 25)
         }
     },
     {
         text: 'Okay, let\'s move away from gameplay and focus on the <strong>Shop</strong>.',
         run: () => {
-            elems.enemies.forEach(enemy => {enemy.kill()})
+            elems.enemies.forEach(enemy => {enemy.data.kill()})
             modifyStat(['melee','cooldown'],'=75')
         }
     },
@@ -3990,7 +4030,7 @@ const tutorial = [
         goalTarget: 15,
 
         run: () => {
-            spawnEnemy([400, doge('area').offsetHeight / 2 - 25], tutorialEnemies.dummy3, 0, 1000)
+            spawnEnemy([400, doge('area').offsetHeight / 2 - 25], tutorialEnemies.dummy3, 0, 25)
             player.getPower(15)
         }
     },
@@ -3998,7 +4038,7 @@ const tutorial = [
         text: 'Nice! Now you have enough POWER to use your power item.',
 
         run: () => {
-            elems.enemies.forEach(enemy => {enemy.kill()})
+            elems.enemies.forEach(enemy => {enemy.data.kill()})
         }
     },
     {
@@ -4017,6 +4057,9 @@ const tutorial = [
     },
     {
         text: 'Thats about it for the basics! You\'ll learn more advanced things as you play through the game.'
+    },
+    {
+        text: 'Have fun!',
     },
     {
         text: 'Byeeee!!!!!',

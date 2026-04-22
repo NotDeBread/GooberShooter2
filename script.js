@@ -120,8 +120,8 @@ function createPopupText(text, pos) {
     const popup = popupTextBase.cloneNode()
     popup.classList.add('popup')
     
-    popup.style.setProperty('--popupX', `${DeBread.randomNum(-10,10)}px`)
-    popup.style.setProperty('--popupY', `${DeBread.randomNum(-10,10)}px`)
+    popup.style.setProperty('--popupX', `${DeBread.randomNum(-25,25)}px`)
+    popup.style.setProperty('--popupY', `${DeBread.randomNum(-25,25)}px`)
     
     popup.innerText = text
 
@@ -738,6 +738,7 @@ const weaponPresets = {
         desc: 'Hot firey paws, living grill and barbecue',
         ammoChar: '🔥',
         textureSize: [0,0],
+        bulletTexture: true,
 
         pros: [
             'Firey ammo',
@@ -756,6 +757,7 @@ const weaponPresets = {
             modifyStat(['bullet','explosionSize'],'=75')
             modifyStat(['player','maxWeaponDistance'],'=25')
             modifyStat(['player','explosiveHeal'], '=0.00001')
+            modifyStat(['bullet','fireyAmmo'],'=true')
         }
     },
     horse_weapon: {

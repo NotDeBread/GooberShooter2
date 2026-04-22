@@ -803,14 +803,18 @@ const upgrades = [
         ghost_ammo: {
             name: 'Ghost Ammo',
             desc: `
-                Bullets hit <cg>+25</cg> times when hitting an enemy.<br>
-                <cb>-90%</cb> Damage
+                Bullets can hit up to <cg>+25</cg> times when hitting an enemy.<br>
+                <cb>-75%</cb> Damage<br>
+                <cb>-50%</cb> Damage multiplier<br>
+                <cb>-75%</cb> Knockback
             `,
             priceMult: 0.8,
 
             apply: () => {
                 modifyStat(['bullet','drillTicks'], '+=25')
-                modifyStat(['bullet','damage'], '*=0.1')
+                modifyStat(['bullet','damage'], '*=0.25')
+                modifyStat(['bullet','damageMult'],'*=0.5')
+                modifyStat(['bullet','knockback'], '*=0.25')
             }
         },
         op_hourglass: {
@@ -1384,6 +1388,7 @@ const powerItems = [
                     const ball = document.createElement('div')
                     ball.classList.add('entity')
                     ball.classList.add('physObj')
+                    ball.classList.add('tennisBall')
                     ball.pos = [...player.centerPos]
                     ball.angle = Math.atan2(e.relCursorPos[1] - ball.pos[1], e.relCursorPos[0] - ball.pos[0])
                     ball.speed = 15
@@ -1550,7 +1555,7 @@ const powerItems = [
                         top: coin.pos[1]+'px'
                     })
 
-                    doge('area').querySelectorAll('.bullet').forEach(bullet => {
+                    doge('area').querySelectorAll('.projectile').forEach(bullet => {
                         if(isColliding(coin, bullet)) {
                             let othercoins = 0
                             doge('area').querySelectorAll('.thrownCoin').forEach(otherCoin => {
@@ -1585,8 +1590,8 @@ const powerItems = [
                                 bullet.pos = [...coin.pos]
                                 if(enemy) {
                                     bullet.angle = Math.atan2(
-                                        bullet.pos[1] - enemy.centerPos[1],
-                                        bullet.pos[0] - enemy.centerPos[0]
+                                        bullet.pos[1] - enemy.data.centerPos[1],
+                                        bullet.pos[0] - enemy.data.centerPos[0]
                                     )
                                     bullet.style.rotate = bullet.angle + 'rad'
                                 } else {
@@ -1727,6 +1732,18 @@ const powerItems = [
                 })
 
                 player.dirVels.push({angle: angle, speed: 25, div: 1.1})
+            }
+        },
+        impulse_grenade: {
+            name: 'Impulse Grenade',
+            desc: `
+                Uses <cp>25</cp> POWER<br>
+                Creates a shockwave that pushes back enemies
+            `,
+            charge: 25,
+
+            use: () => {
+                createExplosion([...player.centerPos], 250, 0, 100, true, [[0,50],[155,255],[255,255],0.5])
             }
         },
         // perfume: {

@@ -782,6 +782,7 @@ const settingsHTML = `
         <div style="display: flex; gap: 5px; padding-bottom: 5px; border-bottom: 1px solid grey; height: 24px;">
             <button onclick="openSettingsMenu('general')">General</button>
             <button onclick="openSettingsMenu('performance')">Performance</button>
+            <button onclick="openSettingsMenu('account')">Account</button>
         </div>
         <div class="settingsSection" id="settingsSection-general">
             <div class="settingsCheckboxContainer">
@@ -802,7 +803,7 @@ const settingsHTML = `
                 <div class="genericCheckbox" id="scb-presentationMode"></div>
                 <div class="settingsCheckboxInfo">
                     <span>Presentation Mode</span>
-                    <span>Enables local scoring and removes inappropriate language.</span>
+                    <span>Removes inappropriate language.</span>
                 </div>
             </div>
             <div class="settingsCheckboxContainer">
@@ -843,11 +844,8 @@ const settingsHTML = `
                 </div>
             </div>
         </div>
-        <div class="settingsSection" id="settingsSection-audio">
-            <span>Audio settings 🔥</span>
-        </div>
-        <div class="settingsSection" id="settingsSection-display">
-            <span>Display settings 🔥</span>
+        <div class="settingsSection" id="settingsSection-account">
+            <span>Under construction</span>
         </div>
     </div>
 `

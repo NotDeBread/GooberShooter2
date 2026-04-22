@@ -556,6 +556,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
     }
 
     enemy.tick = () => {
+        if(!e.gameActive) return
         if(e.gameUpdates - enemyData.spawnDate >= spawnTime && !enemyData.active) {
             enemy.init()
         }
