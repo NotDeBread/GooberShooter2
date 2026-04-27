@@ -1464,12 +1464,10 @@
 @keyframes popupMove {
     50% {
         opacity: 1;
-        /* filter: drop-shadow(0px 0px 5px black) blur(0px); */
     }
     to {
-        transform: translate(var(--popupX), var(--popupY));
+        transform: translate(var(--popupX), var(--popupY)) rotate(var(--popupRot));
         opacity: 0;
-        /* filter: drop-shadow(0px 0px 5px black) blur(5px); */
     }
 }
 
@@ -1484,8 +1482,7 @@
 
 @keyframes particle {
     to {
-        translate: var(--particleX) var(--particleY);
-        scale: 0;
+        transform: translate(var(--particleX), var(--particleY)) scale(0);
     }
 }
 

@@ -6,7 +6,7 @@ let gameSpeed = 1
 let notiCount = 0
 const soundPool = {};
 
-let particles = 0
+// let particles = 0
 let audios = 0
 let audioLimit = 15
 
@@ -251,15 +251,6 @@ function frameUpdate() {
     requestAnimationFrame(frameUpdate)
 } requestAnimationFrame(frameUpdate)
 
-//Error message
-window.onerror = ev => {
-    // createNoti('media/error.png', 'An error has occured', 'Please report this to DeBread, click on this notification to copy the error to your clipboard.', 
-    // () => {
-    //     navigator.clipboard.writeText(ev)
-    //     createNoti(undefined, 'Copied to clipboard.', ev)
-    // })
-}
-
 function isColliding(div1, div2) {
     const rect1 = div1.getBoundingClientRect()
     const rect2 = div2.getBoundingClientRect()
@@ -413,6 +404,60 @@ function getWeightedChance(weights) {
     }
 }
 
+const particles = [
+    // {
+    //     layer: 1,
+    //     pos: [],
+    //     vel: [],
+    //     velDiv: 1,
+    //     size: 10,
+    //     duration: 10,
+    //     durationTotal: 10,
+    //     styles: {
+    //         backgroundColor: 'white'
+    //     }
+    // }
+]
+
+function createParticle(layer, pos, vel, velDiv, angle, size, sizeDiv, duration, styles) {
+    particles.push(
+        {
+            layer: layer,
+            pos: pos, 
+            vel: [
+                Math.cos(angle) * vel,
+                Math.sin(angle) * vel
+            ], 
+            velDiv: velDiv, 
+            size: size,
+            startingSize: size,
+            sizeDiv: sizeDiv,
+
+            duration: duration,
+            maxDuration: duration,
+
+            styles: styles
+        }
+    )
+}
+
+function updateParticles() {
+    for(let i = particles.length - 1; i >= 0; i--) {
+        const particle = particles[i]
+        particle.duration--
+
+        particle.pos[0] += particle.vel[0]
+        particle.pos[1] += particle.vel[1]
+
+
+        particle.vel[0] /= particle.velDiv
+        particle.vel[1] /= particle.velDiv
+
+        if(particle.duration <= 0 || particle.size <= 0) {
+            particles.splice(i,1)
+        }
+    }
+}
 
 //I did NOT anything below, i am too tired rn and i just want to get ts over with
 function roman(num) {

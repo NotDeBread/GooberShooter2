@@ -380,9 +380,9 @@ const enemies = {
         poor: true,
 
         projectile: {
-            cooldown: 2500,
+            cooldown: 100,
             size: 10,
-            dmg: 0,
+            damage: 0,
             speed: 2,
         },
     },
@@ -419,6 +419,10 @@ const enemies = {
             size: 15,
             damage: 50,
             speed: 10,
+
+            magnetStrength: 1,
+            splits: 2,
+            split: 5,
 
             explosionSize: 100,
 
@@ -628,7 +632,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
             const distance = Math.sqrt(Math.pow(dx,2) + Math.pow(dy,2))
 
             if(distance <= data.poisonField.size && e.gameUpdates % DeBread.round(data.poisonField.rate / player.stats.enemy.speedMult / enemyData.speedMult) === 0) {
-                player.damage(data.poisonField.damage, true)
+                player.damage(data.poisonField.damage)
             }
         }
 
@@ -636,7 +640,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
         if(
             data.projectile && 
             enemyData.active &&
-            e.gameUpdates - enemyData.lastShotDate > data.projectile.cooldown
+            e.gameUpdates - enemyData.lastShotDate > data.projectile.cooldown / player.stats.enemy.speedMult
         ) {
             enemy.shoot()
         }

@@ -59,7 +59,7 @@
             <span id="menuTitle1">Goober</span>
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
-            <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest10</a></span>
+            <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest11</a></span>
         </div>
         <div id="menuButtons">
             <button onclick="tryPlay()" style="height: 40px;">PLAY</button>
@@ -385,6 +385,7 @@
                     <button onclick="openSandboxMenu('stats')">Attributes</button>
                     <button onclick="openSandboxMenu('tools')">Tools</button>
                     <button onclick="openSandboxMenu('powerItems')">Power Items</button>
+                    <button onclick="openSandboxMenu('characters')">Characters</button>
                 </div>
                 <div id="gameInnerSandbox">
                     <div id="sandboxMenu-enemies"></div>
@@ -417,6 +418,7 @@
                         </div>
                     </div>
                     <div id="sandboxMenu-powerItems"></div>
+                    <div id="sandboxMenu-characters" style="display: flex; flex-direction: column; gap: 5px; margin-top: 5px;"></div>
                 </div>
             </div>
         </div>
@@ -485,6 +487,7 @@
                 <span id="dbKeys">Keys: []</span><br>
                 <span id="dbCursor">CursorPos: [-,-]</span>
                 <span id="dbUpdates">Updates: 0</span><br>
+                <span id="dbParticles">Particles: 0</span><br>
                 <span id="dbTickInterval">Tick Interval: 0/0</span><br>
                 <span id="dbStatus">Status Effects: []</span><br>
                 <span id="dbElems">Elems: []</span><br>

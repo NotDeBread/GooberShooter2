@@ -1512,6 +1512,7 @@ const powerItems = [
 
                 const coin = document.createElement('div')
                 coin.classList.add('entity')
+                coin.classList.add('thrownCoin')
                 coin.pos = [...player.centerPos]
                 coin.angle = Math.atan2(e.relCursorPos[1] - coin.pos[1], e.relCursorPos[0] - coin.pos[0])
                 coin.speed = 10
@@ -2034,7 +2035,9 @@ const powerItems = [
                     width: '32px',
                     height: '32px',
                     translate: '-50% -50%',
-                    outline: '1px solid red'
+                    filter: `hue-rotate(${DeBread.randomNum(-90,90)}deg)`,
+                    backgroundImage: 'url(graphics/wisp.gif)',
+                    backgroundSize: 'cover'
                 })
 
                 doge('area').append(wisp)
@@ -2631,7 +2634,11 @@ function createShopItems(items) {
 
                     const randomKey = filteredKeys[DeBread.randomNum(0, filteredKeys.length - 1)]
                     const randomItem = itemList[rarity][randomKey]
+
+                    let itemCost = DeBread.round(rarities[rarity].costBase * (1 + player.wave / 10) * (randomItem.priceMult ?? 1))
                     
+                    if(saveData.selectedChallenge === 'classic') itemCost = 0
+
                     if(!randomItemsIDs.includes(randomKey) && saveData.selectedChallenge !== 'abstract') {
                         itemChosen = true
                         randomItems.push({
@@ -2639,7 +2646,7 @@ function createShopItems(items) {
                             id: randomKey,
                             rarity: rarity,
                             type: itemType,
-                            cost: DeBread.round(rarities[rarity].costBase * (1 + player.wave / 10) * (randomItem.priceMult ?? 1))
+                            cost: itemCost
                         })
                         randomItemsIDs.push(randomKey)
                     }
@@ -2795,8 +2802,9 @@ function createShopItems(items) {
 
                     itemSlot.sellOut()
                 }
-
             }
+
+            if(saveData.selectedChallenge === 'classic') closeShop()
         }
         
         itemSlot.sellOut = () => {

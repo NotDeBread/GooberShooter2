@@ -26,11 +26,22 @@ const saveData = {
         showGameQuitWarning: true,
         showPowerItemWarning: true,
         showGameOverflow: true,
+        skunkMode: false,
         debug: false,
     },
 
     gameSettings: {
         gamemode: 0,
+    },
+
+    keybinds: {
+        moveUp: 'w',
+        moveLeft: 'a',
+        moveRight: 'd',
+        moveDown: 's',
+        reload: 'r',
+        powerItem: 'q',
+        melee: 'f',
     },
 
     bankMoney: 0,
@@ -122,6 +133,7 @@ function createPopupText(text, pos) {
     
     popup.style.setProperty('--popupX', `${DeBread.randomNum(-25,25)}px`)
     popup.style.setProperty('--popupY', `${DeBread.randomNum(-25,25)}px`)
+    popup.style.setProperty('--popupRot', `${DeBread.randomNum(-25,25)}deg`)
     
     popup.innerText = text
 
@@ -146,13 +158,14 @@ particleBase.classList.add('particle')
 let particleCount = 0
 
 function createParticles(pos, count, size, dis, duration, timingFunction, styles) {
-    if(particleCount <= 50 && saveData.settings.particles) {
+    if(particleCount <= 100 && saveData.settings.particles) {
         for(let i = 0; i < count; i++) {
             const particle = particleBase.cloneNode()
             particle.style.setProperty('--particleDuration',duration + 'ms')
             const randomAngle = DeBread.randomNum(0,2*Math.PI,3)
             particle.style.setProperty('--particleX', Math.cos(randomAngle)*DeBread.randomNum(dis[0],dis[1])+'px')
             particle.style.setProperty('--particleY', Math.sin(randomAngle)*DeBread.randomNum(dis[0],dis[1])+'px')
+
             particle.style.setProperty('--particleTimingFunction', timingFunction)
             
             addStyles(particle, {
@@ -532,7 +545,7 @@ const weaponPresets = {
             modifyStat(['ammo','max'], '=50')
             modifyStat(['ammo','current'], '=50')
             
-            modifyStat(['ammo','reloadSpeed'], '=3000')
+            modifyStat(['ammo','reloadSpeed'], '=2000')
             modifyStat(['bullet','damage'], '=2.5')
             modifyStat(['ammo','autoFire'], '=true')
             modifyStat(['ammo','stationaryFire'], '=true')
@@ -1850,6 +1863,20 @@ const challenges = {
             modifyStat(['misc','waveMoneyMult'],'=0')
         }
     },
+    classic: {
+        name: 'Classic',
+        desc: `
+            <cs>0.25x</cs> Score multiplier<br>
+            +Enemies no longer increase level
+            +Everything in the shop becomes <cg>free</cg><br>
+            +Buying an item closes the shop
+        `,
+
+        apply: () => {
+            player.scoreMult = 0.25
+            modifyStat(['enemy','levelIncrease'],'=-Infinity')
+        }
+    }
 }
 
 //Music stuff

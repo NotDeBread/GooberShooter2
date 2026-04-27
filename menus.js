@@ -814,6 +814,13 @@ const settingsHTML = `
                 </div>
             </div>
             <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-skunkMode"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Skunk Mode</span>
+                    <span>"Fixes" keybinds.</span>
+                </div>
+            </div>
+            <div class="settingsCheckboxContainer">
                 <div class="genericCheckbox" id="scb-debug"></div>
                 <div class="settingsCheckboxInfo">
                     <span>Debug Mode</span>
@@ -924,5 +931,11 @@ function updateSettings() {
         doge('area').style.overflow = 'visible'
     } else {
         doge('area').style.overflow = 'hidden'
+    }
+
+    if(saveData.settings.skunkMode) {
+        saveData.keybinds.melee = ' '
+    } else {
+        saveData.keybinds.melee = 'f'
     }
 } updateSettings()
