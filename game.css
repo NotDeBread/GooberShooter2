@@ -58,6 +58,45 @@
     width: 150px;
 }
 
+#innerStatsPauseMenu {
+    display: flex;
+}
+
+#gameStatsItems {
+    border: 1px solid grey;
+    padding: 5px;
+    width: 300px;
+    height: 150px;
+    position: relative;
+}
+
+#innerGameStatsItems {
+    overflow: hidden;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+}
+
+#innerGameStatsItems img {
+    width: 32px;
+    height: 32px;
+}
+
+#gameStatsItemsTitle {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    top: -5px;
+    left: 5px;
+    font-weight: 900;
+    font-size: 0.75em;
+    color: grey;
+    height: 10px;
+    padding: 0px 5px;
+    background-color: black;
+}
+
 #gameShopContainer {
     z-index: 4;
     display: none;
@@ -537,21 +576,22 @@
 }
 
 #sandboxMenu-tools button {
-    width: 200px;
+    width: 125px;
 }
 
 .numInput {
-    display: flex;    
+    display: flex;
+    max-width: 100%;   
 }
 
 .numInput button, .numInput input {
-    width: 100px !important;
+    width: 100px;
     outline: none;
     border: 2px solid white;
 }
 
 .numInput input {
-    text-align: right;
+    text-align: center;
 }
 
 
@@ -837,6 +877,24 @@
     border-right: 1px solid red;
 }
 
+@keyframes healthBarAnim {
+    from {
+        box-shadow: 0px 0px 0px 0px red;
+    }
+    to {
+        box-shadow: 0px 0px 0px 10px transparent;
+    }
+}
+
+@keyframes powerBarAnim {
+    from {
+        box-shadow: 0px 0px 0px 0px orange;
+    }
+    to {
+        box-shadow: 0px 0px 0px 10px transparent;
+    }
+}
+
 #gameMoneyCount {
     font-size: 1.25em;
     font-weight: 700;
@@ -849,6 +907,24 @@
     from {
         scale: var(--moneyScale);
         rotate: var(--moneyRot);
+    }
+}
+
+@keyframes moneyBonusIn {
+    from {
+        scale: 0.75;
+        opacity: 0;
+    }
+}
+
+@keyframes moneyBonusOut {
+    from {
+        translate: 0px 0px;
+    }
+    to {
+        translate: -10px -30px;
+        scale: 0.75;
+        opacity: 0;
     }
 }
 

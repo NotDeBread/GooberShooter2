@@ -372,6 +372,7 @@ const upgrades = [
                 <cg>+10</cg> Melee size<br>
                 <cb>-25%</cb> Melee damage
             `,
+            unlockable: true,
 
             apply: () => {
                 modifyStat(['melee','size'], '+=10', )
@@ -383,6 +384,7 @@ const upgrades = [
             desc: `
                 Gain <cg>+10</cg> HP when parrying an enemy projectile.
             `,
+            unlockable: true,
 
             apply: () => {
                 modifyStat(['player','parryHeal'], '+=10', )
@@ -434,6 +436,7 @@ const upgrades = [
                 Parried bullets spawn poison fields on impact.
             `,
             priceMult: 0.75,
+            unlockable: true,
 
             apply: () => {
                 if(player.stats.player.parryPoisonSize > 0) {
@@ -643,6 +646,7 @@ const upgrades = [
                 <cb>+20%</cb> Melee cooldown
             `,
             priceMult: 0.75,
+            unlockable: true,
 
             apply: () => {
                 modifyStat(['melee','explosionPower'], '+=15')
@@ -710,6 +714,7 @@ const upgrades = [
                 Multiplies a random damage stat by <cg>1.25</cg><br>
                 Multiplies a random cooldown stat by <cb>1.25</cb><br>
             `,
+            unlockable: true,
     
             apply: () => {
                 const damageStats = [
@@ -900,6 +905,7 @@ const upgrades = [
                 Hitting an enemy with a bullet gains a <cg>+1%</cg> chance to spawn a copper coin
             `,
             priceMult: 1.5,
+            unlockable: true,
 
             apply: () => {
                 modifyStat(['bullet','coinChance'], '+=1')
@@ -965,6 +971,16 @@ const upgrades = [
                 modifyStat(['player','maxHealth'], '+=100')
             }
         },
+        the_tophat: {
+            name: 'The Tophat',
+            desc: `
+                All damage taken becomes reduced by <cg>+50</cg>%
+            `,
+    
+            apply: () => {
+                modifyStat(['player','armor'], '+=1')
+            }
+        },
         raccoon_tail: {
             name: 'Raccoon Tail',
             desc: `
@@ -973,6 +989,7 @@ const upgrades = [
                 <cg>+1</cg> Bullet speed<br>
                 <cg>+2</cg> Luck
             `,
+            unlockable: true,
             
             apply: () => {
                 modifyStat(['ammo','penetratingRounds'], '=true')
@@ -986,6 +1003,7 @@ const upgrades = [
             desc: `
                 Explosives no longer deal damage to the player, but instead heal up to <cg>+5</cg> HP
             `,
+            unlockable: true,
             
             apply: () => {
                 modifyStat(['player','explosiveHeal'], '+=5')
@@ -999,6 +1017,7 @@ const upgrades = [
                 <cg>-75%</cg> Shot cooldown<br>
                 <cb>-75%</cb> Damage
             `,
+            unlockable: true,
             
             apply: () => {
                 modifyStat(['ammo','autoFire'], '=true')
@@ -1013,6 +1032,7 @@ const upgrades = [
                 Randomizes all player values between <strong>0.1x</strong> and <strong>10x</strong>
             `,
             priceMult: 0.75,
+            unlockable: true,
             
             apply: () => {
                 for(const statCat in player.stats) {
@@ -1031,6 +1051,7 @@ const upgrades = [
             desc: `
                 Enables charging rounds, dealing up to <cg>x10</cg> damage.
             `,
+            unlockable: true,
             
             apply: () => {
                 modifyStat(['ammo','chargeShot'], '=true')
@@ -2523,7 +2544,6 @@ function openShop(upgradeList) {
         doge('gameShopTitle').innerText = 'Shop :)'
         applyFlowText(doge('gameShopTitle'))
 
-        
         // function updateBankinfo() {
         //     doge('bankBalance').innerText = '$'+formatNumber(Math.floor(saveData.bankMoney))
         //     doge('bankBalanceCents').innerText = `.${Math.min(Math.floor(DeBread.round(saveData.bankMoney - Math.floor(saveData.bankMoney), 2)*100),99)}`.padEnd(3,0)
@@ -2550,6 +2570,32 @@ function openShop(upgradeList) {
         }
         
         createShopItems(upgradeList)
+
+        console.log(player.moneyBonusQueue)
+        for(const key in player.moneyBonusQueue) {
+            const data = player.moneyBonusQueue[key]
+            createTimeout(() => {
+                const bonus = document.createElement('div')
+                bonus.innerHTML = `<strong>+$${data.value}</strong> <span style="color: grey;">-</span> <span style="color: white;">${data.text}</span>`
+                addStyles(bonus, {
+                    color: 'rgb(255, 255, 100)',
+                    width: 'fit-content',
+                    animation: 'moneyBonusIn 250ms ease-out 1 forwards'
+                })
+                doge('gameBonusContainer').append(bonus)
+
+                createTimeout(() => {
+                    bonus.style.animation = 'moneyBonusOut 500ms cubic-bezier(.5,-0.75,.9,.5) 1 forwards'
+                    createTimeout(() => {
+                        bonus.remove()
+                        player.getMoney(data.value)
+                        DeBread.playSound(`audio/money${DeBread.randomNum(0,3)}.mp3`,0.5, DeBread.randomNum(0.9,1.1,3), false)
+                    }, 24);
+                }, 75);
+            }, 100 * key);   
+        }
+
+        player.moneyBonusQueue = []
     }
 }
 
@@ -2639,7 +2685,14 @@ function createShopItems(items) {
                     
                     if(saveData.selectedChallenge === 'classic') itemCost = 0
 
-                    if(!randomItemsIDs.includes(randomKey) && saveData.selectedChallenge !== 'abstract') {
+                    let isUnlocked = true
+                    if(randomItem.unlockable) {
+                        if(!saveData.items.includes(randomKey)) {
+                            isUnlocked = false
+                        }
+                    }
+
+                    if(!randomItemsIDs.includes(randomKey) && saveData.selectedChallenge !== 'abstract' && isUnlocked) {
                         itemChosen = true
                         randomItems.push({
                             data: randomItem,
@@ -2780,6 +2833,8 @@ function createShopItems(items) {
                 if(itemMeta.type === 0) { //Items
                     item.apply()
                     itemSlot.sellOut()
+
+                    player.itemsBought.push(randomItems[key])
                 } else if(itemMeta.type === 1) { //Power items
                     if(player.powerItem && saveData.settings.showPowerItemWarning) {
                         openPrompt('Warning!','Buying this power item will override your current one! Are you sure?',[{text: 'Yeah', onclick: () => {player.powerItem = item; itemSlot.sellOut(); closePrompt()}},{text: 'PLEASE NO', onclick: () => {closePrompt()}}])
@@ -2822,6 +2877,15 @@ function createShopItems(items) {
                 player.tutorial.goalValue++
                 updateTutorialGoal()
             }
+
+            if(
+                !saveData.itemsCollected.includes(randomItems[key].id) && 
+                saveData.gameSettings.gamemode !== 3 &&
+                saveData.selectedChallenge === 'none'
+            ) {
+                saveData.itemsCollected.push(randomItems[key].id)
+            }
+            save()
         }
     }
 }

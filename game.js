@@ -27,6 +27,7 @@ function createPlayer() {
         immune: false,
 
         health: 100,
+        hardDamage: 0,
         power: 0,
         rerolls: 0,
 
@@ -88,6 +89,10 @@ function createPlayer() {
 
         elixirIDs: [],
         elixirs: [],
+
+        itemsBought: [],
+
+        moneyBonusQueue: [],
         
         stats: {
             player: {
@@ -97,6 +102,7 @@ function createPlayer() {
                 size: 36, //Player size. (in pixels)
 
                 maxHealth: 100, //Max player health.
+                healthRegen: 0,
                 armor: 0,
                 pickupRange: 0, //How strong pickups are attracted towards the player.
 
@@ -250,7 +256,7 @@ function createPlayer() {
         elem: doge('player'),
 
         //Functions
-        damage: (baseAmount, light) => {
+        damage: (baseAmount, light, hardDamage = 0) => {
             let idolAlive = false
             for(const enemy of elems.enemies) {
                 if(enemy.data.name === 'Idol' && enemy.active) {
@@ -271,8 +277,11 @@ function createPlayer() {
                     player.health -= amount
                 }
             }
-            if(player.health <= 0) player.health = 0
-            if(player.health >= player.stats.player.maxHealth) player.health = player.stats.player.maxHealth
+
+            player.hardDamage += hardDamage
+            player.hardDamage = Math.max(Math.min(player.hardDamage, player.stats.player.maxHealth / 2),0)
+
+            player.health = Math.max(Math.min(player.health, player.stats.player.maxHealth - player.hardDamage),0)
             
             if(amount > 0 && !player.immune && e.gameUpdates - player.lastHitDate >= player.stats.player.immunityTime) {
                 player.gameOverStats.damageTaken += -(player.health - startAmount)
@@ -295,9 +304,12 @@ function createPlayer() {
 
                 player.combo = Math.round(player.combo / 2)
                 player.comboStrength /= 2
+
+                player.perfectWave = false
             }
 
-            doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'       
+            doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'   
+            doge('hardDamageBar').style.width = player.hardDamage / player.stats.player.maxHealth * 100 + '%'    
 
             //Health bar num
             doge('healthBarNum').innerHTML = ''
@@ -311,10 +323,8 @@ function createPlayer() {
             }
             DeBread.easeShake(doge('healthBarContainer'), 10, Math.min(amount / 6, 25), 0.5)
 
-            player.perfectWave = false
-
             if(amount < 0 && Math.abs(DeBread.round(amount, 1)) !== 0) {
-                if(!idolAlive) {
+                if(!idolAlive && !light) {
                     const popup = createPopupText('+'+DeBread.round(Math.abs(amount), 1), player.centerPos)
                     popup.style.color = 'lime'
                     popup.style.fontSize = '15px'
@@ -327,6 +337,12 @@ function createPlayer() {
             }
 
             if(player.health <= 0) player.kill()
+
+            if(player.health <= player.stats.player.maxHealth * 0.25) {
+                doge('healthBarContainer').style.animation = 'healthBarAnim 1s ease-out infinite forwards'
+            } else {
+                doge('healthBarContainer').style.animation = 'none'
+            }
 
             updateArea()
         },
@@ -392,6 +408,9 @@ function createPlayer() {
                 elems.enemies.forEach(enemy => {
                     if(isColliding(doge('meleeHitbox'), enemy) && enemy.data.active) {
                         enemy.data.damage(player.stats.melee.damage * player.stats.melee.damageMult)
+                        if(!enemy.data.alive) {
+                            getAchievement('Knuckle_Sandwich')
+                        }
 
                         const popup = createPopupText(DeBread.round(player.stats.melee.damage), [...enemy.data.centerPos])
                         popup.style.color = 'white'
@@ -481,6 +500,12 @@ function createPlayer() {
                             ]
                             area.createNotice(compliments[DeBread.randomNum(0,compliments.length-1)])
                         }
+
+                        getAchievement('Stylish')
+
+                        if(projectile.origin === player) {
+                            getAchievement('Intentional_Game_Design')
+                        }
                     }
                 })
                 doge('area').querySelectorAll('.superMagnet').forEach(magnet => {
@@ -528,6 +553,12 @@ function createPlayer() {
                     doge('powerItem').style.animation = 'none'
                 }
             }
+
+            if(player.power === player.stats.player.maxPower) {
+                doge('powerContainer').style.animation = 'powerBarAnim 1s ease-out infinite forwards'
+            } else {
+                doge('powerContainer').style.animation = 'none'
+            }
         },
 
         usePowerItem: () => {
@@ -569,6 +600,10 @@ function createPlayer() {
             requestAnimationFrame(() => {
                 doge('gameMoneyCount').style.animation = 'moneyPulse 500ms ease-out 1 forwards'
             })
+
+            if(player.money >= 1000) {
+                getAchievement('Greed')
+            }
         },
 
         updatePosition: () => {
@@ -579,24 +614,20 @@ function createPlayer() {
                 if(player.pos[0] < 0) {
                     player.pos[0] = 0
                     player.vel[0] = 0
-                    // player.dirVels = []
                 }
 
                 if(player.pos[1] < 0) {
                     player.pos[1] = 0
                     player.vel[1] = 1
-                    // player.dirVels = []
                 }
 
                 if(player.pos[0] > doge('area').offsetWidth - player.elem.offsetWidth) {
                     player.pos[0] = doge('area').offsetWidth - player.elem.offsetWidth
                     player.vel[0] = 0
-                    // player.dirVels = []
                 }
                 if(player.pos[1] > doge('area').offsetHeight - player.elem.offsetHeight) {
                     player.pos[1] = doge('area').offsetHeight - player.elem.offsetHeight
                     player.vel[1] = 0
-                    // player.dirVels = []
                 }
 
                 //dirVels
@@ -827,6 +858,7 @@ function startGame() {
         clearInterval(tutorialistInterval)
     }
 
+    timeouts = []
     fixStats()
     updateUI()
     updateArea()
@@ -918,7 +950,7 @@ const weapons = {
                                 player.stats.bullet.lastShotDate = e.gameUpdates
                             }
                         } else {
-                            if(player.stats.ammo.current <= 0) {
+                            if(player.stats.ammo.current <= 0 && saveData.gameSettings.gamemode !== 3) {
                                 const weapon = weapons[player.weapon]
                                 weapon.r()
                             }
@@ -1877,6 +1909,10 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
                             targetsHit.push(shortestTarget.target)
                         }
                     }
+
+                    if(proj.damage >= 100 && origin === player) {
+                        getAchievement('Cooked')
+                    }
                 }
             }
         })
@@ -1978,6 +2014,11 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
             createPoisonField([...proj.pos], data.poisonFieldSize, data.damage * data.poisonFieldDmgPercent / 100, data.poisonFieldTicks, 20, false, data.poisonFieldColor)
         }
 
+        //Parry poison field
+        if(player.stats.player.parryPoisonSize > 0 && proj.isParried) {
+            createPoisonField([...proj.pos], player.stats.player.parryPoisonSize, player.stats.player.parryPoisonDmg, player.stats.player.parryPoisonTicks, 20, false, [255, 130, 226])
+        }
+
         createParticles(
             [...proj.pos],
             5,
@@ -2019,6 +2060,7 @@ function updateUI() {
 
     doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'
     doge('healthBarNum').innerHTML = formatNumber(Math.ceil(player.health))
+    doge('hardDamageBar').style.width = player.hardDamage / player.stats.player.maxHealth * 100 + '%'    
 
     doge('powerBarNum').innerHTML = DeBread.round(player.power)
     doge('powerBar').style.width = player.power / player.stats.player.maxPower * 100+'%'
@@ -2076,689 +2118,712 @@ function updateArea() {
 
 let lastTickDate = 0
 let timeouts = []
+
+function createTimeout(callback, duration) {
+    timeouts.push({
+        duration: duration,
+        run: callback
+    })
+}
+
 const canvasCtxs = [doge('areaCanvasTop').getContext('2d'),doge('areaCanvasBottom').getContext('2d')]
-const updateInterval = DeBread.createInterval(() => {    
-    //Player movement
-    if(e.gameActive) {
-        if(e.keysDown.includes(saveData.keybinds.moveUp)) {
-            if(Math.abs(player.vel[1] - player.stats.player.speedStep) < player.stats.player.speed) {
-                player.vel[1] -= player.stats.player.speedStep
-            } else {
-                player.vel[1] = -player.stats.player.speed
-            }
-        } else if(e.keysDown.includes(saveData.keybinds.moveDown)) {
-            if(Math.abs(player.vel[1] + player.stats.player.speedStep) < player.stats.player.speed) {
-                player.vel[1] += player.stats.player.speedStep
-            } else {
-                player.vel[1] = player.stats.player.speed
-            }
-        } else {
-            if(player.vel[1] !== 0) {
-                const sign = Math.sign(player.vel[1])
-                player.vel[1] -= player.stats.player.speedStep * sign
-                
-                if(Math.sign(player.vel[1]) !== sign) {
-                    player.vel[1] = 0
-                }
-            }
-        }
+const updateInterval = DeBread.createInterval(() => {
+    if(currentMenu === 'game') {
 
-        if(e.keysDown.includes(saveData.keybinds.moveLeft)) {
-            if(Math.abs(player.vel[0] - player.stats.player.speedStep) < player.stats.player.speed) {
-                player.vel[0] -= player.stats.player.speedStep
-            } else {
-                player.vel[0] = -player.stats.player.speed
-            }
-        } else if(e.keysDown.includes(saveData.keybinds.moveRight)) {
-            if(Math.abs(player.vel[0] + player.stats.player.speedStep) < player.stats.player.speed) {
-                player.vel[0] += player.stats.player.speedStep
-            } else {
-                player.vel[0] = player.stats.player.speed
-            }
-        } else {
-            if(player.vel[0] !== 0) {
-                const sign = Math.sign(player.vel[0])
-                player.vel[0] -= player.stats.player.speedStep * sign
-                
-                if(Math.sign(player.vel[0]) !== sign) {
-                    player.vel[0] = 0
-                }
-            }
-        }
-
-        player.pos[0] += player.vel[0]
-        player.pos[1] += player.vel[1]
-    
-        if(Math.abs(player.vel[0]) > 0 || Math.abs(player.vel[1]) > 0) {
-            if(e.gameUpdates - player.lastDustParticle > 2) {
-                if(player.stats.player.fireTouch) {
-                    createParticles([DeBread.randomNum(player.pos[0], player.pos[0] + player.elem.offsetWidth),DeBread.randomNum(player.pos[1], player.pos[1] + player.elem.offsetHeight)], 1, 10, [0,10],750,'ease-out',{backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0, 0.5)`})
+        //Player movement
+        if(e.gameActive) {
+            if(e.keysDown.includes(saveData.keybinds.moveUp)) {
+                if(Math.abs(player.vel[1] - player.stats.player.speedStep) < player.stats.player.speed) {
+                    player.vel[1] -= player.stats.player.speedStep
                 } else {
-                    createParticles([DeBread.randomNum(player.pos[0], player.pos[0] + player.elem.offsetWidth),DeBread.randomNum(player.pos[1], player.pos[1] + player.elem.offsetHeight)], 1, 10, [0,10],750,'ease-out',{backgroundColor: 'rgb(100,100,100,0.25)'})
+                    player.vel[1] = -player.stats.player.speed
                 }
-                player.lastDustParticle = e.gameUpdates
+            } else if(e.keysDown.includes(saveData.keybinds.moveDown)) {
+                if(Math.abs(player.vel[1] + player.stats.player.speedStep) < player.stats.player.speed) {
+                    player.vel[1] += player.stats.player.speedStep
+                } else {
+                    player.vel[1] = player.stats.player.speed
+                }
+            } else {
+                if(player.vel[1] !== 0) {
+                    const sign = Math.sign(player.vel[1])
+                    player.vel[1] -= player.stats.player.speedStep * sign
+                    
+                    if(Math.sign(player.vel[1]) !== sign) {
+                        player.vel[1] = 0
+                    }
+                }
             }
-        } else {
-            if(player.stats.ammo.isReloading) {
-                player.stats.ammo.reloadDate -= player.stats.ammo.stillSpeedIncrease
-            }
-        }
-        
-        player.updatePosition()
-        player.centerPos = [player.pos[0] + player.elem.offsetWidth / 2, player.pos[1] + player.elem.offsetHeight / 2]
-        player.rectPos = [player.elem.getBoundingClientRect().left,player.elem.getBoundingClientRect().top]
-
-        //Player looking directions
-        if (e.cursorPos[1] < player.rectPos[1] && e.cursorPos[0] < player.rectPos[0]) {
-            doge('playerTexture').style.translate =`${152 * (player.stats.player.size / 36)}px 0px`
-        } else if (e.cursorPos[1] < player.rectPos[1] && e.cursorPos[0] > player.rectPos[0] + player.elem.offsetWidth) {
-            doge('playerTexture').style.translate = `${76 * (player.stats.player.size / 36)}px 0px`
-        } else if (e.cursorPos[1] > player.rectPos[1] + player.elem.offsetHeight && e.cursorPos[0] < player.rectPos[0]) {
-            doge('playerTexture').style.translate = `${-76 * (player.stats.player.size / 36)}px 0px`
-        } else if (e.cursorPos[1] > player.rectPos[1] + player.elem.offsetHeight && e.cursorPos[0] > player.rectPos[0] + player.elem.offsetWidth) {
-            doge('playerTexture').style.translate = `${-152 * (player.stats.player.size / 36)}px 0px`
-        } else if (e.cursorPos[1] < player.rectPos[1]) {
-            doge('playerTexture').style.translate = `${114 * (player.stats.player.size / 36)}px 0px`
-        } else if (e.cursorPos[0] < player.rectPos[0]) {
-            doge('playerTexture').style.translate = `${38 * (player.stats.player.size / 36)}px 0px`
-        } else if (e.cursorPos[0] > player.rectPos[0] + player.elem.offsetWidth) {
-            doge('playerTexture').style.translate = `${-38 * (player.stats.player.size / 36)}px 0px`
-        } else if (e.cursorPos[1] > player.rectPos[1] + player.elem.offsetWidth) {
-            doge('playerTexture').style.translate = `${-114 * (player.stats.player.size / 36)}px 0px`
-        } else {
-            doge('playerTexture').style.translate = `${0 * (player.stats.player.size / 36)}px 0px`
-        }
-
-        //304
-        //266
-        //228
-        //190
-        //152
-        //114
-        //76
-        //38
-        //0
     
-        //Reload
-        if(player.stats.ammo.isReloading) {
-            doge('gameInnerAmmoBar').style.transition = `width linear ${e.gameUpdateInterval}ms`
-            doge('gameAmmoCount').innerText = 'RELOADING...'
-            doge('gameAmmoLinesCurrent').innerText = ''
-            doge('gameAmmoLinesMax').innerText = ''
-            let reloadProgress = ((e.gameUpdates - player.stats.ammo.reloadDate) * e.gameUpdateInterval) / player.stats.ammo.reloadSpeed
-            if(reloadProgress > 1) {
-                player.stats.ammo.isReloading = false
-                player.stats.ammo.current = player.stats.ammo.max
-                DeBread.shake(doge('gameAmmo'), e.gameUpdateInterval, 6.7, 0, 100,)
-                DeBread.playSound('audio/reload-long-end.mp3',0.25)
-                
-                if(player.tutorial.stage === 2) {
-                    player.tutorial.goalValue++
-                    updateTutorialGoal()
+            if(e.keysDown.includes(saveData.keybinds.moveLeft)) {
+                if(Math.abs(player.vel[0] - player.stats.player.speedStep) < player.stats.player.speed) {
+                    player.vel[0] -= player.stats.player.speedStep
+                } else {
+                    player.vel[0] = -player.stats.player.speed
                 }
-                
-                updateUI()
+            } else if(e.keysDown.includes(saveData.keybinds.moveRight)) {
+                if(Math.abs(player.vel[0] + player.stats.player.speedStep) < player.stats.player.speed) {
+                    player.vel[0] += player.stats.player.speedStep
+                } else {
+                    player.vel[0] = player.stats.player.speed
+                }
+            } else {
+                if(player.vel[0] !== 0) {
+                    const sign = Math.sign(player.vel[0])
+                    player.vel[0] -= player.stats.player.speedStep * sign
+                    
+                    if(Math.sign(player.vel[0]) !== sign) {
+                        player.vel[0] = 0
+                    }
+                }
             }
-            doge('gameInnerAmmoBar').style.width = reloadProgress * 100 + '%'
-            doge('cursorAmmoBar').style.width = reloadProgress * 100 + '%'
-        } else {
-            doge('gameInnerAmmoBar').style.transition = `none`
-        }
-
-        //Melee Recharge
-        if((e.gameUpdates - player.lastMeleeDate) / player.stats.melee.cooldown < 1) {
-            doge('innerMeleeHitbox').style.scale = (e.gameUpdates - player.lastMeleeDate) / player.stats.melee.cooldown
-            doge('innerMeleeHitbox').style.opacity = '1'
-            doge('meleeHitbox').style.outline = '0px solid rgb(255,255,255,0)'
-        } else {
-            doge('innerMeleeHitbox').style.opacity = '0'
-            doge('meleeHitbox').style.outline = '1px solid rgb(255,255,255,0.25)'
-            doge('meleeHitbox').style.animation = 'none'
-        }
-
-        //Update bullet positions
-        // doge('area').querySelectorAll('.bullet').forEach(bullet => {bullet.updatePosition(elems.enemies)})
-
-        //Autofire
-        if(
-            player.stats.ammo.autoFire && 
-            e.mouseDown[0] &&
-            player.stats.ammo.current > 0 && 
-            !player.stats.ammo.isReloading && 
-            (e.gameUpdates - player.stats.bullet.lastShotDate) * e.gameUpdateInterval > player.stats.bullet.shotCooldown &&
-            !isHoveringOnSandbox &&
-            !sandBoxEnemy
-        ) {
-            if(player.stats.ammo.stationaryFire) {
-                if(player.vel[0] === 0 && player.vel[1] === 0) {
+    
+            player.pos[0] += player.vel[0]
+            player.pos[1] += player.vel[1]
+        
+            if(Math.abs(player.vel[0]) > 0 || Math.abs(player.vel[1]) > 0) {
+                if(e.gameUpdates - player.lastDustParticle > 2) {
+                    if(player.stats.player.fireTouch) {
+                        createParticles([DeBread.randomNum(player.pos[0], player.pos[0] + player.elem.offsetWidth),DeBread.randomNum(player.pos[1], player.pos[1] + player.elem.offsetHeight)], 1, 10, [0,10],750,'ease-out',{backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0, 0.5)`})
+                    } else {
+                        createParticles([DeBread.randomNum(player.pos[0], player.pos[0] + player.elem.offsetWidth),DeBread.randomNum(player.pos[1], player.pos[1] + player.elem.offsetHeight)], 1, 10, [0,10],750,'ease-out',{backgroundColor: 'rgb(100,100,100,0.25)'})
+                    }
+                    player.lastDustParticle = e.gameUpdates
+                }
+            } else {
+                if(player.stats.ammo.isReloading) {
+                    player.stats.ammo.reloadDate -= player.stats.ammo.stillSpeedIncrease
+                }
+            }
+            
+            player.updatePosition()
+            player.centerPos = [player.pos[0] + player.elem.offsetWidth / 2, player.pos[1] + player.elem.offsetHeight / 2]
+            player.rectPos = [player.elem.getBoundingClientRect().left,player.elem.getBoundingClientRect().top]
+    
+            //Player looking directions
+            if (e.cursorPos[1] < player.rectPos[1] && e.cursorPos[0] < player.rectPos[0]) {
+                doge('playerTexture').style.translate =`${152 * (player.stats.player.size / 36)}px 0px`
+            } else if (e.cursorPos[1] < player.rectPos[1] && e.cursorPos[0] > player.rectPos[0] + player.elem.offsetWidth) {
+                doge('playerTexture').style.translate = `${76 * (player.stats.player.size / 36)}px 0px`
+            } else if (e.cursorPos[1] > player.rectPos[1] + player.elem.offsetHeight && e.cursorPos[0] < player.rectPos[0]) {
+                doge('playerTexture').style.translate = `${-76 * (player.stats.player.size / 36)}px 0px`
+            } else if (e.cursorPos[1] > player.rectPos[1] + player.elem.offsetHeight && e.cursorPos[0] > player.rectPos[0] + player.elem.offsetWidth) {
+                doge('playerTexture').style.translate = `${-152 * (player.stats.player.size / 36)}px 0px`
+            } else if (e.cursorPos[1] < player.rectPos[1]) {
+                doge('playerTexture').style.translate = `${114 * (player.stats.player.size / 36)}px 0px`
+            } else if (e.cursorPos[0] < player.rectPos[0]) {
+                doge('playerTexture').style.translate = `${38 * (player.stats.player.size / 36)}px 0px`
+            } else if (e.cursorPos[0] > player.rectPos[0] + player.elem.offsetWidth) {
+                doge('playerTexture').style.translate = `${-38 * (player.stats.player.size / 36)}px 0px`
+            } else if (e.cursorPos[1] > player.rectPos[1] + player.elem.offsetWidth) {
+                doge('playerTexture').style.translate = `${-114 * (player.stats.player.size / 36)}px 0px`
+            } else {
+                doge('playerTexture').style.translate = `${0 * (player.stats.player.size / 36)}px 0px`
+            }
+    
+            //304
+            //266
+            //228
+            //190
+            //152
+            //114
+            //76
+            //38
+            //0
+        
+            //Reload
+            if(player.stats.ammo.isReloading) {
+                doge('gameInnerAmmoBar').style.transition = `width linear ${e.gameUpdateInterval}ms`
+                doge('gameAmmoCount').innerText = 'RELOADING...'
+                doge('gameAmmoLinesCurrent').innerText = ''
+                doge('gameAmmoLinesMax').innerText = ''
+                let reloadProgress = ((e.gameUpdates - player.stats.ammo.reloadDate) * e.gameUpdateInterval) / player.stats.ammo.reloadSpeed
+                if(reloadProgress > 1) {
+                    player.stats.ammo.isReloading = false
+                    player.stats.ammo.current = player.stats.ammo.max
+                    DeBread.shake(doge('gameAmmo'), e.gameUpdateInterval, 6.7, 0, 100,)
+                    DeBread.playSound('audio/reload-long-end.mp3',0.25)
+                    
+                    if(player.tutorial.stage === 2) {
+                        player.tutorial.goalValue++
+                        updateTutorialGoal()
+                    }
+                    
+                    updateUI()
+                }
+                doge('gameInnerAmmoBar').style.width = reloadProgress * 100 + '%'
+                doge('cursorAmmoBar').style.width = reloadProgress * 100 + '%'
+            } else {
+                doge('gameInnerAmmoBar').style.transition = `none`
+            }
+    
+            //Melee Recharge
+            if((e.gameUpdates - player.lastMeleeDate) / player.stats.melee.cooldown < 1) {
+                doge('innerMeleeHitbox').style.scale = (e.gameUpdates - player.lastMeleeDate) / player.stats.melee.cooldown
+                doge('innerMeleeHitbox').style.opacity = '1'
+                doge('meleeHitbox').style.outline = '0px solid rgb(255,255,255,0)'
+            } else {
+                doge('innerMeleeHitbox').style.opacity = '0'
+                doge('meleeHitbox').style.outline = '1px solid rgb(255,255,255,0.25)'
+                doge('meleeHitbox').style.animation = 'none'
+            }
+    
+            //Update bullet positions
+            // doge('area').querySelectorAll('.bullet').forEach(bullet => {bullet.updatePosition(elems.enemies)})
+    
+            //Autofire
+            if(
+                player.stats.ammo.autoFire && 
+                e.mouseDown[0] &&
+                player.stats.ammo.current > 0 && 
+                !player.stats.ammo.isReloading && 
+                (e.gameUpdates - player.stats.bullet.lastShotDate) * e.gameUpdateInterval > player.stats.bullet.shotCooldown &&
+                !isHoveringOnSandbox &&
+                !sandBoxEnemy
+            ) {
+                if(player.stats.ammo.stationaryFire) {
+                    if(player.vel[0] === 0 && player.vel[1] === 0) {
+                        weapons[player.weapon].leftClick()
+                    }
+                } else {
                     weapons[player.weapon].leftClick()
                 }
+            }
+    
+            if(player.stats.ammo.stationaryFire && (player.vel[0] !== 0 || player.vel[1] !== 0)) {
+                doge('gameAmmoContainer').style.color = 'grey'
             } else {
-                weapons[player.weapon].leftClick()
+                doge('gameAmmoContainer').style.color = 'white'
             }
-        }
-
-        if(player.stats.ammo.stationaryFire && (player.vel[0] !== 0 || player.vel[1] !== 0)) {
-            doge('gameAmmoContainer').style.color = 'grey'
-        } else {
-            doge('gameAmmoContainer').style.color = 'white'
-        }
-
-        //Update enemies and thier projectiles
-        elems.enemies.forEach(enemy => {
-
-            if(isColliding(enemy, doge('weapon')) && player.stats.player.weaponContactDamage > 0) {
-                enemy.data.damage(player.stats.player.weaponContactDamage)
-            }
-
-            if(doge('area').querySelectorAll('.tennisBall').length > 0) {
-                doge('area').querySelectorAll('.tennisBall').forEach(ball => {
-                    if(isColliding(enemy, ball) && enemy.active) {
-                        enemy.data.damage(10)
-                    }
-                })
-            }
-        })
-
-        doge('area').querySelectorAll('.projectile').forEach(projectile => {
-            if(isColliding(doge('grazeHitbox'), projectile) && e.gameUpdates - player.lastGrazeDate >= player.stats.player.grazeCooldown && player.power < 100 && projectile.origin !== player) {
-                player.getPower(1)
-                getStyle(styles.grazed)
-                doge('grazeHitbox').style.animation = 'none'
-                requestAnimationFrame(() => {
-                    doge('grazeHitbox').style.animation = 'grazeHitboxFlash 250ms ease-out 1 forwards'
-                })
-
-                if(player.tutorial.stage === 24 && player.tutorial.goalValue < 15) {
-                    player.tutorial.goalValue++
-                    updateTutorialGoal()
-                }
-
-                player.lastGrazeDate = e.gameUpdates
-                DeBread.playSound('audio/graze.wav',0.1,1 + Math.max(player.power / 200, 0))
-            }
-
-            if(projectile.origin !== player) {
-                if(isColliding(doge('meleeHitbox'), projectile) && e.gameUpdates - player.lastMeleeDate >= player.stats.melee.cooldown) {
-                    projectile.style.outline = '2px solid white'
-                } else {
-                    projectile.style.outline = '2px solid black'
-                }
-            }
-        })
-
-        //Waves
-        if((e.gameUpdates - player.lastWaveDate) * e.gameUpdateInterval >= player.stats.misc.waveInterval && !player.wavesPaused && saveData.gameSettings.gamemode < 2 && player.alive) {
-            spawnWave(player.wave)
-            doge('gameWaveCounter').innerText = player.wave
-
-            doge('gameWaveCounter').style.animation = 'none'
-            requestAnimationFrame(() => {
-                doge('gameWaveCounter').style.animation = 'wavePulse 1s ease-out 1 forwards'
-            })
-
-            doge('gameWaveShopCounter').innerText = `${4 - player.wave % 5} waves until shop`
-            player.lastWaveDate = e.gameUpdates
-            player.wave++
-
-            if(player.wave % 5 === 0) {
-                player.wavesPaused = true
-            }
-        }
-        doge('gameInnerWaveBar').style.width = (e.gameUpdates - player.lastWaveDate) * e.gameUpdateInterval / player.stats.misc.waveInterval * 100 + '%'
-
-        //Pickups
-        const pickups = [...doge('area').querySelectorAll('.pickup')];
-        pickups.forEach(pickup => {
-            const distance = Math.sqrt(
-                Math.pow(pickup.pos[0] - player.centerPos[0], 2) + 
-                Math.pow(pickup.pos[1] - player.centerPos[1], 2)
-            )
-
-            const angle = Math.atan2(
-                pickup.pos[1] - player.centerPos[1],
-                pickup.pos[0] - player.centerPos[0]
-            )
-
-            pickup.pos[0] -= Math.cos(angle) / (distance / 100) * player.stats.player.pickupRange
-            pickup.pos[1] -= Math.sin(angle) / (distance / 100) * player.stats.player.pickupRange
-
-            if(isColliding(player.elem, pickup)) {
-                if(pickup.live && pickup.requirement()) {
-                    pickup.action(pickup.value)
-                    pickup.destroy()
-                    DeBread.playSound(`audio/money${DeBread.randomNum(0,3)}.mp3`,0.5, DeBread.randomNum(0.9,1.1,3), false)
-                }
-            }
-
-            pickup.move()
-        })
-    }
-
-    //Cursor
-    addStyles(doge('crosshair'), {
-        left: e.cursorPos[0]+'px',
-        top: e.cursorPos[1]+'px'
-    })
     
-    const cursorDist = Math.sqrt(Math.pow(player.centerPos[0] - e.relCursorPos[0],2) + Math.pow(player.centerPos[1] - e.relCursorPos[1],2))
-
-    addStyles(doge('innerCrosshair'), {
-        width: player.stats.bullet.accuracy * cursorDist / 100+'px',
-        height: player.stats.bullet.accuracy * cursorDist / 100+'px'
-    })
-
-    addStyles(doge('cursorBars'), {
-        left: e.cursorPos[0] - doge('cursorBars').offsetWidth / 2 +'px',
-        top: e.cursorPos[1] - 25 +'px',
-        transition: `left linear ${e.gameUpdateInterval}ms, top linear ${e.gameUpdateInterval}ms`
-    })
-
-    if(!player.stats.ammo.isReloading) {
-        doge('cursorAmmoBar').style.width = player.stats.ammo.current / player.stats.ammo.max * 100 + '%'
-    }
-
-    if(player.stats.ammo.chargeShot) {
-        if(player.isCharging) {
-            doge('cursorCooldownBar').style.width = (e.gameUpdates - player.chargeStartDate) / player.stats.ammo.chargeTime * 100 + '%'
-        } else {
-            doge('cursorCooldownBar').style.width = '0'
-        }
-        if((e.gameUpdates - player.chargeStartDate) / player.stats.ammo.chargeTime >= 1) {
-            doge('cursorCooldownBar').style.backgroundColor = 'yellow'
-        } else {
-            doge('cursorCooldownBar').style.backgroundColor = 'white'
-        }
-    } else {
-        doge('cursorCooldownBar').style.width = ((e.gameUpdates - player.stats.bullet.lastShotDate) * e.gameUpdateInterval / player.stats.bullet.shotCooldown) * 100 + '%'
-    }
-
-    //Canvas updating
-    const topCtx = canvasCtxs[0]
-    const bottomCtx = canvasCtxs[1]
-
-    topCtx.clearRect(0, 0, doge('areaCanvasTop').width, doge('areaCanvasTop').height);
-    bottomCtx.clearRect(0, 0, doge('areaCanvasBottom').width, doge('areaCanvasBottom').height);
-
-    elems.enemies.forEach(enemy => {
-        if(enemy.data.data.beamWidth && enemy.data.active) {
-            bottomCtx.beginPath()
-            bottomCtx.lineWidth = enemy.data.data.beamWidth
-            bottomCtx.moveTo(enemy.data.centerPos[0],enemy.data.centerPos[1])
-            bottomCtx.lineTo(player.centerPos[0],player.centerPos[1])
-            bottomCtx.strokeStyle = `rgba(${enemy.data.data.color},0.5)`
-            bottomCtx.stroke()
-        }
-    })
-
-    for(const particle of particles) {
-        const ctx = canvasCtxs[particle.layer]
-        ctx.beginPath() //not doing this completely bricked my firefox
-
-        ctx.strokeStyle = 'transparent'
-        ctx.fillStyle = particle.styles.color
-
-        // const size = particle.startingSize - (particle.startingSize / particle.maxDuration * (particle.maxDuration - particle.duration))
-        if(Math.round(particle.size,1) !== 0) {
-            particle.size /= particle.sizeDiv
-        } else {
-            particle.size = 0
-        }
-
-        // ctx.fillRect(particle.pos[0], particle.pos[1], particle.size, particle.size)
-        ctx.arc(particle.pos[0], particle.pos[1], particle.size, 0, Math.PI * 2, true)
-        ctx.fill()
-        
-        ctx.stroke()
-    }
-    updateParticles()
-    
-
-    //Poison fields
-    doge('area').querySelectorAll('.poisonField').forEach(field => {
-        if(e.gameUpdates - field.lastTick >= field.tickRate) {            
-            if(field.circular) {
-                // const distance = Math.sqrt(Math.pow(player.centerPos[0] - field.pos[0],2)+Math.pow(player.centerPos[0] - field.pos[0],2))
-                // if(distance <= field.size / 2 && e.gameUpdates - field.lastTick >= field.tickRate) {
-                //     player.damage(field.damage)
-    
-                //     field.lastTick = e.gameUpdates
-                // }
-    
-                // doge('area').querySelectorAll('.enemy').forEach(enemy => {
-                //     const EnemyDistance = Math.sqrt(Math.pow((enemy.pos[0] + enemy.size / 2) - field.pos[0],2)+Math.pow((enemy.pos[1] + enemy.size / 2) - field.pos[0],2))
-    
-                //     if(EnemyDistance <= field.size / 2 && e.gameUpdates - field.lastTick >= field.tickRate) {
-                //         enemy.damage(field.damage)
-    
-                //         field.lastTick = e.gameUpdates
-                //     }
-                // })
-            } else {
-                if(isColliding(player.elem, field) && e.gameUpdates - field.lastTick >= field.tickRate) {
-                    player.damage(field.damage)
-
-                    const popup = createPopupText(DeBread.round(field.damage), [...player.centerPos])
-                    popup.style.color = '#ff6464'
-                    popup.style.fontSize = Math.min(Math.max(field.damage / 5, 15), 50) + 'px'
-                    doge('area').append(popup)
-    
-                    // field.lastTick = e.gameUpdates
-                }
-    
-                elems.enemies.forEach(enemy => {
-                    if(isColliding(enemy, field) && e.gameUpdates - field.lastTick >= field.tickRate && enemy.data.active && !field.ignoreEnemies) {
-                        enemy.data.damage(field.damage)
-                        if(!enemy.alive) {
-                            getStyle(styles.poisoned)
-                        }
-
-                        const popup = createPopupText(DeBread.round(field.damage), [...enemy.data.centerPos])
-                        addStyles(popup, {
-                            color: 'red'
-                        })
-                        doge('area').append(popup)
-    
-                        enemyHit = true
-                    }
-                })
-            }
-            field.lastTick = e.gameUpdates
-            field.ticks++
-
-            if(field.ticks >= field.maxTicks) {
-                field.remove()
-            }
-        }
-    })
-
-    //Status Effects
-    doge('statusEffectContainer').innerHTML = ''
-    for(const key in player.statusEffects) {
-        const statusEffect = player.statusEffects[key]
-        statusEffect.duration--
-
-        if(statusEffect.duration <= 0) {
-            statusEffect.end()
-            player.statusEffects.splice(key, 1)
-        }
-
-        const statusEffectIcon = document.createElement('div')
-        statusEffectIcon.classList.add('statusEffect')
-        statusEffectIcon.innerHTML = `
-            <div class="statsEffectOverlay" style="height:${100 - statusEffect.duration / statusEffect.maxDuration * 100}%"></div>
-            <img src="graphics/statusEffects/${statusEffect.class}.png">
-        `
-
-        doge('statusEffectContainer').append(statusEffectIcon)
-    }
-
-    //Timeouts
-    for(const key in timeouts) {
-        timeouts[key].duration--
-
-        if(timeouts[key].duration <= 0) {
-            timeouts[key].run()
-            timeouts.splice(key, 1)
-        }
-    }
-
-    //Fire
-    document.querySelectorAll('.fire').forEach(fire => {
-        if(isColliding(fire, player.elem)) {
-            for(const statusEffect of player.statusEffects) {
-                if(statusEffect.class === 'fire') {
-                    statusEffect.duration = statusEffect.maxDuration
-                }
-            }
-            if(!player.onFire) {                
-                player.statusEffects.push({
-                    duration: 100,
-                    maxDuration: 100,
-                    class: 'fire',
-                    
-                    end: () => {
-                        player.onFire = false;
-                    }
-                })
-                player.onFire = true
-            }
-        }
-    })
-
-    if(player.onFire) {
-        player.damage(0.1, true)
-        createParticles(
-            [...player.centerPos],
-            2,
-            10,
-            [25,50],
-            250,
-            'ease-out',
-            {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`, opacity: '0.5'}
-        )
-
-        player.crispiness++
-        
-        doge('playerFire').style.opacity = '0.75'
-    } else {
-        doge('playerFire').style.opacity = '0'
-        player.crispiness = 0        
-    }
-
-    //Special enemies
-    let leechAlive = false
-    for(const enemy of elems.enemies) {
-        if(enemy.data.data.name === 'Leech' && enemy.data.active) {
-            leechAlive = true
-            break
-        }
-    }
-
-    let idolAlive = false
-    for(const enemy of elems.enemies) {
-        if(enemy.data.data.name === 'Idol' && enemy.data.active) {
-            idolAlive = true
-            break
-        }
-    }
-
-    if(idolAlive) {
-        doge('healthBarContainer').style.filter = 'grayscale(1)'
-    } else {
-        doge('healthBarContainer').style.filter = ''
-    }
-
-    if(leechAlive && e.gameUpdates % 5 === 0 && player.health > 10) {
-        player.damage(1, true)
-    }
-
-    //Portal
-    document.querySelectorAll('.portal').forEach(portal => {
-        createParticles(
-            [
-                DeBread.randomNum(portal.pos[0] - portal.offsetWidth / 2, portal.pos[0] + portal.offsetHeight / 2),
-                DeBread.randomNum(portal.pos[1] - portal.offsetWidth / 2, portal.pos[1] + portal.offsetHeight / 2)
-            ]
-            , 1, 10, [25, 100], 1000, 'ease-in', 
-            {
-                backgroundColor: 'white',
-                opacity: '0.1'
-            }
-        )
-
-        if(isColliding(player.elem, portal) && !player.inPortal) {
-            portal.style.width = window.innerWidth + 'px'
-            portal.style.height = window.innerHeight + 'px'
-            portal.style.border = '1px solid black'
-            player.elem.style.scale = '0'
-            doge('weapon').style.scale = '0'
-
-            player.inPortal = true
-
-            setTimeout(() => {
-                if(saveData.gameSettings.gamemode === 3) {
-                    openShop([
-                        {
-                            id: 'rock',
-                            rarity: 0,
-                            type: 0,
-                            cost: 2,
-                            data: upgrades[0].rock
-                        },
-                        {
-                            id: 'apple',
-                            rarity: 0,
-                            type: 1,
-                            cost: 6,
-                            data: powerItems[0].apple
-                        },
-                        {
-                            id: 'strength',
-                            rarity: 0,
-                            type: 2,
-                            cost: 10,
-                            data: elixirs[0].strength
-                        }
-                    ])
-                } else {
-                    openShop()
-                }
-
-                if(player.tutorial.stage === 11) {
-                    player.tutorial.goalValue++
-                    updateTutorialGoal()
-                }
-            }, 1000);
-        }
-    })
-
-    //Passive items
-    if(e.gameUpdates % Math.max(DeBread.round((100 / player.stats.player.passiveAbilityMult)), 1) === 0 && player.stats.player.socksDamage > 0 && elems.enemies.length > 0) {
-        const targetEnemy = elems.enemies[DeBread.randomNum(0,elems.enemies.length-1)]
-        if(targetEnemy.data.active) {
-            createPoisonField([targetEnemy.data.centerPos[0], targetEnemy.data.centerPos[1]], 100, player.stats.bullet.damage * player.stats.player.socksDamage, 1, 10, false, [0,100,255])
-        }
-    }
-    
-    if(e.gameUpdates % Math.max(DeBread.round((50 / player.stats.player.passiveAbilityMult)), 1) === 0 && elems.enemies.length > 0) {
-        for(let i = 0; i < player.stats.player.thirdEye; i++) {
-            let closestEnemy = {elem: undefined, dist: Infinity}
-    
+            //Update enemies and thier projectiles
             elems.enemies.forEach(enemy => {
-                const enemyDist = Math.sqrt(Math.pow(player.centerPos[0] - enemy.data.centerPos[0],2) + Math.pow(player.centerPos[1] - enemy.data.centerPos[1],2))
-                if(enemyDist < closestEnemy.dist) {
-                    closestEnemy.elem = enemy
-                    closestEnemy.dist = enemyDist
+    
+                if(isColliding(enemy, doge('weapon')) && player.stats.player.weaponContactDamage > 0) {
+                    enemy.data.damage(player.stats.player.weaponContactDamage)
+                }
+    
+                if(doge('area').querySelectorAll('.tennisBall').length > 0) {
+                    doge('area').querySelectorAll('.tennisBall').forEach(ball => {
+                        if(isColliding(enemy, ball) && enemy.active) {
+                            enemy.data.damage(10)
+                        }
+                    })
                 }
             })
-            const enemyAngle = Math.atan2(player.centerPos[1] - closestEnemy.elem.data.centerPos[1], player.centerPos[0] - closestEnemy.elem.data.centerPos[0])
-
-            const t = (i - (player.stats.player.thirdEye - 1) / 2)
-            const offset = (t / player.stats.player.thirdEye) * Math.PI / 12
-            const bulletPos = [...player.centerPos]
-
-            createProjectile(0, bulletPos, enemyAngle + offset, player.stats.bullet, elems.enemies, player)
+    
+            doge('area').querySelectorAll('.projectile').forEach(projectile => {
+                if(isColliding(doge('grazeHitbox'), projectile) && e.gameUpdates - player.lastGrazeDate >= player.stats.player.grazeCooldown && player.power < 100 && projectile.origin !== player) {
+                    player.getPower(1)
+                    getStyle(styles.grazed)
+                    doge('grazeHitbox').style.animation = 'none'
+                    requestAnimationFrame(() => {
+                        doge('grazeHitbox').style.animation = 'grazeHitboxFlash 250ms ease-out 1 forwards'
+                    })
+    
+                    if(player.tutorial.stage === 24 && player.tutorial.goalValue < 15) {
+                        player.tutorial.goalValue++
+                        updateTutorialGoal()
+                    }
+    
+                    player.lastGrazeDate = e.gameUpdates
+                    DeBread.playSound('audio/graze.wav',0.1,1 + Math.max(player.power / 200, 0))
+                }
+    
+                if(projectile.origin !== player) {
+                    if(isColliding(doge('meleeHitbox'), projectile) && e.gameUpdates - player.lastMeleeDate >= player.stats.melee.cooldown) {
+                        projectile.style.outline = '2px solid white'
+                    } else {
+                        projectile.style.outline = '2px solid black'
+                    }
+                }
+            })
+    
+            //Waves
+            if((e.gameUpdates - player.lastWaveDate) * e.gameUpdateInterval >= player.stats.misc.waveInterval && !player.wavesPaused && saveData.gameSettings.gamemode < 2 && player.alive) {
+                spawnWave(player.wave)
+                doge('gameWaveCounter').innerText = player.wave
+    
+                doge('gameWaveCounter').style.animation = 'none'
+                requestAnimationFrame(() => {
+                    doge('gameWaveCounter').style.animation = 'wavePulse 1s ease-out 1 forwards'
+                })
+    
+                doge('gameWaveShopCounter').innerText = `${4 - player.wave % 5} waves until shop`
+                player.lastWaveDate = e.gameUpdates
+                player.wave++
+    
+                if(player.wave % 5 === 0) {
+                    player.wavesPaused = true
+                }
+            }
+            doge('gameInnerWaveBar').style.width = (e.gameUpdates - player.lastWaveDate) * e.gameUpdateInterval / player.stats.misc.waveInterval * 100 + '%'
+    
+            //Pickups
+            const pickups = [...doge('area').querySelectorAll('.pickup')];
+            pickups.forEach(pickup => {
+                const distance = Math.sqrt(
+                    Math.pow(pickup.pos[0] - player.centerPos[0], 2) + 
+                    Math.pow(pickup.pos[1] - player.centerPos[1], 2)
+                )
+    
+                const angle = Math.atan2(
+                    pickup.pos[1] - player.centerPos[1],
+                    pickup.pos[0] - player.centerPos[0]
+                )
+    
+                pickup.pos[0] -= Math.cos(angle) / (distance / 100) * player.stats.player.pickupRange
+                pickup.pos[1] -= Math.sin(angle) / (distance / 100) * player.stats.player.pickupRange
+    
+                if(isColliding(player.elem, pickup)) {
+                    if(pickup.live && pickup.requirement()) {
+                        pickup.action(pickup.value)
+                        pickup.destroy()
+                        DeBread.playSound(`audio/money${DeBread.randomNum(0,3)}.mp3`,0.5, DeBread.randomNum(0.9,1.1,3), false)
+                    }
+                }
+    
+                pickup.move()
+            })
         }
-    }
 
-    if(player.comboStrength > 0) {
-        if(elems.enemies.length > 0) {
-            player.comboStrength -= 0.5 + (player.combo / 100)
+        //Timeouts
+        for(const key in timeouts) {
+            timeouts[key].duration--
+
+            if(timeouts[key].duration <= 0) {
+                timeouts[key].run()
+                timeouts.splice(key, 1)
+            }
         }
-    } else {
-        if(player.combo > 1) {
-            player.combo = Math.round(player.combo / 2)
-            player.comboStrength = 100
-            doge('streakCount').innerText = 'x' + player.combo
-            DeBread.shake(doge('streakCount'), 10, 5, 5, 200)
-        }
-    }
-
-    if(player.comboStrength > 100) {
-        player.comboStrength = 100
-    }
-
-    doge('innerStreakBar').style.width = player.comboStrength + '%'
-    if(player.comboStrength < 20 && player.comboStrength > 0) {
-        doge('streakContainer').style.animation = 'streakBarScared 100ms cubic-bezier(.5, 0.05, 1, .5) infinite alternate'
-    } else {
-        doge('streakContainer').style.animation = ''
-    }
-
-    //Sandbox Enemy
+    
+        //Cursor
+        addStyles(doge('crosshair'), {
+            left: e.cursorPos[0]+'px',
+            top: e.cursorPos[1]+'px'
+        })
         
-    if(sandBoxEnemy) {
-        doge('sandboxEnemy').style.opacity = '0.25'
-        doge('sandboxEnemy').style.left = e.relCursorPos[0]+'px'
-        doge('sandboxEnemy').style.top = e.relCursorPos[1]+'px'
-        doge('sandboxEnemy').style.width = sandBoxEnemy.size + 'px'
-        doge('sandboxEnemy').style.backgroundColor = `rgb(${sandBoxEnemy.color})`
-    } else {
-        doge('sandboxEnemy').style.opacity = '0'
-    }
+        const cursorDist = Math.sqrt(Math.pow(player.centerPos[0] - e.relCursorPos[0],2) + Math.pow(player.centerPos[1] - e.relCursorPos[1],2))
     
-    //Tick stuff
-    document.querySelectorAll('.fire, .entity').forEach(elem => {
-        elem.tick(elems.enemies)
-    })
-
-    //Random stuff
-    if(e.gameUpdates % 500 === 0 && saveData.selectedChallenge === 'skillsUSA') {
-        createNotification('Tip!','You can parry by pressing <strong>F</strong>! Give it a try!', undefined, 5000)
-    }
-
-    if(player.stats.player.powerRegen) {
-        player.getPower(player.stats.player.powerRegen)
-    }
-
-    for(let i = elems.enemies.length - 1; i >= 0; i--) {
-        if(!elems.enemies[i].data.alive) {
-            elems.enemies.splice(elems.enemies.indexOf(elems.enemies[i]),1)
+        addStyles(doge('innerCrosshair'), {
+            width: player.stats.bullet.accuracy * cursorDist / 100+'px',
+            height: player.stats.bullet.accuracy * cursorDist / 100+'px'
+        })
+    
+        addStyles(doge('cursorBars'), {
+            left: e.cursorPos[0] - doge('cursorBars').offsetWidth / 2 +'px',
+            top: e.cursorPos[1] - 25 +'px',
+            transition: `left linear ${e.gameUpdateInterval}ms, top linear ${e.gameUpdateInterval}ms`
+        })
+    
+        if(!player.stats.ammo.isReloading) {
+            doge('cursorAmmoBar').style.width = player.stats.ammo.current / player.stats.ammo.max * 100 + '%'
         }
-    }
-
-    //Restart
-    const lastRestartProgress = player.restartProgress
-    if(e.keysDown.includes('r') && e.keysDown.includes('shift') && e.gameUpdates >= 20) {
-        player.restartProgress++
-        doge('gameInnerRestartBar').style.width = player.restartProgress / 50 * 100 + '%'
-
-        if(player.restartProgress >= 50) {
-            startGame()
+    
+        if(player.stats.ammo.chargeShot) {
+            if(player.isCharging) {
+                doge('cursorCooldownBar').style.width = (e.gameUpdates - player.chargeStartDate) / player.stats.ammo.chargeTime * 100 + '%'
+            } else {
+                doge('cursorCooldownBar').style.width = '0'
+            }
+            if((e.gameUpdates - player.chargeStartDate) / player.stats.ammo.chargeTime >= 1) {
+                doge('cursorCooldownBar').style.backgroundColor = 'yellow'
+            } else {
+                doge('cursorCooldownBar').style.backgroundColor = 'white'
+            }
+        } else {
+            doge('cursorCooldownBar').style.width = ((e.gameUpdates - player.stats.bullet.lastShotDate) * e.gameUpdateInterval / player.stats.bullet.shotCooldown) * 100 + '%'
         }
-    } else {
-        player.restartProgress = 0
-    }
-
-    if(player.restartProgress > lastRestartProgress) {
-        doge('gameRestartContainer').style.translate = '0px 0px'
-    } else if(player.restartProgress < lastRestartProgress) {
-        doge('gameRestartContainer').style.translate = '0px 100px'
-    }
     
-    //Debug stuff
-    doge('dbPos').innerText = `
-    Pos: [${DeBread.round(player.pos[0],2)},${DeBread.round(player.pos[1],2)}],
-    CPos: [${DeBread.round(player.centerPos[0],2)},${DeBread.round(player.centerPos[1],2)}]
-    RPos: [${DeBread.round(player.rectPos[0],2)},${DeBread.round(player.rectPos[1],2)}]
-    `
-    doge('dbTPS').innerText = `${DeBread.round(1000 / DeBread.round(performance.now()-lastTickDate),2)}TPS`
-    doge('dbE').innerText = `${doge('area').children.length}E`
-    doge('dbVel').innerText = `Vel: [${DeBread.round(player.vel[0],2)},${DeBread.round(player.vel[1],2)}]`
-    doge('dbKeys').innerText = `Keys: [${e.keysDown}]`
-    doge('dbCursor').innerText = `
-    CursorPos: [${e.cursorPos[0]},${e.cursorPos[1]}]
-    RelCursorPos: [${DeBread.round(e.relCursorPos[0],2)},${DeBread.round(e.relCursorPos[1],2)}]
-    `
-    doge('dbParticles').innerText = `Particles: ${formatNumber(particles.length)}`
-    doge('dbUpdates').innerText = `Updates: ${e.gameUpdates}`
-    doge('dbTickInterval').innerText = `Tick Interval: ${e.gameUpdateInterval}ms/${DeBread.round(performance.now()-lastTickDate)}ms`
-    doge('dbStatus').innerText = `Status Effects: ${JSON.stringify(player.statusEffects)}`
-    doge('dbElems').innerText = `Elems: Enemies: ${elems.enemies.length} Pickups: ${(elems.pickups.length)}`
+        //Remove hard damage and apply regen
+        if(e.gameUpdates - player.lastHitDate >= 250) {
+            if(player.hardDamage > 0) {
+                player.hardDamage -= 0.25
+                updateUI()
+            }
     
-    e.gameUpdates++
-    lastTickDate = performance.now()
+            if(player.health < player.stats.player.maxHealth) {
+                player.damage(-player.stats.player.healthRegen,true)
+            }
+        }
+    
+        //Canvas updating
+        const topCtx = canvasCtxs[0]
+        const bottomCtx = canvasCtxs[1]
+    
+        topCtx.clearRect(0, 0, doge('areaCanvasTop').width, doge('areaCanvasTop').height);
+        bottomCtx.clearRect(0, 0, doge('areaCanvasBottom').width, doge('areaCanvasBottom').height);
+    
+        elems.enemies.forEach(enemy => {
+            if(enemy.data.data.beamWidth && enemy.data.active) {
+                bottomCtx.beginPath()
+                bottomCtx.lineWidth = enemy.data.data.beamWidth
+                bottomCtx.moveTo(enemy.data.centerPos[0],enemy.data.centerPos[1])
+                bottomCtx.lineTo(player.centerPos[0],player.centerPos[1])
+                bottomCtx.strokeStyle = `rgba(${enemy.data.data.color},0.5)`
+                bottomCtx.stroke()
+            }
+        })
+    
+        for(const particle of particles) {
+            const ctx = canvasCtxs[particle.layer]
+            ctx.beginPath() //not doing this completely bricked my firefox
+    
+            ctx.strokeStyle = 'transparent'
+            ctx.fillStyle = particle.styles.color
+    
+            // const size = particle.startingSize - (particle.startingSize / particle.maxDuration * (particle.maxDuration - particle.duration))
+            if(Math.round(particle.size,1) !== 0) {
+                particle.size /= particle.sizeDiv
+            } else {
+                particle.size = 0
+            }
+    
+            // ctx.fillRect(particle.pos[0], particle.pos[1], particle.size, particle.size)
+            ctx.arc(particle.pos[0], particle.pos[1], particle.size, 0, Math.PI * 2, true)
+            ctx.fill()
+            
+            ctx.stroke()
+        }
+        updateParticles()
+        
+    
+        //Poison fields
+        doge('area').querySelectorAll('.poisonField').forEach(field => {
+            if(e.gameUpdates - field.lastTick >= field.tickRate) {            
+                if(field.circular) {
+                    // const distance = Math.sqrt(Math.pow(player.centerPos[0] - field.pos[0],2)+Math.pow(player.centerPos[0] - field.pos[0],2))
+                    // if(distance <= field.size / 2 && e.gameUpdates - field.lastTick >= field.tickRate) {
+                    //     player.damage(field.damage)
+        
+                    //     field.lastTick = e.gameUpdates
+                    // }
+        
+                    // doge('area').querySelectorAll('.enemy').forEach(enemy => {
+                    //     const EnemyDistance = Math.sqrt(Math.pow((enemy.pos[0] + enemy.size / 2) - field.pos[0],2)+Math.pow((enemy.pos[1] + enemy.size / 2) - field.pos[0],2))
+        
+                    //     if(EnemyDistance <= field.size / 2 && e.gameUpdates - field.lastTick >= field.tickRate) {
+                    //         enemy.damage(field.damage)
+        
+                    //         field.lastTick = e.gameUpdates
+                    //     }
+                    // })
+                } else {
+                    if(isColliding(player.elem, field) && e.gameUpdates - field.lastTick >= field.tickRate) {
+                        player.damage(field.damage)
+    
+                        const popup = createPopupText(DeBread.round(field.damage), [...player.centerPos])
+                        popup.style.color = '#ff6464'
+                        popup.style.fontSize = Math.min(Math.max(field.damage / 5, 15), 50) + 'px'
+                        doge('area').append(popup)
+        
+                        // field.lastTick = e.gameUpdates
+                    }
+        
+                    elems.enemies.forEach(enemy => {
+                        if(isColliding(enemy, field) && e.gameUpdates - field.lastTick >= field.tickRate && enemy.data.active && !field.ignoreEnemies) {
+                            enemy.data.damage(field.damage)
+                            if(!enemy.alive) {
+                                getStyle(styles.poisoned)
+                            }
+    
+                            const popup = createPopupText(DeBread.round(field.damage), [...enemy.data.centerPos])
+                            addStyles(popup, {
+                                color: 'red'
+                            })
+                            doge('area').append(popup)
+        
+                            enemyHit = true
+                        }
+                    })
+                }
+                field.lastTick = e.gameUpdates
+                field.ticks++
+    
+                if(field.ticks >= field.maxTicks) {
+                    field.remove()
+                }
+            }
+        })
+    
+        //Status Effects
+        doge('statusEffectContainer').innerHTML = ''
+        for(const key in player.statusEffects) {
+            const statusEffect = player.statusEffects[key]
+            statusEffect.duration--
+    
+            if(statusEffect.duration <= 0) {
+                statusEffect.end()
+                player.statusEffects.splice(key, 1)
+            }
+    
+            const statusEffectIcon = document.createElement('div')
+            statusEffectIcon.classList.add('statusEffect')
+            statusEffectIcon.innerHTML = `
+                <div class="statsEffectOverlay" style="height:${100 - statusEffect.duration / statusEffect.maxDuration * 100}%"></div>
+                <img src="graphics/statusEffects/${statusEffect.class}.png">
+            `
+    
+            doge('statusEffectContainer').append(statusEffectIcon)
+        }
+    
+        //Fire
+        document.querySelectorAll('.fire').forEach(fire => {
+            if(isColliding(fire, player.elem)) {
+                for(const statusEffect of player.statusEffects) {
+                    if(statusEffect.class === 'fire') {
+                        statusEffect.duration = statusEffect.maxDuration
+                    }
+                }
+                if(!player.onFire) {                
+                    player.statusEffects.push({
+                        duration: 100,
+                        maxDuration: 100,
+                        class: 'fire',
+                        
+                        end: () => {
+                            player.onFire = false;
+                        }
+                    })
+                    player.onFire = true
+                }
+            }
+        })
+    
+        if(player.onFire) {
+            player.damage(0.1, true)
+            createParticles(
+                [...player.centerPos],
+                2,
+                10,
+                [25,50],
+                250,
+                'ease-out',
+                {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`, opacity: '0.5'}
+            )
+    
+            player.crispiness++
+            
+            doge('playerFire').style.opacity = '0.75'
+        } else {
+            doge('playerFire').style.opacity = '0'
+            player.crispiness = 0        
+        }
+    
+        //Special enemies
+        let leechAlive = false
+        for(const enemy of elems.enemies) {
+            if(enemy.data.data.name === 'Leech' && enemy.data.active) {
+                leechAlive = true
+                break
+            }
+        }
+    
+        let idolAlive = false
+        for(const enemy of elems.enemies) {
+            if(enemy.data.data.name === 'Idol' && enemy.data.active) {
+                idolAlive = true
+                break
+            }
+        }
+    
+        if(idolAlive) {
+            doge('healthBarContainer').style.filter = 'grayscale(1)'
+        } else {
+            doge('healthBarContainer').style.filter = ''
+        }
+    
+        if(leechAlive && e.gameUpdates % 5 === 0 && player.health > 10) {
+            player.damage(1, true, 1)
+        }
+    
+        //Portal
+        document.querySelectorAll('.portal').forEach(portal => {
+            createParticles(
+                [
+                    DeBread.randomNum(portal.pos[0] - portal.offsetWidth / 2, portal.pos[0] + portal.offsetHeight / 2),
+                    DeBread.randomNum(portal.pos[1] - portal.offsetWidth / 2, portal.pos[1] + portal.offsetHeight / 2)
+                ]
+                , 1, 10, [25, 100], 1000, 'ease-in', 
+                {
+                    backgroundColor: 'white',
+                    opacity: '0.1'
+                }
+            )
+    
+            if(isColliding(player.elem, portal) && !player.inPortal) {
+                portal.style.width = window.innerWidth + 'px'
+                portal.style.height = window.innerHeight + 'px'
+                portal.style.border = '1px solid black'
+                player.elem.style.scale = '0'
+                doge('weapon').style.scale = '0'
+    
+                player.inPortal = true
+    
+                setTimeout(() => {
+                    if(saveData.gameSettings.gamemode === 3) {
+                        openShop([
+                            {
+                                id: 'rock',
+                                rarity: 0,
+                                type: 0,
+                                cost: 2,
+                                data: upgrades[0].rock
+                            },
+                            {
+                                id: 'apple',
+                                rarity: 0,
+                                type: 1,
+                                cost: 6,
+                                data: powerItems[0].apple
+                            },
+                            {
+                                id: 'strength',
+                                rarity: 0,
+                                type: 2,
+                                cost: 10,
+                                data: elixirs[0].strength
+                            }
+                        ])
+                    } else {
+                        openShop()
+                    }
+    
+                    if(player.tutorial.stage === 11) {
+                        player.tutorial.goalValue++
+                        updateTutorialGoal()
+                    }
+                }, 1000);
+            }
+        })
+    
+        //Passive items
+        if(e.gameUpdates % Math.max(DeBread.round((100 / player.stats.player.passiveAbilityMult)), 1) === 0 && player.stats.player.socksDamage > 0 && elems.enemies.length > 0) {
+            const targetEnemy = elems.enemies[DeBread.randomNum(0,elems.enemies.length-1)]
+            if(targetEnemy.data.active) {
+                createPoisonField([targetEnemy.data.centerPos[0], targetEnemy.data.centerPos[1]], 100, player.stats.bullet.damage * player.stats.player.socksDamage, 1, 10, false, [0,100,255])
+            }
+        }
+        
+        if(e.gameUpdates % Math.max(DeBread.round((50 / player.stats.player.passiveAbilityMult)), 1) === 0 && elems.enemies.length > 0) {
+            for(let i = 0; i < player.stats.player.thirdEye; i++) {
+                let closestEnemy = {elem: undefined, dist: Infinity}
+        
+                elems.enemies.forEach(enemy => {
+                    const enemyDist = Math.sqrt(Math.pow(player.centerPos[0] - enemy.data.centerPos[0],2) + Math.pow(player.centerPos[1] - enemy.data.centerPos[1],2))
+                    if(enemyDist < closestEnemy.dist) {
+                        closestEnemy.elem = enemy
+                        closestEnemy.dist = enemyDist
+                    }
+                })
+                const enemyAngle = Math.atan2(player.centerPos[1] - closestEnemy.elem.data.centerPos[1], player.centerPos[0] - closestEnemy.elem.data.centerPos[0])
+    
+                const t = (i - (player.stats.player.thirdEye - 1) / 2)
+                const offset = (t / player.stats.player.thirdEye) * Math.PI / 12
+                const bulletPos = [...player.centerPos]
+    
+                createProjectile(0, bulletPos, enemyAngle + offset, player.stats.bullet, elems.enemies, player)
+            }
+        }
+    
+        if(player.comboStrength > 0) {
+            if(elems.enemies.length > 0) {
+                player.comboStrength -= 0.5 + (player.combo / 100)
+            }
+        } else {
+            if(player.combo > 1) {
+                player.combo = Math.round(player.combo / 2)
+                player.comboStrength = 100
+                doge('streakCount').innerText = 'x' + player.combo
+                DeBread.shake(doge('streakCount'), 10, 5, 5, 200)
+            }
+        }
+    
+        if(player.comboStrength > 100) {
+            player.comboStrength = 100
+        }
+    
+        doge('innerStreakBar').style.width = player.comboStrength + '%'
+        if(player.comboStrength < 20 && player.comboStrength > 0) {
+            doge('streakContainer').style.animation = 'streakBarScared 100ms cubic-bezier(.5, 0.05, 1, .5) infinite alternate'
+        } else {
+            doge('streakContainer').style.animation = ''
+        }
+    
+        //Sandbox Enemy
+            
+        if(sandBoxEnemy) {
+            doge('sandboxEnemy').style.opacity = '0.25'
+            doge('sandboxEnemy').style.left = e.relCursorPos[0]+'px'
+            doge('sandboxEnemy').style.top = e.relCursorPos[1]+'px'
+            doge('sandboxEnemy').style.width = sandBoxEnemy.size + 'px'
+            doge('sandboxEnemy').style.backgroundColor = `rgb(${sandBoxEnemy.color})`
+        } else {
+            doge('sandboxEnemy').style.opacity = '0'
+        }
+        
+        //Tick stuff
+        document.querySelectorAll('.fire, .entity').forEach(elem => {
+            elem.tick(elems.enemies)
+        })
+    
+        //Random stuff
+        if(e.gameUpdates % 500 === 0 && saveData.selectedChallenge === 'skillsUSA') {
+            createNotification('Tip!','You can parry by pressing <strong>F</strong>! Give it a try!', undefined, 5000)
+        }
+    
+        if(player.stats.player.powerRegen) {
+            player.getPower(player.stats.player.powerRegen)
+        }
+    
+        for(let i = elems.enemies.length - 1; i >= 0; i--) {
+            if(!elems.enemies[i].data.alive) {
+                elems.enemies.splice(elems.enemies.indexOf(elems.enemies[i]),1)
+            }
+        }
+    
+        //Restart
+        const lastRestartProgress = player.restartProgress
+        if(e.keysDown.includes('r') && e.keysDown.includes('shift') && e.gameUpdates >= 20) {
+            player.restartProgress++
+            doge('gameInnerRestartBar').style.width = player.restartProgress / 50 * 100 + '%'
+    
+            if(player.restartProgress >= 50) {
+                startGame()
+            }
+        } else {
+            player.restartProgress = 0
+        }
+    
+        if(player.restartProgress > lastRestartProgress) {
+            doge('gameRestartContainer').style.translate = '0px 0px'
+        } else if(player.restartProgress < lastRestartProgress) {
+            doge('gameRestartContainer').style.translate = '0px 100px'
+        }
+        
+        //Debug stuff
+        doge('dbPos').innerText = `
+        Pos: [${DeBread.round(player.pos[0],2)},${DeBread.round(player.pos[1],2)}],
+        CPos: [${DeBread.round(player.centerPos[0],2)},${DeBread.round(player.centerPos[1],2)}]
+        RPos: [${DeBread.round(player.rectPos[0],2)},${DeBread.round(player.rectPos[1],2)}]
+        `
+        doge('dbTPS').innerText = `${DeBread.round(1000 / DeBread.round(performance.now()-lastTickDate),2)}TPS`
+        doge('dbE').innerText = `${doge('area').children.length}E`
+        doge('dbVel').innerText = `Vel: [${DeBread.round(player.vel[0],2)},${DeBread.round(player.vel[1],2)}]`
+        doge('dbKeys').innerText = `Keys: [${e.keysDown}]`
+        doge('dbCursor').innerText = `
+        CursorPos: [${e.cursorPos[0]},${e.cursorPos[1]}]
+        RelCursorPos: [${DeBread.round(e.relCursorPos[0],2)},${DeBread.round(e.relCursorPos[1],2)}]
+        `
+        doge('dbParticles').innerText = `Particles: ${formatNumber(particles.length)}`
+        doge('dbUpdates').innerText = `Updates: ${e.gameUpdates}`
+        doge('dbTickInterval').innerText = `Tick Interval: ${e.gameUpdateInterval}ms/${DeBread.round(performance.now()-lastTickDate)}ms`
+        doge('dbStatus').innerText = `Status Effects: ${JSON.stringify(player.statusEffects)}`
+        doge('dbElems').innerText = `Elems: Enemies: ${elems.enemies.length} Pickups: ${(elems.pickups.length)}`
+        
+        e.gameUpdates++
+        lastTickDate = performance.now()
+    }
 }, 'e.gameUpdateInterval')
 
 document.addEventListener('mousedown', ev => {
@@ -3411,7 +3476,7 @@ function openPauseMenu(id) {
                         doge('gamePauseTitle').innerText = `PAUSED - SANDBOX`
                     }
                 } else {
-                    doge('gamePauseTitle').innerText = id.toUpperCase()
+                    doge('gamePauseTitle').innerText = id.toUpperCase().replaceAll('_',' ')
                 }
                 applyFlowText(doge('gamePauseTitle'))
             }, 250);
@@ -3422,6 +3487,38 @@ function openPauseMenu(id) {
             })
         }
     })
+
+    if(id === 'run_stats') {
+        for(item of player.itemsBought) {
+            let alreadyBought = false
+            doge('innerGameStatsItems').querySelectorAll('div').forEach(img => {
+                if(img.id === item.id) {
+                    img.querySelector('span').innerText++
+                    alreadyBought = true
+                }
+            })
+            if(!alreadyBought) {
+                const img = document.createElement('div')
+                img.innerHTML = '<span>1</span>'
+                img.id = item.id
+                addStyles(img, {
+                    backgroundImage: `url(graphics/upgrades/${item.id}.png)`,
+                    backgroundSize: '32px 32px',
+                    width: '32px',
+                    height: '32px',
+                    position: 'relative'
+                })
+
+                addStyles(img.querySelector('span'), {
+                    fontWeight: '700',
+                    filter: 'drop-shadow(0px 0px 5px black)',
+                    textShadow: '-1px -1px 0px black, 0px -1px 0px black, 1px -1px 0px black, -1px 0px 0px black, 1px 0px 0px black, -1px 1px 0px black, 0px 1px 0px black, 1px 1px 0px black'
+                })
+
+                doge('innerGameStatsItems').append(img)
+            }
+        }
+    }
 } openPauseMenu('')
 
 //Sandbox stuff
@@ -3828,6 +3925,7 @@ function openSandboxMenu(menu) {
 
                 updateArea()
                 updateUI()
+                save()
             }
 
             doge('sandboxMenu-characters').append(button)
@@ -4188,7 +4286,13 @@ const tutorial = [
         run: () => {
             player.alive = false
             e.gameActive = false
+            saveData.gameSettings.gamemode = 0
             openMenu('main')
+            save()
+
+            if(e.gameUpdates <= 1500) {
+                getAchievement('Knowledgeable')
+            }
         }
     }
 ]

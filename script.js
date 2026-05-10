@@ -10,7 +10,7 @@ const e = {
     mouseDown: [false,false]
 }
 
-const saveData = {
+const defaultSaveData = {
     selectedCharacter: 'debread',
     selectedSkin: -1,
     firstLogin: false,
@@ -28,6 +28,9 @@ const saveData = {
         showGameOverflow: true,
         skunkMode: false,
         debug: false,
+        devMode: false,
+
+        enemyVoiceLines: 'none'
     },
 
     gameSettings: {
@@ -77,7 +80,41 @@ const saveData = {
             yOffset: 0,
             rot: 0,
         },
-    ]
+    ],
+
+    stats: {
+        enemiesKilled: 0,
+    },
+    achievements: [],
+    items: [],
+    itemsCollected: []
+}
+
+//Save updater, by RedJive2
+function fillInto(a, b) {    
+    if (typeof a !== 'object' || typeof b !== 'object') {
+        throw new Error("a and b must be object, but got " + String(a) + " and " + String(b) + " (merge)")
+    }
+ 
+    for (const k in b) {
+        if (typeof b[k] === 'object' && k in a) {
+            fillInto(a[k], b[k])
+        } else if (!(k in a)) {
+            a[k] = b[k]
+        }
+    }
+} 
+const saveData = JSON.parse(localStorage.getItem("GooberShooter2Save")) ?? defaultSaveData
+fillInto(saveData, defaultSaveData)
+
+function save() {
+    localStorage.setItem("GooberShooter2Save", JSON.stringify(saveData))
+    console.log(`Game saved.`)
+}
+
+function deleteSave() {
+    localStorage.removeItem("GooberShooter2Save", JSON.stringify(saveData))
+    window.location.reload()
 }
 
 document.addEventListener('keydown', ev => {
@@ -1046,7 +1083,12 @@ const characters = {
         desc: 'run',
         taunts: 1,
         tag: 'The Horse',
-        tagCol: 'black',
+        tagCol: '#6b563c',
+
+        tagList: [
+            {text: 'GS1',col: '#e0a24a'},
+            {text: '🏇🐴🐴🐎🐎🏇🐴🐎🐴🐴',col: '#282422'}
+        ],
 
         weapon: weaponPresets.horse_weapon,
 
@@ -1057,10 +1099,6 @@ const characters = {
             'The horse says idc',
             'The horse gets a drink anyways'
         ],
-
-        applyStats: () => {
-            
-        },
     },
     car: {
         name: 'car',
@@ -1437,6 +1475,10 @@ const characters = {
         desc: 'this game is pissing me off',
         tag: 'the&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsporiginal',
         tagCol: 'rgb(107, 106, 52)',
+
+        tagList: [
+            {text: 'GS2',col: '#775db9'}
+        ],
 
         weapon: weaponPresets.mounted_machine_gun
     },
@@ -1876,6 +1918,493 @@ const challenges = {
             player.scoreMult = 0.25
             modifyStat(['enemy','levelIncrease'],'=-Infinity')
         }
+    }
+}
+
+//Achievement Difficulties
+//0: All information shown
+//1: Achievement is visible, description is replaced with '???'
+//2: Achievement is not visible until it is unlocked.
+
+const achievements = {
+    First_Blood: {
+        name: 'First Blood',
+        desc: 'Kill an enemy.',
+        difficulty: 0,
+    },
+    Murderer: {
+        name: 'Murderer',
+        desc: 'Kill 25 enemies.',
+        difficulty: 0,
+    },
+    Blood_Thirsty: {
+        name: 'Blood Thirsty',
+        desc: 'Kill 100 enemies.',
+        difficulty: 0,
+    },
+    Serial_Killer: {
+        name: 'Serial Killer',
+        desc: 'Kill 1,000 enemies.',
+        difficulty: 0,
+    },
+    Anarchist: {
+        name: 'Anarchist',
+        desc: 'Kill 5,000 enemies.',
+        difficulty: 0,
+    },
+    Paint_the_World_Red: {
+        name: 'Paint the World Red',
+        desc: 'Kill 10,000 enemies.',
+        difficulty: 0,
+    },
+    Cooked: {
+        name: 'Cooked',
+        desc: 'Deal over 100 damage at once with a single bullet',
+        difficulty: 0,
+        unlockType: 'Item',
+
+        unlock: {
+            type: 'Item',
+            name: 'Red Mushroom',
+            src: 'graphics/upgrades/red_mushroom.png',
+            data: upgrades[2].red_mushroom
+        },
+
+        run: () => {
+            saveData.items.push('red_mushroom')
+        }
+    },
+    Stylish: {
+        name: 'Stylish',
+        desc: 'Parry a projectile.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Feedbacker',
+            src: 'graphics/upgrades/feedbacker.png',
+            data: upgrades[1].feedbacker
+        },
+
+        run: () => {
+            saveData.items.push('feedbacker')
+        }
+    },
+    Intentional_Game_Design: {
+        name: 'Intentional Game Design',
+        desc: 'Parry a player projectile.<br><em style="color: grey; font-size: 0.75em;">may be an ULTRAKILL reference...</em>',
+        difficulty: 1,
+
+        unlock: {
+            type: 'Item',
+            name: 'Knuckleblaster',
+            src: 'graphics/upgrades/knuckleblaster.png',
+            data: upgrades[2].knuckleblaster
+        },
+
+        run: () => {
+            saveData.items.push('knuckleblaster')
+        }
+    },
+    Greed: {
+        name: 'Greed',
+        desc: 'Have $1,000 in a run.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Golden Ammo',
+            src: 'graphics/upgrades/golden_ammo.png',
+            data: upgrades[3].golden_ammo
+        },
+
+        run: () => {
+            saveData.items.push('golden_ammo')
+        }
+    },
+    Knuckle_Sandwich: {
+        name: 'Knuckle Sandwich',
+        desc: 'Kill an enemy with a melee.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Boxing Glovess',
+            src: 'graphics/upgrades/boxing_gloves.png',
+            data: upgrades[1].boxing_gloves
+        },
+
+        run: () => {
+            saveData.items.push('boxing_gloves')
+        }
+    },
+    Knowledgeable: {
+        name: 'Knowledgeable',
+        desc: 'Complete the tutorial quickly.',
+        difficulty: 0,
+    },
+    Survivor: {
+        name: 'Survivor',
+        desc: 'Reach wave 10.',
+        difficulty: 0,
+    },
+    Trooper: {
+        name: 'Trooper',
+        desc: 'Reach wave 50.',
+        difficulty: 0,
+    },
+    Conqueror: {
+        name: 'Conqueror',
+        desc: 'Reach wave 100.',
+        difficulty: 0,
+    },
+    Champion: {
+        name: 'Champion',
+        desc: 'Reach wave 200.',
+        difficulty: 0,
+    },
+    debread_Perfection: {
+        name: 'DeBread Perfection',
+        desc: 'Reach wave 100 using DeBread.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'The Tophat',
+            src: 'graphics/upgrades/the_tophat.png',
+            data: upgrades[4].the_tophat
+        },
+
+        run: () => {
+            saveData.items.push('the_tophat')
+        }
+    },
+    fella_Perfection: {
+        name: 'Fella Perfection',
+        desc: 'Reach wave 100 using Fella.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Raccoon Tail',
+            src: 'graphics/upgrades/raccoon_tail.png',
+            data: upgrades[4].raccoon_tail
+        },
+
+        run: () => {
+            saveData.items.push('raccoon_tail')
+        }
+    },
+    plonk_Perfection: {
+        name: 'Plonk Perfection',
+        desc: 'Reach wave 100 using Plonk.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Used Needle',
+            src: 'graphics/upgrades/used_needle.png',
+            data: upgrades[4].used_needle
+        },
+
+        run: () => {
+            saveData.items.push('used_needle')
+        }
+    },
+    ashton_Perfection: {
+        name: 'Ashton Perfection',
+        desc: 'Reach wave 100 using Ashton.',
+        difficulty: 0,
+    },
+    lorna_Perfection: {
+        name: 'Lorna Perfection',
+        desc: 'Reach wave 100 using Lorna.',
+        difficulty: 0,
+    },
+    tammy_Perfection: {
+        name: 'Tammy Perfection',
+        desc: 'Reach wave 100 using Tammy.',
+        difficulty: 0,
+    },
+    tana_Perfection: {
+        name: 'Tana Perfection',
+        desc: 'Reach wave 100 using Tana.',
+        difficulty: 0,
+    },
+    jaden_Perfection: {
+        name: 'Jaden Perfection',
+        desc: 'Reach wave 100 using Jaden.',
+        difficulty: 0,
+    },
+    peep_Perfection: {
+        name: 'Peep Perfection',
+        desc: 'Reach wave 100 using Peep.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Beret',
+            src: 'graphics/upgrades/beret.png',
+            data: upgrades[4].beret
+        },
+
+        run: () => {
+            saveData.items.push('beret')
+        }
+    },
+    slip_Perfection: {
+        name: 'Slip Perfection',
+        desc: 'Reach wave 100 using Slip.',
+        difficulty: 0,
+    },
+    sasha_Perfection: {
+        name: 'Sasha Perfection',
+        desc: 'Reach wave 100 using Sasha.',
+        difficulty: 0,
+    },
+    the_horse_Perfection: {
+        name: 'The Horse Perfection',
+        desc: 'Reach wave 100 using The Horse.',
+        difficulty: 0,
+    },
+    car_Perfection: {
+        name: 'car Perfection',
+        desc: 'Reach wave 100 using car.',
+        difficulty: 0,
+    },
+    erix_Perfection: {
+        name: 'erix Perfection',
+        desc: 'Reach wave 100 using erix.',
+        difficulty: 0,
+    },
+    walf_Perfection: {
+        name: 'Walf Perfection',
+        desc: 'Reach wave 100 using Walf.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Power Item',
+            name: 'Wisp',
+            src: 'graphics/powerItems/wisp.png',
+            data: powerItems[4].wisp
+        },
+
+        run: () => {
+            saveData.items.push('wisp')
+        }
+    },
+    jake_Perfection: {
+        name: 'Jake Perfection',
+        desc: 'Reach wave 100 using Jake.',
+        difficulty: 0,
+    },
+    crow_Perfection: {
+        name: 'Crow Perfection',
+        desc: 'Reach wave 100 using Crow.',
+        difficulty: 0,
+    },
+    krazy_Perfection: {
+        name: 'Krazy Perfection',
+        desc: 'Reach wave 100 using Krazy.',
+        difficulty: 0,
+    },
+    bean_Perfection: {
+        name: 'Bean Perfection',
+        desc: 'Reach wave 100 using Bean.',
+        difficulty: 0,
+    },
+    phoenix_Perfection: {
+        name: 'Phoenix Perfection',
+        desc: 'Reach wave 100 using Phoenix.',
+        difficulty: 0,
+    },
+    allx_Perfection: {
+        name: 'Quantum Perfection',
+        desc: 'Reach wave 100 using Quantum.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Power Item',
+            name: 'Tesla Coil',
+            src: 'graphics/powerItems/tesla_coil.png',
+            data: powerItems[4].tesla_coil
+        },
+
+        run: () => {
+            saveData.items.push('tesla_coil')
+        }
+    },
+    dottr_Perfection: {
+        name: 'Dottr Perfection',
+        desc: 'Reach wave 100 using Dottr.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Soap',
+            src: 'graphics/upgrades/soap.png',
+            data: upgrades[4].soap
+        },
+
+        run: () => {
+            saveData.items.push('soap')
+        }
+    },
+    skunk_Perfection: {
+        name: 'Skunk Perfection',
+        desc: 'Reach wave 100 using Skunk.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Pepto Bismol',
+            src: 'graphics/upgrades/pepto_bismol.png',
+            data: upgrades[1].pepto_bismol
+        },
+
+        run: () => {
+            saveData.items.push('pepto_bismol.')
+        }
+    },
+    udev_Perfection: {
+        name: 'udev Perfection',
+        desc: 'Reach wave 100 using udev',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Old Laptop',
+            src: 'graphics/upgrades/old_laptop.png',
+            data: upgrades[4].old_laptop
+        }
+    },
+    snorp_Perfection: {
+        name: 'Douglass Perfection',
+        desc: 'Reach wave 100 using Douglass.',
+        difficulty: 0,
+    },
+    wasp_Perfection: {
+        name: 'Wasp Perfection',
+        desc: 'Reach wave 100 using Wasp.',
+        difficulty: 0,
+    },
+    skywalkr_Perfection: {
+        name: 'Skywalkr Perfection',
+        desc: 'Reach wave 100 using Skywalkr.',
+        difficulty: 0,
+    },
+    meringue_Perfection: {
+        name: 'Meringue Perfection',
+        desc: 'Reach wave 100 using Meringue.',
+        difficulty: 0,
+    },
+    glorp_Perfection: {
+        name: 'Glorp Perfection',
+        desc: 'Reach wave 100 using Glorp.',
+        difficulty: 0,
+    },
+    tico_Perfection: {
+        name: 'Tico Perfection',
+        desc: 'Reach wave 100 using Tico.',
+        difficulty: 0,
+    },
+    tutorialist_Perfection: {
+        name: 'Tutorialist Perfection',
+        desc: 'Reach wave 100 using The Tutorialist.',
+        difficulty: 0,
+    },
+    Character_Perfectionist: {
+        name: 'Character Perfectionist',
+        desc: 'Reach wave 100 on every character. [not working yet]',
+        difficulty: 0,
+    }
+}
+
+function getAchievement(key) {
+    const achievement = achievements[key]
+    if(!saveData.achievements.includes(key) && Object.keys(achievements).includes(key) && (![2,3].includes(saveData.gameSettings.gamemode) || achievement.ignoreGamemode) && saveData.selectedChallenge === 'none') {
+        saveData.achievements.push(key)
+
+        createAchNoti(achievement, key)
+
+        if(achievement.unlock) {
+            mainMenuEventQueue.push(() => {
+                createNotification(`${achievement.unlock.type} Unlocked!`,`<strong>${achievement.unlock.name}</strong> can now appear in the shop.`,achievement.unlock.src)
+            })
+        }
+
+        if(achievement.run) achievement.run()
+    }
+}
+
+//Ripped from Goober Shooter 1
+function createAchNoti(ach, key) {
+    const noti = document.createElement('div')
+    noti.classList.add('achNoti')
+
+    noti.classList.add('achNotiAnim')
+    setTimeout(() => {
+        noti.classList.remove('achNotiAnim')
+    }, 500);
+
+    const notiSection1 = document.createElement('span')
+    notiSection1.style.transition = 'opacity ease-in-out 500ms'
+    notiSection1.innerText = 'Achievement Unlocked!'
+    notiSection1.style.fontWeight = '700'
+    noti.append(notiSection1)
+
+    const notiImg = document.createElement('img')
+    notiImg.style.display = 'none'
+    notiImg.style.opacity = 0
+    notiImg.style.transition = 'opacity ease-in-out 250ms'
+    notiImg.src = `graphics/achievements/${key}.png`
+    noti.append(notiImg)
+
+    const notiSection2 = document.createElement('div')
+    notiSection2.classList.add('achNotiText')
+    notiSection2.style.display = 'none'
+    notiSection2.style.opacity = 0
+    notiSection2.style.transition = 'opacity ease-in-out 250ms'
+    notiSection2.innerHTML = `
+    <span>${ach.name}</span><br>
+    <span>${ach.desc}</span>
+    `
+    noti.append(notiSection2)
+
+    doge('achNotiContainer').append(noti)
+
+    noti.style.transition = 'width cubic-bezier(.5,-0.5,.25,1) 500ms, height cubic-bezier(.5,-0.5,.25,1) 500ms, opacity ease-in-out 1s, border-radius cubic-bezier(.5,-0.5,.25,1) 500ms'
+    setTimeout(() => {
+        if(noti) {
+            noti.style.width = '350px'
+            noti.style.height = '50px'
+            noti.style.borderRadius = '0px'
+            notiSection1.style.opacity = 0
+            setTimeout(() => {
+                if(noti) {
+                    notiSection1.style.display = 'none'
+                    notiImg.style.display = 'unset'
+                    notiSection2.style.display = 'unset'
+                    requestAnimationFrame(() => {
+                        notiImg.style.opacity = 1
+                        notiSection2.style.opacity = 1
+                    })
+        
+                    setTimeout(() => {
+                        if(noti) {
+                            noti.style.opacity = 0
+                            setTimeout(() => {
+                                noti.remove()
+                            }, 1000);
+                        }
+                    }, 3000);
+                }
+            }, 250);
+        }
+    }, 1500);
+
+    noti.onclick = () => {
+        noti.remove()
     }
 }
 

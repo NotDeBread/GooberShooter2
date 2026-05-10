@@ -83,10 +83,19 @@ button:hover {
     scale: 1.1;
 }
 
+button:hover img {
+    filter: invert();
+}
+
 button:active {
     background-color: rgb(200,200,200);
     color: black;
     scale: 1;
+}
+
+button img {
+    width: 32px;
+    height: 32px;
 }
 
 input {
@@ -138,6 +147,18 @@ input[type="range"]::-moz-range-progress {
     background-color: white;
     color: rgb(131, 43, 65);
     color: rgb(104, 29, 87);
+}
+
+select {
+    border: 2px solid white;
+    background-color: black;
+    color: white;
+    font-family: "Poppins", sans-serif;
+    cursor: pointer;
+}
+
+select option {
+    outline: 1px solid white;
 }
 
 .genericCheckbox {

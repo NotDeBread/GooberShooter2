@@ -54,24 +54,45 @@
         </div>
     </div>
     <div id="notificationContainer"></div>
+    <div id="achNotiContainer"></div>
+
+    <div id="topper">
+        <button id="topperButton0">
+            <img src="graphics/icons/prev.png">
+            <span>Prev button</span>
+        </button>
+        <button id="topperButton1">
+            <span>Next button</span>
+            <img src="graphics/icons/next.png">
+        </button>
+    </div>
+
     <div id="menu-main" class="menu" style="display: flex;">
         <div style="position: relative; translate: -25px 0px;">
             <span id="menuTitle1">Goober</span>
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
-            <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest11</a></span>
+            <div style="line-height: 1;">
+                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest12</a></span><br>
+                <a style="font-size: 0.75em; opacity: 0.5; cursor: pointer;">Report a bug</a>
+            </div>
         </div>
         <div id="menuButtons">
-            <button onclick="tryPlay()" style="height: 40px;">PLAY</button>
-            <button onclick="openMenu('characterSelect')">CHARACTER SELECT</button>
+            <button onclick="tryPlay()" style="height: 50px;">PLAY</button>
+            <button onclick="openMenu('collection')">COLLECTION</button>
+            <button onclick="openMenu('achievements')">ACHIEVEMENTS</button>
             <button onclick="openSettings()">SETTINGS</button>
-            <button onclick="openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,300])
-            ">CREDITS</button>
-            <button onclick="window.open('https://forms.gle/zkECpXQ6iEFuKfVA8','_blank')">REPORT A BUG</button>
+            <button onclick="openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,350])">CREDITS</button>
+            <!-- <div id="smallMenuButtons">
+                <button onclick="openMenu('achievements')"><img src="graphics/icons/achievements.png"></button>
+                <button onclick="openSettings()"><img src="graphics/icons/settings.png"></button>
+                <button onclick="openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,400])
+                "><img src="graphics/icons/credits.png"></button>
+            </div> -->
         </div>
     </div>
     <div id="menu-gameSettings" class="menu">
-        <div class="genericMenuTitle">GAME SETTINGS</div>
+        <div class="submenuTitle">GAME SETTINGS</div>
 
         <div id="gameSettingsContainer">
             <div id="gameSettingsTabs">
@@ -138,8 +159,6 @@
                 </div>
             </div>
         </div>
-
-        <button onclick="openMenu('main')" class="genericMenuButton">BACK</button>
     </div>
     <div id="menu-characterSelect" class="menu">
         <div>
@@ -241,7 +260,88 @@
                 </section>
             </div>
         </div>
-        <button onclick="openMenu('main')" class="genericMenuButton" style="margin-top: 25px;">BACK</button>
+    </div>
+    <div id="menu-achievements" class="menu">
+        <div>
+            <div class="submenuTitle">ACHIEVEMENTS</div>
+        </div>
+
+        <div id="achListContainer">
+            <div style="padding: 5px; border-bottom: 2px solid grey;">
+                <div id="achBarContainer">
+                    <div id="achBarTextContainer">
+                        <span id="achBarText">0/- (0%)</span>
+                    </div>
+                    <div id="innerAchBar"></div>
+                </div>
+            </div>
+            <div id="achList">
+                <div id="innerAchList">
+                    <div class="ach">
+                        <img src="graphics/placeholder.png">
+                        <div class="achText">
+                            <strong>Some achievement name</strong>
+                            <span>Some achievement description</span>
+                        </div>
+                    </div>
+                    <div class="ach">
+                        <img src="graphics/placeholder.png">
+                        <div class="achText">
+                            <strong>Some achievement name</strong>
+                            <span>Some achievement description</span>
+                        </div>
+                    </div>
+                    <div class="ach">
+                        <img src="graphics/placeholder.png">
+                        <div class="achText">
+                            <strong>Some achievement name</strong>
+                            <span>Some achievement description</span>
+                        </div>
+                    </div>
+                    <div class="ach">
+                        <img src="graphics/placeholder.png">
+                        <div class="achText">
+                            <strong>Intentional Game Design</strong>
+                            <span>Parry a player projectile<br><em style="color: grey; font-size: 0.75em;">may be an ULTRAKILL reference...</em></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="menu-collection" class="menu">
+        <div>
+            <div class="submenuTitle">COLLECTION</div>
+        </div>
+
+        <div id="collectionContainer">
+            <div id="collectionItemContainer">
+                <div id="collectionImgContainer">
+                    <img id="collectionImg" src="graphics/placeholder.png">
+                    <span id="collectionItemName">Some really long item name</span><br>
+                </div>
+                <div id="collectionItemTags"></div>
+                <div style="padding: 5px;">
+                    <span id="collectionItemDesc">Some super awesome descriptioon</span>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column;">
+                <div id="collectionProgressContainer">
+                    <div style="width: 250px;">
+                        <span id="collectionProgressTitle">CONSUMABLES</span>
+                    </div>
+                    <div id="collectionProgressBar">
+                        <span id="collectionProgressBarText">-/0 (0%)</span>
+                        <div id="innerCollectionProgressBar"></div>
+                    </div>
+                </div>
+                <div id="collectionListContainer">
+                    <div id="collectionList">
+
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <div id="menu-game" class="menu">
         <div id="gamePauseContainer">
@@ -251,7 +351,7 @@
                 <div class="gamePauseMenu" id="pauseMenu-main" menuHeight="200">
                     <button onclick="pauseGame()">Resume</button>
                     <button onclick="openSettings()">Settings</button>
-                    <!-- <button onclick="openPauseMenu('run_stats')">Run Stats</button> -->
+                    <button onclick="openPauseMenu('run_stats')">Run Stats</button>
                     <button style="margin-top: 25px;" 
                         onclick="
                             if(!saveData.settings.showGameQuitWarning) {
@@ -309,7 +409,15 @@
                         ">Quit</button>
                 </div>
                 <div class="gamePauseMenu" id="pauseMenu-run_stats" menuHeight="250">
-                    <button>STATS!</button>
+                    <div id="innerStatsPauseMenu">
+                        <div id="gameStatsItems">
+                            <span id="gameStatsItemsTitle">ITEMS</span>
+                            <div id="innerGameStatsItems">
+
+                            </div>
+                        </div>
+                    </div>
+
                     <button onclick="openPauseMenu('main')">Back</button>
                 </div>
             </div>
@@ -412,9 +520,10 @@
                             <input type="number" id="sandboxGetPowerInput" placeholder="Power">
                         </div>
                         <div class="numInput">
-                            <button onclick="player.damage(-parseInt(0+doge('sandboxDamageInput').value))">Heal</button>
-                            <button onclick="player.damage(parseInt(0+doge('sandboxDamageInput').value))">Damage</button>
-                            <input type="number" id="sandboxDamageInput" placeholder="Amount">
+                            <button onclick="player.damage(-parseInt(0+doge('sandboxDamageInput').value))" style="width: 70px;">Heal</button>
+                            <button onclick="player.damage(parseInt(0+doge('sandboxDamageInput').value), undefined, parseInt(0+doge('sandboxHardDamageInput').value))" style="width: 70px;">Damage</button>
+                            <input type="number" id="sandboxDamageInput" placeholder="Amount" style="width: 75px;">
+                            <input type="number" id="sandboxHardDamageInput" placeholder="HD" style="width: 50px;">
                         </div>
                     </div>
                     <div id="sandboxMenu-powerItems"></div>
@@ -506,6 +615,7 @@
                             <!-- <img src="graphics/health.png" width="16"> -->
                             <div class="statusBar" id="healthBarContainer">
                                 <div class="innerStatusBar" id="healthBar" style="background-color: rgb(255,100,100);"></div>
+                                <div class="innerStatusBar" id="hardDamageBar" style="position: absolute; top: 0; right: 0; background-color: grey;"></div>
                             </div>
                             <div id="healthBarNum">100</div>
                         </div>
@@ -529,6 +639,7 @@
                 <!--Below bars and power item, money-->
                 <div>
                     <div id="gameMoneyCount">$0</div>
+                    <div id="gameBonusContainer"></div>
                 </div>
             </div>
             <div id="gameBossbarContainer">
@@ -660,8 +771,6 @@
             </div>
         </div>
     </div>
-
-
 
     <script src="DeBread.js"></script>
     <script src="upgrades.js"></script>

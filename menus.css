@@ -35,6 +35,51 @@
     height: 148px;
 }
 
+#topper {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    overflow: hidden;
+
+    pointer-events: none;
+}
+
+#topper button {
+    height: 50px;
+    width: 200px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0;
+    transition: width var(--bouncy) 250ms, translate ease-in-out 250ms, letter-spacing var(--bouncy) 250ms;
+}
+
+#topper button:hover {
+    scale: 1;
+    width: 225px;
+    letter-spacing: 1px;
+}
+
+#topper button:active {
+    width: 210px;
+    letter-spacing: 0px;
+}
+
+#topperButton0 {
+    translate: -202px 0px;
+}
+
+#topperButton1 {
+    translate: 202px 0px;
+    justify-content: end;
+}
+
 .menu {
     position: absolute;
     top: 0;
@@ -125,6 +170,19 @@
     width: 150px;
     height: 30px;
     font-weight: 700;
+}
+
+#smallMenuButtons {
+    display: flex;
+    gap: 5px;
+    width: 150px;
+}
+
+#smallMenuButtons button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 40px;
 }
 
 /* Game settings */
@@ -482,6 +540,232 @@
     }
 }
 
+/* Achievements */
+
+#achListContainer {
+    border: 2px solid white;
+    width: 1000px;
+    background-color: rgb(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+}
+
+#achBarContainer {
+    width: calc(100% - 4px);
+    height: 20px;
+    border: 2px solid white;
+    position: relative;
+}
+
+#achBarTextContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+}
+
+#achBarText {
+    mix-blend-mode: difference;
+}
+
+#innerAchBar {
+    width: 50%;
+    height: 100%;
+    background-color: white;
+}
+
+#achList {
+    height: 500px;
+    overflow-y: scroll;
+    scrollbar-width: thin;
+}
+
+#innerAchList {
+    padding: 5px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: flex-start;
+}
+
+.ach {
+    border: 2px solid white;
+    padding: 5px;
+    display: flex;
+    gap: 5px;
+    height: 64px;
+    width: 312px; /* I hate this*/
+    line-height: 1.1;
+}
+
+.achText {
+    display: flex;
+    flex-direction: column;
+}
+
+.achText span {
+    font-size: 0.9em;
+}
+
+#achNotiContainer {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    width: 100dvw;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    z-index: 5;
+    gap: 5px;
+}
+
+.achNoti {
+    width: 250px;
+    height: 25px;
+    padding: 5px;
+    border-radius: 10px;
+    outline: 2px solid white;
+    background-color: rgb(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    overflow: hidden;
+    cursor: default;
+    transition: width cubic-bezier(.75,-0.5,.25,1.5) 500ms, height cubic-bezier(.75,-0.5,.25,1.5) 500ms, opacity ease-in-out 1s;
+}
+
+.achNotiAnim {
+    animation: achNotiIn 500ms var(--bouncy) 1 forwards;
+}
+
+@keyframes achNotiIn {
+    from {
+        height: 0;
+        padding: 0;
+        opacity: 0;
+    }
+}
+
+.achNoti img {
+    width: 50px;
+    height: 50px;
+}
+
+.achNotiText {
+    text-align: left; 
+    width: 100%; 
+    line-height: 1.1;
+}
+
+.achNotiText span:nth-child(1) {
+    font-weight: 700;
+}
+
+/* Collection */
+
+#collectionContainer {
+    border: 2px solid white;
+    background-color: rgb(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    display: flex;
+    width: 800px;
+    height: 500px;
+    display: flex;
+}
+
+#collectionItemContainer {
+    border-right: 2px solid white;
+    padding: 5px;
+    height: calc(100% - 10px);
+}
+
+#collectionImgContainer {
+    display: flex;
+    gap: 5px;
+    padding: 5px;
+    width: 250px;
+}
+
+#collectionImg {
+    height: 32px;
+    width: 32px;
+}
+
+#collectionItemName {
+    font-weight: 700;
+    font-size: 1.25em;
+}
+
+#collectionItemTags {
+    display: flex;
+    gap: 5px;
+    padding: 5px;
+}
+
+#collectionProgressContainer {
+    padding: 5px;
+    border-bottom: 2px solid white;
+    width: calc(100% - 10px);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#collectionProgressTitle {
+    font-weight: 700;
+    padding: 5px;
+}
+
+#collectionProgressBar {
+    border: 2px solid white;
+    height: 25px;
+    width: calc(100% - 4px);
+    position: relative;
+}
+
+#collectionProgressBarText {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+    mix-blend-mode: difference;
+}
+
+#innerCollectionProgressBar {
+    height: 100%;
+    width: 50%;
+    background-color: white;
+    transition: width cubic-bezier(0,1,.5,1) 500ms;
+}
+
+#collectionListContainer {
+    height: 100%;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+#collectionList {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 5px;
+    gap: 5px;
+}
+
+/* Settings */
+
 #settings {
     display: flex;
     flex-direction: column;
@@ -491,6 +775,7 @@
 .settingsSection {
     overflow-y: auto;
     height: 100%;
+    padding: 5px;
 }
 
 .settingsCheckboxContainer {

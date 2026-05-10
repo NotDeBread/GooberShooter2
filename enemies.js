@@ -912,6 +912,25 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
 
             getCombo()
             getStyle(styles.kill)
+
+            if(saveData.gameSettings.gamemode !== 2) {
+                saveData.stats.enemiesKilled++
+
+                const enemiesKilled = saveData.stats.enemiesKilled
+                if(enemiesKilled >= 10000) {
+                    getAchievement('Paint_the_World_Red')
+                } else if(enemiesKilled >= 5000) {
+                    getAchievement('Anarchist')
+                } if(enemiesKilled >= 1000) {
+                    getAchievement('Serial_Killer')
+                } else if(enemiesKilled >= 100) {
+                    getAchievement('Blood_Thirsty')
+                } else if(enemiesKilled >= 25) {
+                    getAchievement('Murderer')
+                } else if(enemiesKilled >= 1) {
+                    getAchievement('First_Blood')
+                }
+            }
         }
     }
 
@@ -1145,6 +1164,13 @@ function spawnEnemyOld(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
 
             getCombo()
             getStyle(styles.kill)
+
+            // if(player.perfectWave && elems.enemies.length === 0) {
+            //     player.moneyBonusQueue.push({
+            //         value: Math.min(player.wave,10),
+            //         text: `Wave ${player.wave} perfect clear!`
+            //     })
+            // }
         }
     }
 
@@ -1451,6 +1477,7 @@ function spawnEnemyOld(pos, data, levelBase, spawnTime = 1000, extraData = {}) {
 
 function spawnWave(wave, poor) {
     let credits = wave
+
     player.perfectWave = true
 
     while(credits > 0) {
@@ -1469,7 +1496,6 @@ function spawnWave(wave, poor) {
 
     player.comboStrength += 25
 
-    
     if(!poor) {
         let coins = wave * player.stats.misc.waveMoneyMult
         const differentCoins = [0,0,0,0,0]
@@ -1528,6 +1554,21 @@ function spawnWave(wave, poor) {
             const randomStat = randomStats[DeBread.randomNum(0,randomStats.length-1)]
             modifyStat([randomStat[0],randomStat[1]], randomStat[2])
             createNotification('Stat up!',`${randomStat[0]}.${randomStat[1]}`)
+        }
+    }
+
+    if(saveData.gameSettings.gamemode !== 3) {
+        doge('pageTitle').innerText = `Goober Shooter 2 - Wave ${player.wave}`
+
+        if(wave === 200) {
+            getAchievement('Champion')
+        } else if(wave === 100) {
+            getAchievement(`${saveData.selectedCharacter}_Perfection`)
+            getAchievement('Conqueror')
+        } else if(wave === 50) {
+            getAchievement('Trooper')
+        } else if(wave === 10) {
+            getAchievement('Survivor')
         }
     }
 }
