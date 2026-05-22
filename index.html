@@ -73,8 +73,8 @@
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
             <div style="line-height: 1;">
-                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest12</a></span><br>
-                <a style="font-size: 0.75em; opacity: 0.5; cursor: pointer;">Report a bug</a>
+                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest13</a></span><br>
+                <a style="font-size: 0.75em; opacity: 0.5; cursor: pointer;" href="https://forms.gle/JDaQUZ1wR6GhAscZ8" target="_blank">Report a bug</a>
             </div>
         </div>
         <div id="menuButtons">
@@ -90,6 +90,11 @@
                 "><img src="graphics/icons/credits.png"></button>
             </div> -->
         </div>
+        <div id="ffContainer">
+            <span>Fun fact!</span>
+            <span id="menuFF">wowie this is some really cool text</span>
+        </div>
+        <span style="position: absolute; top: 10px; right: 10px; width: 500px; text-align: right; color: yellow;">Some updates may alter the way save data is structured! If you encounter any problems after an update, it is most likely due to save data inconsistencies. Go into settings > account, then delete your data.</span>
     </div>
     <div id="menu-gameSettings" class="menu">
         <div class="submenuTitle">GAME SETTINGS</div>
@@ -493,6 +498,7 @@
                     <button onclick="openSandboxMenu('stats')">Attributes</button>
                     <button onclick="openSandboxMenu('tools')">Tools</button>
                     <button onclick="openSandboxMenu('powerItems')">Power Items</button>
+                    <button onclick="openSandboxMenu('consumables')">Consumables</button>
                     <button onclick="openSandboxMenu('characters')">Characters</button>
                 </div>
                 <div id="gameInnerSandbox">
@@ -600,6 +606,25 @@
                 <span id="dbTickInterval">Tick Interval: 0/0</span><br>
                 <span id="dbStatus">Status Effects: []</span><br>
                 <span id="dbElems">Elems: []</span><br>
+            </div>
+            <div id="gameBossPopupContainer">
+                <div id="gameBossPopup">
+                    <div class="gameBossPopupCharacter">
+                        <img src="graphics/characters/fellaPortraitLarge.png" style="scale: -1 1;">
+                        <div class="gameBossPopupText">
+                            <!-- <span>-</span> -->
+                            <span>Fella</span>
+                        </div>
+                    </div>
+                    <em id="gameBossVs">vs.</em>
+                    <div class="gameBossPopupCharacter" style="text-align: right; justify-content: end;">
+                        <div class="gameBossPopupText">
+                            <em id="bossPopupOpponentModifier">❗Enraged</em>
+                            <span id="bossPopupOpponentName">Sasha</span>
+                        </div>
+                        <img src="graphics/characters/sashaPortraitLarge.png" id="bossPopupOpponentImg">
+                    </div>
+                </div>
             </div>
             <div id="gameTopLeftContainer">
                 <!--Power item, bars, and status effects-->

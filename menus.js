@@ -8,21 +8,33 @@ const startSequence = [
             'graphics/characters/fellaPortrait.png',
         ]
     },
+    // {
+    //     text: [
+    //         'With music by',
+    //         'B Dawgs'
+    //     ],
+    // },
     {
         text: [
-            'With music by',
-            'B Dawgs'
-        ],
-    },
-    {
-        text: [
-            'And extra art from',
+            'with extra art from',
             'Plinkel'
         ],
         images: [
             'graphics/characters/ashtonPortrait.png',
         ]
     },
+]
+
+const funFacts = [
+    'You can hold shift and click in the opening cutscene to go into the sandbox!',
+    'Holding SHIFT when clicking the play button skips the character select menu!',
+    'Goober Shooter 2 was used as a submission for a game development competition!',
+    'Some character and weapon textures were made by Plinkel!',
+    'You can parry your own projectiles!',
+    'Goober Shooter 2 was originally going to be like TBOI, where you have to clear floors to progress.',
+    'Many items are pulled straight out of the original Goober Shooter!',
+    'Originally, the player could\'ve had \'shield\' on top of thier health, but it caused too many issues so it was scrapped.',
+    'You can press H in the sandbox to toggle the sandbox menu!'
 ]
 
 const startScreenTimeouts = []
@@ -136,7 +148,7 @@ function createMenuCharacter() {
         width: '72px',
         height: '72px',
         pointerEvents: 'none',
-        transition: 'left linear 20ms, top linear 20ms',
+        transition: 'left linear 30ms, top linear 30ms',
     })
 
     if(DeBread.randomNum(1,500) === 1) {
@@ -210,7 +222,7 @@ function createMenuCharacter() {
 
 setInterval(() => {
     doge('menu-main').querySelectorAll('.menuCharacter').forEach(character => {character.update()})
-}, 20)
+}, 30)
 
 function tryPlay() {
     if(!saveData.tutorialBeat) {
@@ -299,6 +311,8 @@ function openMenu(menu) {
         if(DeBread.randomNum(1,500) === 1) {
             doge('menuTitle1').innerText = 'Googer'
         }
+
+        doge('menuFF').innerText = funFacts[DeBread.randomNum(0,funFacts.length-1)]
         
         applyFlowText(doge('menuTitle1'), 0.75)
         applyFlowText(doge('menuTitle2'), 0.75)
@@ -345,7 +359,6 @@ function openMenu(menu) {
 
         for(let i = 0; i < mainMenuEventQueue.length; i++) {
             const queuedFunction = mainMenuEventQueue[i]
-            console.log(250 * i)
             setTimeout(() => {
                 queuedFunction()
             }, 250 * (i+1));
@@ -441,6 +454,8 @@ function renderCharacterSelect() {
         // tag.classList.add('selectedCharacterTag')
         // tag.innerHTML = `${characters[saveData.selectedCharacter].taunts ?? '???'} taunts`
         // doge('selectedCharacterTags').append(tag)
+
+        save()
     } updateSelectedCharacter()
     
 
@@ -734,7 +749,7 @@ function renderCollectionPage(page) {
                     isUnlocked = false
                 }
 
-                let isCollected = saveData.itemsCollected.includes(key)
+                let isCollected = saveData.stats.itemsCollected.includes(key)
 
                 if(isCollected || saveData.settings.devMode) {
                     item.onmouseenter = () => {
@@ -780,9 +795,8 @@ function renderCollectionPage(page) {
                             doge('collectionItemName').innerText = 'Locked'
                             doge('collectionItemDesc').innerHTML = 'Play more to unlock this item!'
                             doge('collectionItemTags').innerHTML = ''
-
-                            console.log(data)
                         }
+                        item.querySelector('img').style.filter = 'brightness(50%)'
                     } else if(!isCollected) {
                         item.querySelector('img').src = 'graphics/icons/unknown.png'
     
@@ -792,9 +806,8 @@ function renderCollectionPage(page) {
                             doge('collectionItemName').innerText = 'Not collected'
                             doge('collectionItemDesc').innerHTML = 'Buy this item from the shop to add it to the collection page!'
                             doge('collectionItemTags').innerHTML = ''
-
-                            console.log(data)
                         }
+                        item.querySelector('img').style.filter = 'brightness(50%)'
                     }
                 }
 
@@ -1001,7 +1014,7 @@ function selectGamemode(gm) {
         }
     }
     saveData.gameSettings.gamemode = gm
-}
+} selectGamemode(0)
 
 function renderChallenges() {
     if(saveData.gameSettings.gamemode === 3) {
@@ -1148,19 +1161,6 @@ const settingsHTML = `
         </div>
         <div class="settingsSection" id="settingsSection-fun">
             <span>Enemy voice lines:</span>
-            <select id="sdd-enemyVoiceLines">
-                <option>
-                    <span>none</span>
-                </option>
-                <option>
-                    <span>Skywalkr</span>
-                </option>
-                <option>
-                    <span>Dottr</span>
-                </option>
-            </select>
-            <br>
-            <span>Consumable voice lines:</span>
             <select id="sdd-enemyVoiceLines">
                 <option>
                     <span>none</span>

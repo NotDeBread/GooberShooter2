@@ -83,11 +83,13 @@ const defaultSaveData = {
     ],
 
     stats: {
-        enemiesKilled: 0,
+        list: {
+            Enemies_Killed: 0,
+        },
+        itemsCollected: [],
     },
     achievements: [],
-    items: [],
-    itemsCollected: []
+    items: []
 }
 
 //Save updater, by RedJive2
@@ -504,6 +506,7 @@ const weaponPresets = {
         desc: 'Releases a short-range wave of energy, passing through multiple enemies.',
         ammoChar: '|',
         textureSize: [0,0],
+        bulletTexture: true,
 
         pros: [
             'Damage',
@@ -971,6 +974,18 @@ const characters = {
         ],
         
         weapon: weaponPresets.baretta_93r
+    },
+    nyan: {
+        name: 'Nyan',
+        desc: '',
+        tag: 'Cat thing??',
+        tagCol: 'rgb(230, 92, 92)',
+
+        tagList: [
+            {text: 'GS1',col: '#e0a24a'}
+        ],
+        
+        weapon: weaponPresets.gun
     },
     jaden: {
         name: 'Jaden',
@@ -1463,13 +1478,19 @@ const characters = {
 
     //     weapon: weaponPresets.gun
     // },
-    // henry: {
-    //     name: 'Henry',
-    //     desc: '',
-    //     tag: 'Wolf',
+    wolff: {
+        name: 'Wolff',
+        desc: 'BRITISH PEOPLE 🤮🤮🤮🤮',
+        tag: 'Wolf',
+        tagCol: '#420d28',
 
-    //     weapon: weaponPresets.gun
-    // },
+        tagList: [
+            {text: 'GS1',col: '#e0a24a'},
+            {text: 'GS2',col: '#775db9'}
+        ],
+
+        weapon: weaponPresets.gun
+    },
     skywalkr: {
         name: 'Skywalkr',
         desc: 'this game is pissing me off',
@@ -1506,20 +1527,6 @@ const characters = {
     //     name: 'Zima',
     //     desc: '',
     //     tag: 'Yeen',
-
-    //     weapon: weaponPresets.gun
-    // },
-    // henry: {
-    //     name: 'Henry',
-    //     desc: '',
-    //     taunts: 1,
-    //     tag: 'Wolf',
-    //     tagCol: 'rgb(25,25,25)',
-
-    //     tagList: [
-    //         {text: 'GS1',col: '#e0a24a'},
-    //         {text: 'GS2',col: '#775db9'}
-    //     ],
 
     //     weapon: weaponPresets.gun
     // },
@@ -1759,7 +1766,7 @@ const challenges = {
             player.scoreMult = 1.25
             player.getMoney(250)
             modifyStat(['enemy','levelIncrease'], '=-500')
-            modifyStat(['enemy','moneyMult'], '=0')
+            modifyStat(['misc','waveMoneyMult'], '=0')
         }
     },
     itemless: {
@@ -2131,6 +2138,11 @@ const achievements = {
         desc: 'Reach wave 100 using Tana.',
         difficulty: 0,
     },
+    nyan_Perfection: {
+        name: 'Nyan Perfection',
+        desc: 'Reach wave 100 using Nyan.',
+        difficulty: 0,
+    },
     jaden_Perfection: {
         name: 'Jaden Perfection',
         desc: 'Reach wave 100 using Jaden.',
@@ -2288,6 +2300,11 @@ const achievements = {
         desc: 'Reach wave 100 using Wasp.',
         difficulty: 0,
     },
+    wolff_Perfection: {
+        name: 'Wolff Perfection',
+        desc: 'Reach wave 100 using Wasp.',
+        difficulty: 0,
+    },
     skywalkr_Perfection: {
         name: 'Skywalkr Perfection',
         desc: 'Reach wave 100 using Skywalkr.',
@@ -2334,6 +2351,7 @@ function getAchievement(key) {
         }
 
         if(achievement.run) achievement.run()
+        save()
     }
 }
 

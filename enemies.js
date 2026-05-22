@@ -328,6 +328,88 @@ const enemies = {
             }
         },
     },
+    pyromaniac: {
+        name: 'Pyromaniac',
+        desc: 'A large, slow-moving enemy that fires large, explosive, splitting projectiles.',
+        color: [135, 78, 59],
+        size: 75,
+        health: 750,
+        speed: 0.5,
+        credits: 30,
+        explosionImmunity: true,
+
+        projectile: {
+            cooldown: 120,
+            size: 25,
+            damage: 75,
+            speed: 15,
+            range: 50,
+            explosionSize: 100,
+            bounces: 1,
+
+            splits: 1,
+            split: 3,
+            speedDiv: 1.1,
+        },
+    },
+    turret: {
+        name: 'Turret',
+        desc: 'A small, stationary enemy that rapidly fires low damage projectiles.',
+        color: [79, 87, 110],
+        size: 40,
+        health: 250,
+        speed: 0,
+        credits: 20,
+        mounted: true,
+        
+        projectile: {
+            cooldown: 10,
+            size: 10,
+            damage: 10,
+            speed: 5,
+        },
+
+        onDeath: enemy => {
+            createExplosion([...enemy.data.centerPos],100,50,50,false,[[161,119],[255,205],[255,255]])
+        }
+    },
+    nucliest: {
+        name: 'Nucliest',
+        desc: 'A stationary enemy that fires radioactive bouncy ammo.',
+        color: [151, 240, 91],
+        size: 50,
+        health: 500,
+        speed: 0,
+        credits: 40,
+        mounted: true,
+        regen: -0.5,
+        
+        projectile: {
+            cooldown: 20,
+            size: 10,
+            damage: 10,
+            speed: 6,
+            radiationSize: 50,
+            range: 100,
+            bounces: 1,
+
+            poisonFieldChance: 75,
+            poisonFieldSize: 50,
+            poisonFieldDmgPercent: 50,
+            poisonFieldTicks: 10,
+            poisonFieldColor: [151,240,91]
+        },
+
+        poisonField: {
+            size: 50,
+            damage: 25,
+            rate: 10,
+        },
+
+        onDeath: enemy => {
+            createPoisonField([...enemy.data.centerPos],100,10,10,10,false,[151,240,91])
+        }
+    },
     dummy: {
         name: 'Dummy',
         desc: '<em style="color: grey;">Sandbox only</em><br>Has infinite health and displays total damage taken.',
@@ -441,6 +523,14 @@ const enemies = {
     },
 }
 
+const voicelines = {
+    Dottr: {
+        ambient: 11,
+        hurt: 8,
+        death: 2,
+    }
+}
+
 const enemyBase = document.createElement('div')
 enemyBase.classList.add('entity')
 enemyBase.classList.add('enemy')
@@ -469,6 +559,8 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
     const enemy = enemyBase.cloneNode(true)
     const healthBar = enemy.querySelector('.innerEnemyHealthBar')
     const level = Math.max(levelBase + player.stats.enemy.levelIncrease, 0)
+    enemy.querySelector('.enemyLevel').innerText = level
+    // console.log(level, enemy.querySelector('.enemyLevel'))
 
     let sizeMult = [1,1]
     if(saveData.selectedChallenge === 'abstract') {
@@ -502,8 +594,11 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
         friendly: false,
         data: data,
         damageTaken: 0,
+        explosionImmunity: data.explosionImmunity ?? false,
 
         elem: enemy,
+
+        lastSfxDate: 0,
     }
     const enemyData = enemy.data
 
@@ -713,6 +808,19 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
             top: enemyData.pos[1]+'px'
         })
         enemyData.centerPos = [enemyData.pos[0]+enemy.offsetWidth/2,enemyData.pos[1]+enemy.offsetHeight/2]
+
+        if(e.gameUpdates - enemyData.lastSfxDate > 200 && DeBread.randomNum(1,100) === 1) {
+            if(saveData.settings.enemyVoiceLines !== 'none') {
+                enemyData.lastSfxDate = e.gameUpdates
+                const volumeSpeedMult = 50 / enemyData.size
+                DeBread.playSound(
+                    `audio/voicelines/${saveData.settings.enemyVoiceLines}/ambient${DeBread.randomNum(0,voicelines[saveData.settings.enemyVoiceLines].ambient)}.mp3`,
+                    0.1,
+                    volumeSpeedMult,
+                    false
+                )
+            }   
+        }
     }
 
     if(data.projectile) {
@@ -738,7 +846,12 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                     projPos[1] - DeBread.randomNum(enemyData.target.pos[1], enemyData.target.pos[1] + enemyData.target.elem.offsetHeight),
                     projPos[0] - DeBread.randomNum(enemyData.target.pos[0], enemyData.target.pos[0] + enemyData.target.elem.offsetWidth),
                 )
-                createProjectile(1, [...projPos], projAngle, data.projectile, [player.elem], enemy.data)
+
+                const projData = {...data.projectile}
+                projData.damage *= (1 + level / 2)
+                projData.speed *= player.stats.enemy.speedMult
+
+                createProjectile(1, [...projPos], projAngle, projData, [player.elem], enemy.data)
                 enemyData.dirVels.push({angle: projAngle, speed: data.projectile.recoil ?? 0, div: 1.25})
 
                 enemyData.lastShotDate = e.gameUpdates
@@ -806,6 +919,16 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                     requestAnimationFrame(() => {
                         enemyData.bossBar.querySelector('div').style.animation = 'bossbarPulse 250ms ease-out 1 forwards'
                     })
+                }
+
+                if(saveData.settings.enemyVoiceLines !== 'none' && DeBread.randomNum(1,7) === 1) {
+                    const volumeSpeedMult = 50 / enemyData.size
+                    DeBread.playSound(
+                        `audio/voicelines/${saveData.settings.enemyVoiceLines}/hurt${DeBread.randomNum(0,voicelines[saveData.settings.enemyVoiceLines].hurt)}.mp3`,
+                        0.1,
+                        volumeSpeedMult,
+                        false
+                    )
                 }
             }
         }  
@@ -914,9 +1037,9 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
             getStyle(styles.kill)
 
             if(saveData.gameSettings.gamemode !== 2) {
-                saveData.stats.enemiesKilled++
+                saveData.stats.list.Enemies_Killed++
 
-                const enemiesKilled = saveData.stats.enemiesKilled
+                const enemiesKilled = saveData.stats.list.Enemies_Killed
                 if(enemiesKilled >= 10000) {
                     getAchievement('Paint_the_World_Red')
                 } else if(enemiesKilled >= 5000) {
@@ -930,6 +1053,16 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                 } else if(enemiesKilled >= 1) {
                     getAchievement('First_Blood')
                 }
+            }
+
+            if(saveData.settings.enemyVoiceLines !== 'none') {
+                const volumeSpeedMult = 50 / enemyData.size
+                DeBread.playSound(
+                    `audio/voicelines/${saveData.settings.enemyVoiceLines}/death${DeBread.randomNum(0,voicelines[saveData.settings.enemyVoiceLines].death)}.mp3`,
+                    0.1,
+                    volumeSpeedMult,
+                    false
+                )
             }
         }
     }
@@ -1490,7 +1623,7 @@ function spawnWave(wave, poor) {
         const key = Object.keys(enemies)[randomEnemy]
         if(enemies[key].credits <= credits) {
             credits -= enemies[key].credits
-            spawnEnemy([DeBread.randomNum(0,doge('area').offsetWidth-enemies[key].size),DeBread.randomNum(0,doge('area').offsetWidth-enemies[key].size)],enemies[key],enemyLevel, DeBread.randomNum(25, 50))
+            spawnEnemy([DeBread.randomNum(0,doge('area').offsetWidth-enemies[key].size),DeBread.randomNum(0,doge('area').offsetWidth-enemies[key].size)],enemies[key],enemyLevel, DeBread.randomNum(50, 75))
         }
     }
 
@@ -1597,6 +1730,35 @@ const bosses = {
             }
         }
     }
+}
+
+function startBossSequence(opponentData = {}) {
+    doge('bossPopupOpponentName').innerText = opponentData.name ?? '???'
+    if(opponentData.modifier) {
+        doge('bossPopupOpponentModifier').innerText = opponentData.modifier
+        doge('bossPopupOpponentModifier').style.display = 'unset'
+    } else {
+        doge('bossPopupOpponentModifier').style.display = 'none'
+    }
+
+    let imgNum = 0
+    doge('gameBossPopup').querySelectorAll('img').forEach(img => {
+        img.style.animation = `slide${imgNum} 2s ease-out 1 forwards`
+        imgNum++
+    })
+
+    doge('gameBossPopup').style.height = '150px'
+    doge('gameBossPopupContainer').style.opacity = '1'
+    
+    createTimeout(() => {
+        doge('gameBossPopup').style.height = '0px'
+        doge('gameBossPopupContainer').style.opacity = '0'
+        setTimeout(() => {
+            doge('gameBossPopup').querySelectorAll('img').forEach(img => {
+                img.style.animation = `none`
+            })
+        }, 250);
+    }, 100)
 }
 
 function spawnBoss(pos, data, spawnTime = 20) {

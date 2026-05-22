@@ -24,7 +24,7 @@ function createPlayer() {
         chargeDmgMult: 1,
 
         inPortal: false,
-        immune: false,
+        immune: 0,
 
         health: 100,
         hardDamage: 0,
@@ -121,6 +121,7 @@ function createPlayer() {
                 parryPoisonDmg: 0, //How much damage (as a percent of the player damage) a poison field (from a parried bullet) deals every poison field tick.
                 parryPoisonTicks: 0, //How many times a poison field (from a parried bullet) attempts to damage an enemy before destroying.
                 parryPoisonSize: 0, //How big (in pixels) the parried poison fields are.
+                parryShrapnel: 0,
 
                 contactDamage: 0, //How much damage the player deals to colliding enemies every tick.
 
@@ -210,7 +211,7 @@ function createPlayer() {
                 damage: 25, //How much damage is dealt to enemies within the players melee hitbox.
                 damageMult: 1, //Multiplies damage stat.
                 cooldown: 75, //How long (in ticks) it takes to recharge the cooldown.
-                size: 50, //How large (in pixels) the melee hitbox is.
+                size: 25, //How large (in pixels) the melee hitbox is.
                 knockback: 5,
 
                 explosionPower: 0, //How big and powerful the explosion created by meleeing an enemy is.
@@ -268,13 +269,15 @@ function createPlayer() {
             const amount = baseAmount / (1 + (player.stats.player.armor ?? 0))
 
             const startAmount = player.health
-            if(player.health - amount < 1 && player.health > 1) {
-                player.health = 1
-            } else {
-                if(amount > 0) {
-                    player.health -= amount
-                } else if(!idolAlive) {
-                    player.health -= amount
+            if(!player.immune) {
+                if(player.health - amount < 1 && player.health > 1) {
+                    player.health = 1
+                } else {
+                    if(amount > 0) {
+                        player.health -= amount
+                    } else if(!idolAlive) {
+                        player.health -= amount
+                    }
                 }
             }
 
@@ -283,9 +286,8 @@ function createPlayer() {
 
             player.health = Math.max(Math.min(player.health, player.stats.player.maxHealth - player.hardDamage),0)
             
-            if(amount > 0 && !player.immune && e.gameUpdates - player.lastHitDate >= player.stats.player.immunityTime) {
+            if(amount > 0 && !player.immune && e.gameUpdates - player.lastHitDate >= player.stats.player.immunityTime) {                
                 player.gameOverStats.damageTaken += -(player.health - startAmount)
-                player.lastHitDate = e.gameUpdates
                 
                 player.elem.style.animation = 'none'
                 setTimeout(() => {
@@ -295,17 +297,17 @@ function createPlayer() {
                 if(!light) {
                     player.getPower(-(Math.min(amount / 2, 15)))
                     DeBread.playSound('audio/hit.mp3', 0.25)
+                    
+                    player.combo = Math.round(player.combo / 2)
+                    player.comboStrength /= 2
+                    player.perfectWave = false
+                    player.lastHitDate = e.gameUpdates
                 }
 
                 //Explosive Damage
                 if(DeBread.randomNum(1,100) < player.stats.player.explosiveHitChance) {
                     createExplosion([...player.centerPos],player.stats.player.size * 3, player.stats.bullet.damage * player.stats.player.explosiveHitDamage, 50, true)
                 }
-
-                player.combo = Math.round(player.combo / 2)
-                player.comboStrength /= 2
-
-                player.perfectWave = false
             }
 
             doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'   
@@ -440,22 +442,26 @@ function createPlayer() {
                     }
                 })
 
+                //Parry
                 let projectileHit = false
                 doge('area').querySelectorAll('.projectile').forEach(projectile => {
                     if(isColliding(doge('meleeHitbox'), projectile)) {
                         player.damage(-player.stats.player.parryHeal)
                         player.getPower(5)
 
-                        if(projectile.parried) {
+                        if(projectile.isParried) {
                             getStyle(styles.counterParry)
+                        } else if(projectile.origin === player) {
+                            getStyle(styles.projectileBoost)
                         } else {
                             getStyle(styles.parry)
                         }
                         getCombo()
 
                         projectile.angle = Math.atan2(projectile.pos[1] - e.relCursorPos[1], projectile.pos[0] - e.relCursorPos[0])
-                        projectile.speed *= 3
+                        projectile.speed += 10
                         projectile.data.explosionSize = 100
+                        projectile.damage *= 1.5
                         projectile.targetList = elems.enemies
                         projectile.isParried = true
 
@@ -794,14 +800,13 @@ function startGame() {
         if(characters[saveData.selectedCharacter].applyStats) {
             characters[saveData.selectedCharacter].applyStats()
         }
+        challenges[saveData.selectedChallenge].apply()
         doge('pageTitle').innerText = 'Goober Shooter 2 - Wave 0'
     }
 
     if(saveData.gameSettings.gamemode === 2) {
         doge('pageTitle').innerText = 'Goober Shooter 2 - Sandbox'
     }
-
-    challenges[saveData.selectedChallenge].apply()
 
     let playerSrc = saveData.selectedCharacter
     if(saveData.selectedSkin > -1) {
@@ -1758,6 +1763,21 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
                 {color: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`}
             )
         }
+
+        //Golden particles
+        if(pData.coinChance > 0 && e.gameUpdates % 3 === 0) {
+            createParticle(
+                0, 
+                [...proj.pos],
+                5,
+                1.5,
+                DeBread.randomNum(0, Math.PI * 2, 5),
+                proj.size,
+                1.5,
+                10,
+                {color: `rgb(255, 255, ${DeBread.randomNum(100, 200)})`}
+            )
+        }
         
         addStyles(proj, {
             left: proj.pos[0]+'px',
@@ -1907,6 +1927,14 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
                             doge('area').append(chain)
     
                             targetsHit.push(shortestTarget.target)
+                        }
+                    }
+
+                    if(proj.isParried) {
+                        const shrapnelData = {...player.stats.bullet}
+                        shrapnelData.damage *= 0.5
+                        for(let i = 0; i < player.stats.player.parryShrapnel; i++) {
+                            createProjectile(0, [...proj.pos], ((Math.PI * 2) / player.stats.player.parryShrapnel) * i, shrapnelData, elems.enemies, player.elem)
                         }
                     }
 
@@ -2906,6 +2934,14 @@ document.addEventListener('keydown', ev => {
     if(key === ' ' && !player.tutorial.goal) {
         progressTutorial()
     }
+
+    if(key === 'h' && saveData.gameSettings.gamemode === 2 && document.activeElement !== doge('sandboxItemsSearchbar')) {
+        if(doge('gameSandboxContainer').style.display === 'flex') {
+            doge('gameSandboxContainer').style.display = 'none'
+        } else {
+            doge('gameSandboxContainer').style.display = 'flex'
+        }
+    }
 })
 
 function getClosest(from, cls) {
@@ -3029,7 +3065,7 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer, col = [[255,255],[0,2
         ) / 1.1 //Grace
         const distanceEffect = 1 - distance / size
 
-        if(distance < size && enemy.data.active) {
+        if(distance < size && enemy.data.active && !enemy.data.explosionImmunity) {
             enemy.data.damage(dmg * distanceEffect)
             if(dmg * distanceEffect > 0) {
                 const popup = createPopupText(DeBread.round(dmg * distanceEffect), [(enemy.data.pos[0]),(enemy.data.pos[1])])
@@ -3302,6 +3338,11 @@ const styles = {
         text: 'Counter Parry',
         baseAmnt: 2500,
         comboBoost: 100,
+    },
+    projectileBoost: {
+        text: 'Projectile Boost',
+        baseAmnt: 500,
+        comboBoost: 50,
     },
     punch: {
         text: 'Punched',
@@ -3595,6 +3636,7 @@ function openSandboxMenu(menu) {
         doge('sandboxMenu-upgrades').innerHTML = ''
 
         const searchBar = document.createElement('input')
+        searchBar.id = 'sandboxItemsSearchbar'
         searchBar.placeholder = 'Search...'
         addStyles(searchBar, {
             width: '100%',
@@ -4037,7 +4079,7 @@ const tutorialEnemies = {
         color: [255, 218, 169],
         credits: 0,
         size: 50,
-        health: 80,
+        health: 100,
         speed: 0,
         mounted: true,
         hideLevel: true,

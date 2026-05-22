@@ -79,6 +79,10 @@ const upgrades = [
 
             apply: () => {
                 player.health += 25
+            },
+
+            requirement: () => {
+                return player.health / player.stats.player.maxHealth < 0.9
             }
         },
         helmet: {
@@ -99,6 +103,10 @@ const upgrades = [
 
             apply: () => {
                 modifyStat(['player','speed'], '+=0.5')
+            },
+
+            requirement: () => {
+                return player.stats.player.speed < 10
             }
         },
         // magnet: {
@@ -172,7 +180,7 @@ const upgrades = [
                     ['melee','damage']
                 ]
                 const randomStat = stats[DeBread.randomNum(0,stats.length-1)]
-                console.log(randomStat)
+                createNotification('Stat increased!',`${randomStat[0]} ${randomStat[1]}`)
 
                 modifyStat(randomStat,'*=1.1')
             }
@@ -401,6 +409,10 @@ const upgrades = [
             apply: () => {
                 modifyStat(['player','speed'], '+=3', )
                 modifyStat(['player','speedStep'], '*=0.6', )
+            },
+
+            requirement: () => {
+                return player.stats.player.speed < 10
             }
         },
         shield: {
@@ -565,6 +577,10 @@ const upgrades = [
             apply: () => {
                 modifyStat(['bullet','damage'], `+=(player.stats.player.maxHealth-10)/10`)
                 modifyStat(['player','maxHealth'], '=10')
+            },
+
+            requirement: () => {
+                return player.stats.player.maxHealth > 10
             }
         },
         nuclear_waste: {
@@ -700,12 +716,20 @@ const upgrades = [
                     ['melee','size'],
                     ['melee','damage']
                 ]
+
+                const statsChanges = [[],[]]
+
                 for(let i = 0; i < 2; i++) {
                     const randomStat = stats[DeBread.randomNum(0,stats.length-1)]
-                    console.log(randomStat)    
                     modifyStat(randomStat,'*=1.1')
+                    statsChanges[0].push(randomStat)
                 }
-                modifyStat(stats[DeBread.randomNum(0,stats.length-1)],'*=0.75')
+
+                const randomStat = stats[DeBread.randomNum(0,stats.length-1)]
+                modifyStat(randomStat,'*=0.75')
+                statsChanges[1].push(randomStat)
+
+                createNotification('Stats modified!',`Increased: ${statsChanges[0][0][0]}.${statsChanges[0][0][1]}, ${statsChanges[0][1][0]}.${statsChanges[0][1][1]}<br>Decreased: ${statsChanges[1][0][0]}.${statsChanges[1][0][1]}`)
             }
         },
         red_mushroom: {
@@ -720,16 +744,19 @@ const upgrades = [
                 const damageStats = [
                     ['bullet','damage'],
                     ['melee','damage'],
-                    ['player','contactDamage']
                 ]
-                modifyStat(damageStats[DeBread.randomNum(0,damageStats.length-1)],'*=1.25')
+                const randomDamageStat = damageStats[DeBread.randomNum(0,damageStats.length-1)]
+                modifyStat(randomDamageStat,'*=1.25')
 
                 const cooldownStats = [
                     ['bullet','shotCooldown'],
                     ['ammo','reloadSpeed'],
                     ['melee','cooldown']
                 ]
-                modifyStat(cooldownStats[DeBread.randomNum(0,cooldownStats.length-1)],'*=1.25')
+                const randomCooldownStat = cooldownStats[DeBread.randomNum(0,cooldownStats.length-1)]
+                modifyStat(randomCooldownStat,'*=1.25')
+
+                createNotification('Stats increased!',`${randomDamageStat[0]} ${randomDamageStat[1]}, ${randomCooldownStat[0]} ${randomCooldownStat[1]}`)
             }
         },
         blue_mushroom: {
@@ -743,16 +770,19 @@ const upgrades = [
                 const damageStats = [
                     ['bullet','damage'],
                     ['melee','damage'],
-                    ['player','contactDamage']
                 ]
-                modifyStat(damageStats[DeBread.randomNum(0,damageStats.length-1)],'*=0.75')
+                const randomDamageStat = damageStats[DeBread.randomNum(0,damageStats.length-1)]
+                modifyStat(randomDamageStat,'*=0.75')
 
                 const cooldownStats = [
                     ['bullet','shotCooldown'],
                     ['ammo','reloadSpeed'],
                     ['melee','cooldown']
                 ]
-                modifyStat(cooldownStats[DeBread.randomNum(0,cooldownStats.length-1)],'*=0.75')
+                const randomCooldownStat = cooldownStats[DeBread.randomNum(0,cooldownStats.length-1)]
+                modifyStat(randomCooldownStat,'*=0.75')
+
+                createNotification('Stats decreased!',`${randomDamageStat[0]} ${randomDamageStat[1]}, ${randomCooldownStat[0]} ${randomCooldownStat[1]}`)
             }
         },
     },
@@ -939,6 +969,17 @@ const upgrades = [
                 modifyStat(['player','thirdEye'], '+=1')
             }
         },
+        shrapnel: {
+            name: 'Shrapnel',
+            desc: `
+                Hitting an enemy with a parried projectile creates <cg>+3</cg> projectiles that mimic player bullet attributes with <cb>50%</cb> less damage.
+            `,
+            priceMult: 1.5,
+
+            apply: () => {
+                modifyStat(['player','parryShrapnel'], '+=3')
+            }
+        },
     },
     {
         bottomless_mag: {
@@ -974,7 +1015,8 @@ const upgrades = [
         the_tophat: {
             name: 'The Tophat',
             desc: `
-                All damage taken becomes reduced by <cg>+50</cg>%
+                All damage taken becomes reduced by <cg>+50</cg>%<br>
+                <em style="color: grey;">gone but not forgotten</em>
             `,
     
             apply: () => {
@@ -1001,7 +1043,8 @@ const upgrades = [
         beret: {
             name: 'Beret',
             desc: `
-                Explosives no longer deal damage to the player, but instead heal up to <cg>+5</cg> HP
+                Explosives no longer deal damage to the player, but instead heal up to <cg>+5</cg> HP<br>
+                <em style="color: grey;">I HATE YOU I HATE YOU I HATE YOU</em>
             `,
             unlockable: true,
             
@@ -1068,7 +1111,8 @@ const upgrades = [
             name: 'Chicken Alfredo',
             desc: `
                 <cg>2x</cg> Max HP<br>
-                <cg>+100%</cg> HP
+                <cg>+100%</cg> HP<br>
+                <em style="color: grey;">only the best!</em>
             `,
             priceMult: 0.9,
 
@@ -1472,6 +1516,12 @@ const powerItems = [
                             }
                         }
 
+                        elems.enemies.forEach(enemy => {
+                            if(isColliding(enemy, ball)) {
+                                enemy.data.damage(10)
+                            }
+                        })
+
                         ball.roll += ball.speed / 30
 
                         addStyles(ball, {
@@ -1502,11 +1552,11 @@ const powerItems = [
                     })
 
                     modifyStat(['player','contactDamage'], '+=15')
-                    player.immune = true
+                    player.immune++
                     player.statusEffects.push({
                         end: () => {
                             modifyStat(['player','contactDamage'], '-=15')
-                            player.immune = false
+                            player.immune--
                         },
                         class: 'dash',
                         duration: (1000 / e.gameUpdateInterval) * 0.75,
@@ -1939,7 +1989,18 @@ const powerItems = [
                         createExplosion([...bottle.pos], 100, player.stats.bullet.damage*2, 10, true)
                         createFire([...bottle.pos], 250, true)
 
-                        createParticles([...bottle.pos], 5, 10, [25,50], 250, 'ease-out',{backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`})
+                        createParticle(
+                            0,
+                            [...bottle.pos],
+                            10,
+                            1.1,
+                            DeBread.randomNum(0,Math.PI*2,10),
+                            10,
+                            1.1,
+                            25,
+                            {color: 'white'}
+                        )
+
                         bottle.remove()
                     }
 
@@ -1959,14 +2020,26 @@ const powerItems = [
                         }
                     })
 
-                    createParticles(
+                    // createParticles(
+                    //     [...bottle.pos],
+                    //     1,
+                    //     10,
+                    //     [25,50],
+                    //     250,
+                    //     'ease-out',
+                    //     {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`}
+                    // )
+
+                    createParticle(
+                        0,
                         [...bottle.pos],
-                        1,
-                        10,
-                        [25,50],
-                        250,
-                        'ease-out',
-                        {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`}
+                        5,
+                        1.25,
+                        DeBread.randomNum(0,Math.PI*2,10),
+                        5,
+                        1.1,
+                        25,
+                        {color: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`}
                     )
                 }
 
@@ -2106,7 +2179,7 @@ const powerItems = [
                 teslaCoil.tick = () => {
                     teslaCoil.ticksActive++
 
-                    if(teslaCoil.ticksActive % 10 === 0 && elems.enemies.length > 0) {
+                    if(teslaCoil.ticksActive % Math.max(DeBread.round((10 / player.stats.player.passiveAbilityMult)), 1) === 0 && elems.enemies.length > 0) {
                         const randomEnemy = elems.enemies[DeBread.randomNum(0,elems.enemies.length-1)]
                         const rdx = randomEnemy.data.centerPos[0] - teslaCoil.pos[0]
                         const rdy = randomEnemy.data.centerPos[1] - teslaCoil.pos[1]
@@ -2350,8 +2423,8 @@ const elixirs = [{
     strength: {
         name: 'Strength Elixir',
         desc: `
-            <cg>+0.5</cg> Damage multiplier<br>
-            <cg>+0.5</cg> Melee damage multiplier
+            <cg>+0.25</cg> Damage multiplier<br>
+            <cg>+0.25</cg> Melee damage multiplier
         `,
         baseCost: 100,
         costIncrease: 1.25,
@@ -2359,14 +2432,14 @@ const elixirs = [{
         tier: 0,
 
         apply: () => {
-            modifyStat(['bullet','damageMult'], '+=0.5')
-            modifyStat(['melee','damageMult'], '+=0.5')
+            modifyStat(['bullet','damageMult'], '+=0.25')
+            modifyStat(['melee','damageMult'], '+=0.25')
         }
     },
     fighter: {
         name: 'Fighter Elixir',
         desc: `
-            <cg>+0.75</cg> Melee damage multiplier
+            <cg>+0.5</cg> Melee damage multiplier
         `,
         baseCost: 100,
         costIncrease: 1.5,
@@ -2374,13 +2447,13 @@ const elixirs = [{
         tier: 0,
 
         apply: () => {
-            modifyStat(['melee','damageMult'], '+=0.75')
+            modifyStat(['melee','damageMult'], '+=0.5')
         }
     },
     gunslinger: {
         name: 'Gunslinger Elixir',
         desc: `
-            <cg>+0.75</cg> Damage multiplier
+            <cg>+0.5</cg> Damage multiplier
         `,
         baseCost: 100,
         costIncrease: 1.5,
@@ -2388,7 +2461,7 @@ const elixirs = [{
         tier: 0,
 
         apply: () => {
-            modifyStat(['bullet','damageMult'], '+=0.75')
+            modifyStat(['bullet','damageMult'], '+=0.5')
         }
     },
     haste: {
@@ -2571,7 +2644,6 @@ function openShop(upgradeList) {
         
         createShopItems(upgradeList)
 
-        console.log(player.moneyBonusQueue)
         for(const key in player.moneyBonusQueue) {
             const data = player.moneyBonusQueue[key]
             createTimeout(() => {
@@ -2692,7 +2764,12 @@ function createShopItems(items) {
                         }
                     }
 
-                    if(!randomItemsIDs.includes(randomKey) && saveData.selectedChallenge !== 'abstract' && isUnlocked) {
+                    let meetsRequirement = true
+                    if(randomItem.requirement) {
+                        meetsRequirement = randomItem.requirement()
+                    }
+
+                    if(!randomItemsIDs.includes(randomKey) && saveData.selectedChallenge !== 'abstract' && isUnlocked && meetsRequirement) {
                         itemChosen = true
                         randomItems.push({
                             data: randomItem,
@@ -2879,11 +2956,11 @@ function createShopItems(items) {
             }
 
             if(
-                !saveData.itemsCollected.includes(randomItems[key].id) && 
-                saveData.gameSettings.gamemode !== 3 &&
+                !saveData.stats.itemsCollected.includes(randomItems[key].id) &&
+                ![2,3].includes(saveData.gameSettings.gamemode) &&
                 saveData.selectedChallenge === 'none'
             ) {
-                saveData.itemsCollected.push(randomItems[key].id)
+                saveData.stats.itemsCollected.push(randomItems[key].id)
             }
             save()
         }
