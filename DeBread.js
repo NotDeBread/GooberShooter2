@@ -420,25 +420,27 @@ const particles = [
 ]
 
 function createParticle(layer, pos, vel, velDiv, angle, size, sizeDiv, duration, styles) {
-    particles.push(
-        {
-            layer: layer,
-            pos: pos, 
-            vel: [
-                Math.cos(angle) * vel,
-                Math.sin(angle) * vel
-            ], 
-            velDiv: velDiv, 
-            size: size,
-            startingSize: size,
-            sizeDiv: sizeDiv,
-
-            duration: duration,
-            maxDuration: duration,
-
-            styles: styles
-        }
-    )
+    if(particles.length < saveData.settings.particleLimit && saveData.setting.particles) {
+        particles.push(
+            {
+                layer: layer,
+                pos: pos, 
+                vel: [
+                    Math.cos(angle) * vel,
+                    Math.sin(angle) * vel
+                ], 
+                velDiv: velDiv, 
+                size: size,
+                startingSize: size,
+                sizeDiv: sizeDiv,
+    
+                duration: duration,
+                maxDuration: duration,
+    
+                styles: styles
+            }
+        )
+    }
 }
 
 function updateParticles() {

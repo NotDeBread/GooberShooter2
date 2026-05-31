@@ -814,3 +814,21 @@
 .settingsCheckboxInfo span:nth-child(2) {
     color: grey;
 }
+
+.settingsRangeContainer {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    white-space: nowrap;
+}
+
+/* "Property non-standard, avoid using it" FUCK YOU! */
+.settingsRangeContainer input::-moz-range-track, 
+.settingsRangeContainer input::-moz-range-progress ,
+.settingsRangeContainer input::-moz-range-thumb {
+    height: 20px;
+}
+
+.settingsRangeContainer input:hover::-moz-range-thumb {
+    height: 25px;
+}

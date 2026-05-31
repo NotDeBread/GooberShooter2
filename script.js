@@ -29,6 +29,8 @@ const defaultSaveData = {
         skunkMode: false,
         debug: false,
         devMode: false,
+        autoReload: false,
+        particleLimit: 5000,
 
         enemyVoiceLines: 'none'
     },
@@ -935,6 +937,19 @@ const characters = {
 
         weapon: weaponPresets.shotgun
     },
+    tammy: {
+        name: 'Tammy',
+        desc: 'Some other other guy',
+        tag: 'Dire Wolf',
+        tagCol: 'rgb(147, 151, 182)',
+
+        tagList: [
+            {text: 'GS2',col: '#775db9'},
+            {text: 'Plinkel Pack', col: '#386942'},
+        ],
+        
+        weapon: weaponPresets.garand
+    },
     lorna: {
         name: 'Lorna Walker',
         desc: 'ACAB? Even her?',
@@ -948,19 +963,6 @@ const characters = {
         ],
 
         weapon: weaponPresets.riot_shotgun
-    },
-    tammy: {
-        name: 'Tammy',
-        desc: 'Some other other guy',
-        tag: 'Dire Wolf',
-        tagCol: 'rgb(147, 151, 182)',
-
-        tagList: [
-            {text: 'GS2',col: '#775db9'},
-            {text: 'Plinkel Pack', col: '#386942'},
-        ],
-        
-        weapon: weaponPresets.garand
     },
     tana: {
         name: 'Tana',
@@ -1101,7 +1103,7 @@ const characters = {
         tagCol: '#6b563c',
 
         tagList: [
-            {text: 'GS1',col: '#e0a24a'},
+            {text: 'GS2',col: '#775db9'},
             {text: '🏇🐴🐴🐎🐎🏇🐴🐎🐴🐴',col: '#282422'}
         ],
 
@@ -1114,6 +1116,10 @@ const characters = {
             'The horse says idc',
             'The horse gets a drink anyways'
         ],
+
+        applyStats: () => {
+            player.visibleStats.push('misc-horseIncrease')
+        }
     },
     car: {
         name: 'car',
@@ -1157,7 +1163,7 @@ const characters = {
         info: `
             Cannot fire thier own projectiles.<br>
             <br>
-            Starts with the \`Walfling\` Power Item.<br>${powerItems[5].walfling.desc}
+            Starts with the \'Walfling\' Power Item.<br>${powerItems[5].walfling.desc}
         `,
 
         weapon: weaponPresets.none,
@@ -1445,15 +1451,27 @@ const characters = {
         weapon: weaponPresets.gun
     },
     snorp: {
-        name: 'Douglass',
+        name: 'Douglas',
         desc: '',
         taunts: 5,
         tag: 'Cat ?',
         tagCol: '#5268da',
-
+        info: `
+            Starts with the \'Diet Pepsi\' Power Item.<br>${powerItems[5].diet_pepsi.desc}
+        `,
         tagList: [
             {text: 'GS1',col: '#e0a24a'}
         ],
+
+        cons: [
+            'Power items cannot appear in the shop'
+        ],
+
+        applyStats: () => {
+            player.powerItem = powerItems[5].diet_pepsi
+            player.shopWeights[1] = 0
+            player.visibleStats.push('shop-pepsifyChance')
+        },
 
         weapon: weaponPresets.gun
     },
@@ -1486,6 +1504,18 @@ const characters = {
 
         tagList: [
             {text: 'GS1',col: '#e0a24a'},
+            {text: 'GS2',col: '#775db9'}
+        ],
+
+        weapon: weaponPresets.gun
+    },
+    chip: {
+        name: 'Chip',
+        desc: 'AUSTRALIAN PEOPLE 🤮🤮🤮🤮',
+        tag: 'Australian Shepherd',
+        tagCol: 'rgb(247, 146, 148)',
+
+        tagList: [
             {text: 'GS2',col: '#775db9'}
         ],
 
@@ -2291,8 +2321,8 @@ const achievements = {
         }
     },
     snorp_Perfection: {
-        name: 'Douglass Perfection',
-        desc: 'Reach wave 100 using Douglass.',
+        name: 'Douglas Perfection',
+        desc: 'Reach wave 100 using Douglas.',
         difficulty: 0,
     },
     wasp_Perfection: {
@@ -2302,7 +2332,12 @@ const achievements = {
     },
     wolff_Perfection: {
         name: 'Wolff Perfection',
-        desc: 'Reach wave 100 using Wasp.',
+        desc: 'Reach wave 100 using Wolff.',
+        difficulty: 0,
+    },
+    chip_Perfection: {
+        name: 'Chip Perfection',
+        desc: 'Reach wave 100 using Chip.',
         difficulty: 0,
     },
     skywalkr_Perfection: {

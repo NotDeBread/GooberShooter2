@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="generic.css">
     <link rel="stylesheet" href="game.css">
     <link rel="stylesheet" href="menus.css">
-    <title id="pageTitle">Goober Shooter 2 - Main Menu</title>
+    <title id="pageTitle">Goober Shooter 2</title>
 </head>
 <body>
     <div id="performanceDebug">
@@ -73,7 +73,7 @@
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
             <div style="line-height: 1;">
-                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest13</a></span><br>
+                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest14</a></span><br>
                 <a style="font-size: 0.75em; opacity: 0.5; cursor: pointer;" href="https://forms.gle/JDaQUZ1wR6GhAscZ8" target="_blank">Report a bug</a>
             </div>
         </div>
@@ -498,7 +498,7 @@
                     <button onclick="openSandboxMenu('stats')">Attributes</button>
                     <button onclick="openSandboxMenu('tools')">Tools</button>
                     <button onclick="openSandboxMenu('powerItems')">Power Items</button>
-                    <button onclick="openSandboxMenu('consumables')">Consumables</button>
+                    <!-- <button onclick="openSandboxMenu('consumables')">Consumables</button> -->
                     <button onclick="openSandboxMenu('characters')">Characters</button>
                 </div>
                 <div id="gameInnerSandbox">
@@ -510,7 +510,6 @@
                         <button onclick="elems.enemies.forEach(enemy => {enemy.data.kill()})">Kill all enemies</button>
                         <button onclick="player.health = player.stats.player.maxHealth; updateUI()">Heal player</button>
                         <button onclick="spawnPortal()">Spawn portal</button>
-                        <button onclick="player = createPlayer()">Reset player</button>
                         <!-- <button onclick="spawnWave(25)">Spawn wave 25</button> -->
                         <div class="numInput">
                             <button onclick="spawnWave(parseInt(0+doge('sandboxWaveInput').value))">Spawn wave</button>

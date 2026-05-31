@@ -5,16 +5,32 @@ function renderStats() {
         statSection.classList.add('gameStatContainer')
         statSection.innerHTML = `<span class="gameStatSectionName">${key.toUpperCase()}</span>`
         for(const stat in player.stats[key]) {
-            const elem = document.createElement('div')
-            elem.innerHTML = `
-                <span class="gameStatName">${stat}:</span>
-                <span id="${key}-${stat}">${player.stats[key][stat]}</span>
-                <span class="gameStatChange" id="${key}-${stat}Change"></span>
-            `
-            statSection.append(elem)
+            if(player.visibleStats.includes(`${key}-${stat}`) || saveData.settings.debug) {
+                const elem = document.createElement('div')
+                elem.innerHTML = `
+                    <span class="gameStatName">${stat}:</span>
+                    <span id="${key}-${stat}">${player.stats[key][stat]}</span>
+                    <span class="gameStatChange" id="${key}-${stat}Change"></span>
+                `
+                statSection.append(elem)
+            }
         }
 
-        doge('gameStatsContainer').append(statSection)
+        if(statSection.children.length > 1) {
+            doge('gameStatsContainer').append(statSection)
+        }
+    }
+
+    if(saveData.settings.debug) {
+        addStyles(doge('gameStatsContainer'), {
+            opacity: '0.25',
+            fontSize: '0.25em'
+        })
+    } else {
+        addStyles(doge('gameStatsContainer'), {
+            opacity: '1',
+            fontSize: '0.75em'
+        })
     }
 }
 
@@ -35,28 +51,28 @@ function fixStats() {
 function modifyStat(stat, modifier) {
     const startingValue = player.stats[stat[0]][stat[1]] * (player.stats[stat[0]][stat[1]+"Mult"] ?? 1)
     eval('player.stats[stat[0]][stat[1]]' + modifier)
-
-    fixStats()
-
-    doge(`${stat[0]}-${stat[1]}`).innerText = DeBread.round(player.stats[stat[0]][stat[1]] * (player.stats[stat[0]][stat[1]+"Mult"] ?? 1),2)
-
-    const change = player.stats[stat[0]][stat[1]] * (player.stats[stat[0]][stat[1]+"Mult"] ?? 1) - startingValue
-    const changeElem = doge(`${stat[0]}-${stat[1]}Change`)
-
-    if(change > 0) {
-        changeElem.innerText = `+${DeBread.round(change,2)}`
-        changeElem.style.color = 'rgb(100,255,100)'
-    } else if(change < 0) {
-        changeElem.innerText = DeBread.round(change,2)
-        changeElem.style.color = 'rgb(255,100,100)'
-    }
     
-    changeElem.style.opacity = 1
-    clearTimeout(changeElem.timeout)
-    changeElem.timeout = setTimeout(() => {
-        changeElem.style.opacity = 0
-    }, 2500);
+    fixStats()
+    
+    const change = player.stats[stat[0]][stat[1]] * (player.stats[stat[0]][stat[1]+"Mult"] ?? 1) - startingValue
+    if(doge(`${stat[0]}-${stat[1]}`)) {
+        doge(`${stat[0]}-${stat[1]}`).innerText = DeBread.round(player.stats[stat[0]][stat[1]] * (player.stats[stat[0]][stat[1]+"Mult"] ?? 1),2)
+        const changeElem = doge(`${stat[0]}-${stat[1]}Change`)
+        
+        if(change > 0) {
+            changeElem.innerText = `+${DeBread.round(change,2)}`
+            changeElem.style.color = 'rgb(100,255,100)'
+        } else if(change < 0) {
+            changeElem.innerText = DeBread.round(change,2)
+            changeElem.style.color = 'rgb(255,100,100)'
+        }
 
+        changeElem.style.opacity = 1
+        clearTimeout(changeElem.timeout)
+        changeElem.timeout = setTimeout(() => {
+            changeElem.style.opacity = 0
+        }, 2500);
+    }
 }
 
 const upgrades = [
@@ -133,11 +149,11 @@ const upgrades = [
         precision_goggles: {
             name: 'Precision Goggles',
             desc: `
-                <cg>+5</cg>% Crit chance
+                <cg>+2</cg>% Crit chance
             `,
             
             apply: () => {
-                modifyStat(['bullet', 'critChance'], '+=5')
+                modifyStat(['bullet', 'critChance'], '+=2')
             }
         },
         chalk: {
@@ -289,7 +305,7 @@ const upgrades = [
             name: 'Scope',
             desc: `
                 <cg>+10%</cg> Crit damage <br>
-                <cg>+10</cg>% Crit chance
+                <cg>+5</cg>% Crit chance
             `,
 
             apply: () => {
@@ -322,14 +338,14 @@ const upgrades = [
         screw: {
             name: 'Screw',
             desc: `
-                Bullets hit <cg>+1</cg> more times when hitting an evemy.<br>
-                <cb>-25%</cb> Reload speed
+                Bullets gain a +<cg>10%</cg> chance to hit an enemy an additional time<br>
+                <cb>-20%</cb> Reload speed
             `,
             priceMult: 1.5,
 
             apply: () => {
-                modifyStat(['bullet','drillTicks'], '+=1')
-                modifyStat(['ammo','reloadSpeed'], '*=1.25')
+                modifyStat(['bullet','drillChance'], '+=10')
+                modifyStat(['ammo','reloadSpeed'], '*=1.2')
             }
         },
         mini_mushroom: {
@@ -337,6 +353,7 @@ const upgrades = [
             desc: `
                 <cg>-10%</cg> Size <br>
                 <cg>+1</cg> Speed <br>
+                <cg>+20%</cg> Reload speed<br>
                 <cb>-10%</cb> Max HP
             `,
             priceMult: 0.8,
@@ -344,13 +361,14 @@ const upgrades = [
             apply: () => {
                 modifyStat(['player','size'], '*=0.9')
                 modifyStat(['player','speed'], '+=1')
+                modifyStat(['ammo','reloadSpeed'], '*=0.8')
                 modifyStat(['player','maxHealth'], '*=0.9')
             }
         },
         mega_mushroom: {
             name: 'Mega Mushroom',
             desc: `
-                <cg>+30</cg> Max HP<br>
+                <cg>+40</cg> Max HP<br>
                 <cg>+1</cg> Contact damage<br>
                 <cb>+15</cb> Size <br>
                 <cb>-15%</cb> Speed <br>
@@ -358,7 +376,7 @@ const upgrades = [
             priceMult: 0.8,
 
             apply: () => {
-                modifyStat(['player','maxHealth'], '+=30')
+                modifyStat(['player','maxHealth'], '+=40')
                 modifyStat(['player','contactDamage'], '+=1')
                 modifyStat(['player','size'], '+=15')
                 modifyStat(['player','speed'], '*=0.85')
@@ -540,7 +558,7 @@ const upgrades = [
         drill_ammo: {
             name: 'Drill Ammo',
             desc: `
-                Bullets hit <cg>+2</cg> times when hitting an enemy.<br>
+                Bullets hit <cg>+1</cg> times when hitting an enemy.<br>
                 <cg>+2</cg> Damage<br>
                 <cb>-25%</cb> Bullet speed
             `,
@@ -548,7 +566,7 @@ const upgrades = [
             priceMult: 1.25,
 
             apply: () => {
-                modifyStat(['bullet','drillTicks'], '+=2')
+                modifyStat(['bullet','drillTicks'], '+=1')
                 modifyStat(['bullet','damage'], '+=2')
                 modifyStat(['bullet','speed'], '*=0.75')
             }
@@ -684,17 +702,6 @@ const upgrades = [
                     modifyStat(['melee','damage'], '+=5')
                     modifyStat(['player','speed'], '*=0.8')
                 }
-            },
-        multishot: {
-            name: 'Multi-shot',
-            desc: `
-                Shoot <cg>+1</cg> more bullets at a time.
-            `,
-            priceMult: 1.1,
-    
-            apply: () => {
-                modifyStat(['bullet','multishot'], '+=1')
-            }
         },
         mysterious_mushroom: {
             name: 'Mysterious Mushroom',
@@ -887,7 +894,7 @@ const upgrades = [
         golden_mushroom: {
             name: 'Golden Mushroom',
             desc: `
-                Multiplies a random base stat by <strong>10x</strong>
+                Multiplies a random base stat by <strong>10x</strong><br>
                 Multiplies a random base stat by <strong>0.2x</strong>
             `,
             priceMult: 1.2,
@@ -978,6 +985,17 @@ const upgrades = [
 
             apply: () => {
                 modifyStat(['player','parryShrapnel'], '+=3')
+            }
+        },
+        multishot: {
+            name: 'Multi-shot',
+            desc: `
+                Shoot <cg>+1</cg> more bullets at a time.
+            `,
+            priceMult: 1.1,
+    
+            apply: () => {
+                modifyStat(['bullet','multishot'], '+=1')
             }
         },
     },
@@ -1352,7 +1370,7 @@ const powerItems = [
                 setTimeout(() => {
                     mater.remove()
                     
-                    createPoisonField([mater.pos[0], mater.pos[1] - 10], 50, player.stats.bullet.damage * 2.5, 10, 10, false, [255,50,50])
+                    createPoisonField([mater.pos[0], mater.pos[1] - 10], 50, player.stats.bullet.damage * 2.5, 10, 10, elems.enemies, [255,50,50])
                     createParticles(mater.pos, 10, 10, [0,50],500,'ease-out',{backgroundColor: 'red'})
     
                     DeBread.playSound('audio/splat.mp3', 0.1)
@@ -1768,7 +1786,6 @@ const powerItems = [
                         if(isColliding(bottle, enemy) && enemy.data.active) {
                             enemy.data.damage(player.stats.bullet.damage * 2)
                             enemy.data.isBleeding = true
-                            enemy.data.speedMult /= 2
                             bottle.destroy()
                         }
                     })
@@ -1845,12 +1862,12 @@ const powerItems = [
             use: () => {
                 if(DeBread.randomNum(0,1) === 0) {
                     doge('area').querySelectorAll('.enemy').forEach(enemy => {
-                        spawnEnemy(enemy.pos,enemies.guy,1,0)
-                        enemy.kill(undefined, true)
+                        spawnEnemy(enemy.data.pos,enemies.guy,1,0)
+                        enemy.data.kill(undefined, true)
                     })
                 } else {
                     doge('area').querySelectorAll('.enemy').forEach(enemy => {
-                        spawnEnemy([enemy.pos[0]+1, enemy.pos[1]+1],enemy.data,enemy.level,0)
+                        spawnEnemy([enemy.data.pos[0]+1, enemy.data.pos[1]+1],enemy.data.data,enemy.data.level,0)
                     })
                 }
             }
@@ -2091,13 +2108,15 @@ const powerItems = [
             desc: `
                 Uses <cp>100</cp> POWER<br>
                 Creates a giant explosion, dealing <cg>50</cg> damage and applying bleeding to enemies.<br>
-                Creates a giant poison field that does <cb>100</cb> damage over 500 ticks.
+                Creates a giant poison field that does <cb>100</cb> damage to the player and enemies over 500 ticks.<br>
             `,
             charge: 100,
 
             use: () => {
+                const targets = [...elems.enemies]
+                targets.push(player.elem)
                 createExplosion([player.centerPos[0]+DeBread.randomNum(-1,1,10),player.centerPos[1]+DeBread.randomNum(-1,1,10)], 500, 50, 250, true, [[255,255],[255,255],[255,255]])
-                createPoisonField([...player.centerPos], 500, 10, 10, 50, false, [200,255,200])
+                createPoisonField([...player.centerPos], 500, 10, 10, 50, targets, [200,255,200])
                 elems.enemies.forEach(enemy => {
                     enemy.isBleeding = true
                 })
@@ -2109,10 +2128,10 @@ const powerItems = [
             name: 'Wisp',
             desc: `
                 Uses <cp>75</cp> POWER<br>
-                Summons a wisp on your crosshair.<br>
-                Wisps fire projectiles at enemies when the player fires a projectile that deals <cg>50%</cg> of the players damage. This also ignores shot cooldown and ammo.<br>
-                Wisps' projectile attributes copy the players projectile attributes.<br>
-                Wisps explode after 500 ticks, dealing up to <cg>100</cg> damage.
+                -Summons a wisp on your crosshair.<br>
+                -Wisps fire projectiles your crosshair when the player fires a projectile, which deals <cg>50%</cg> of the players damage.<br>
+                -Wisps' projectile attributes copy the players projectile attributes.<br>
+                -Wisps explode after 500 ticks, dealing up to <cg>100</cg> damage.
             `,
             charge: 75,
 
@@ -2299,7 +2318,9 @@ const powerItems = [
             id: 'pringles_can',
             desc: `
                 Uses <cp>100</cp> POWER<br>
-                Throws a pringles can towards your cursor, dealing <cg>1000%</cg> of your damage on impact and pushes enemies away.
+                Throws a pringles can towards your cursor, dealing <cg>1000%</cg> of your damage on impact and pushes enemies away.<br>
+                <br>
+                <em style="color: grey;">Only real ones know that chaos I've caused with these.</em>
             `,
             charge: 100,
 
@@ -2362,6 +2383,46 @@ const powerItems = [
                 doge('area').append(bottle)
             }
         },
+        pepsi: {
+            name: 'Pepsi',
+            desc: `
+                Uses <cp>50</cp> POWER<br>
+                Grants <cg>1</cg> random stat up<br>
+                <br>
+                <em style="color: grey;">better than coke</em>
+            `,
+            charge: 50,
+
+            use: () => {
+                const randomStats = [
+                    ['player','speed','+=0.1'],
+                    ['player','maxHealth','+=10'],
+                    ['player','maxPower','+=1'],
+                    ['player','grazeSize','+=0.1'],
+                    ['player','parryHeal','+=1'],
+                    ['shop','luck','+=0.5'],
+                    ['shop','rerolls','+=1'],
+                    ['bullet','damage','+=1'],
+                    ['bullet','size','+=1'],
+                    ['bullet','shotCooldown','*=0.95'],
+                    ['bullet','range','+=5'],
+                    ['bullet','critChance','+=5'],
+                    ['bullet','critDamageMult','+=0.1'],
+                    ['bullet','drillTicks','+=1'],
+                    ['bullet','bounces','+=1'],
+                    ['melee','damage','+=2'],
+                    ['melee','cooldown','*=0.95'],
+                    ['melee','knockback','+=1'],
+                    ['melee','heal','+=1'],
+                    ['ammo','max','+=1'],
+                    ['ammo','reloadSpeed','*=0.95'],
+                ]
+
+                const randomStat = randomStats[DeBread.randomNum(0,randomStats.length-1)]
+                modifyStat([randomStat[0],randomStat[1]], randomStat[2])
+                createNotification('Stat up!',`${randomStat[0]}.${randomStat[1]}`)
+            }
+        },
     },
     {
         walfling: {
@@ -2414,6 +2475,56 @@ const powerItems = [
                     createExplosion(walfling.pos, 100, 100, 25, true)
                     walfling.remove()
                 }
+            }
+        },
+        diet_pepsi: {
+            name: 'Diet Pepsi',
+            desc: `
+                Uses <cp>50</cp> POWER<br>
+                -Grants <cg>2</cg> random stat ups<br>
+                -Gives a <cb>+2</cb>% chance for shop items to become <strong>Pepsified</strong><br>
+                -Every two uses, the power of the stat ups increase<br>
+                <br>
+                <strong>Pepsified Item:</strong><br>
+                Cannot be bought
+            `,
+            charge: 50,
+
+            use: () => {
+                const randomStats = [
+                    ['player','speed','+=0.1'],
+                    ['player','maxHealth','+=10'],
+                    ['player','maxPower','+=1'],
+                    ['player','grazeSize','+=0.1'],
+                    ['player','parryHeal','+=1'],
+                    ['shop','luck','+=0.5'],
+                    ['shop','rerolls','+=1'],
+                    ['bullet','damage','+=1'],
+                    ['bullet','size','+=1'],
+                    ['bullet','shotCooldown','*=0.95'],
+                    ['bullet','range','+=5'],
+                    ['bullet','critChance','+=5'],
+                    ['bullet','critDamageMult','+=0.1'],
+                    ['bullet','drillTicks','+=1'],
+                    ['bullet','bounces','+=1'],
+                    ['melee','damage','+=2'],
+                    ['melee','cooldown','*=0.95'],
+                    ['melee','knockback','+=1'],
+                    ['melee','heal','+=1'],
+                    ['ammo','max','+=1'],
+                    ['ammo','reloadSpeed','*=0.95'],
+                ]
+
+                for(let i = 0; i < 2; i++) {
+                    const randomStat = randomStats[DeBread.randomNum(0,randomStats.length-1)]
+                    for(let i = 0; i < Math.floor(player.stats.misc.pepsiPower); i++) {
+                        modifyStat([randomStat[0],randomStat[1]], randomStat[2])
+                    }
+                    createNotification(`Stat up! (x${Math.floor(player.stats.misc.pepsiPower)})`,`${randomStat[0]}.${randomStat[1]}`)
+                }
+
+                modifyStat(['shop','pepsifyChance'],'+=2')
+                modifyStat(['misc','pepsiPower'],'+=0.5')
             }
         },
     }
@@ -2563,6 +2674,7 @@ const elixirs = [{
         baseCost: 125,
         costIncrease: 2,
         buyLimit: 10,
+        tier: 0,
 
         apply: () => {
             modifyStat(['player','maxPower'], '+=10')
@@ -2769,6 +2881,11 @@ function createShopItems(items) {
                         meetsRequirement = randomItem.requirement()
                     }
 
+                    let isSpicy = false
+                    if(DeBread.randomNum(1,100) <= player.stats.shop.pepsifyChance) {
+                        isSpicy = true                        
+                    }
+
                     if(!randomItemsIDs.includes(randomKey) && saveData.selectedChallenge !== 'abstract' && isUnlocked && meetsRequirement) {
                         itemChosen = true
                         randomItems.push({
@@ -2776,7 +2893,8 @@ function createShopItems(items) {
                             id: randomKey,
                             rarity: rarity,
                             type: itemType,
-                            cost: itemCost
+                            cost: itemCost,
+                            spicy: isSpicy
                         })
                         randomItemsIDs.push(randomKey)
                     }
@@ -2858,6 +2976,12 @@ function createShopItems(items) {
             itemSlot.style.boxShadow = `inset 0px 0px 0px 5px ${rarities[itemMeta.rarity].color}`
         }
 
+        if(itemMeta.spicy) {
+            itemSlot.style.backgroundImage = 'url(graphics/spicyItem.png)'
+            itemSlot.style.backgroundSize = 'cover'
+            itemSlot.querySelector('img').style.filter = 'grayscale() brightness(25%)'
+        }
+
         itemSlot.onmouseenter = () => {
             const itemRect = itemSlot.getBoundingClientRect()
 
@@ -2879,6 +3003,10 @@ function createShopItems(items) {
                 if(item.buyLimit < Infinity) {
                     itemDesc += `<br>Maxes out at tier <cs>${roman(item.buyLimit)}</cs>`
                 }
+            }
+
+            if(itemMeta.spicy) {
+                itemDesc = `<strong style="color: #532c4e;">PEPSIFIED</strong><br>This item cannot be bought!`
             }
 
             tooltip(
@@ -2906,7 +3034,7 @@ function createShopItems(items) {
                 }
             }
 
-            if(player.money >= randomItems[key].cost && underBuyLimit) {
+            if(player.money >= randomItems[key].cost && underBuyLimit && !itemMeta.spicy) {
                 if(itemMeta.type === 0) { //Items
                     item.apply()
                     itemSlot.sellOut()
@@ -3259,7 +3387,6 @@ function closeShop() {
             portal.remove()
             player.elem.style.scale = '1'
             doge('weapon').style.scale = '1'
-            player.stats.player.pickupRange -= 10
         }, 1000);
     })
 

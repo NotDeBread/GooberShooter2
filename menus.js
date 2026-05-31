@@ -304,6 +304,7 @@ function openMenu(menu) {
     currentMenu = menu
 
     if(menu === 'main') {
+        document.title = 'Goober Shooter 2 - Main Menu'
         e.gameActive = false
         doge('menuTitle1').innerText = 'Goober'
         doge('menuTitle2').innerText = 'Shooter'
@@ -372,6 +373,7 @@ function openMenu(menu) {
     }
 
     if(menu === 'gameSettings') {
+        document.title = 'Goober Shooter 2 - Game Settings'
         renderChallenges()
         openGameSettingsMenu(0)
 
@@ -384,6 +386,7 @@ function openMenu(menu) {
     }
 
     if(menu === 'characterSelect') {
+        document.title = 'Goober Shooter 2 - Character Select'
         renderCharacterSelect()
         topper([
             {
@@ -406,6 +409,7 @@ function openMenu(menu) {
     }
 
     if(menu === 'achievements') {
+        document.title = 'Goober Shooter 2 - Achievements'
         renderAchievementList()
         topper([
             {
@@ -416,6 +420,7 @@ function openMenu(menu) {
     }
 
     if(menu === 'collection') {
+        document.title = 'Goober Shooter 2 - Collection'
         renderCollectionPage('items')
         topper([
             {
@@ -1062,6 +1067,8 @@ function renderChallenges() {
                     }
                 })
             }
+
+            save()
         }
     }
 }
@@ -1071,7 +1078,6 @@ const creditsHTML = `
         <img src="graphics/logo.png" width=175>
         <span>By <a href="https://debread.space/" target="_blank">DeBread</a></span>
     </div>
-    <span>Idea help: <a href="https://yeen.town/@Chalkllate" target="blank">Jake</a>, <a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a></span><br>
     <span>Background Shader: From <a href="https://www.playbalatro.com/" target="_blank">Balatro</a>, rewritten by <a href="https://xemantic.github.io/shader-web-background/" target="_blank">xemantic</a></span><br>
     <span>Addditional Textures: <a href="https://plinkel.neocities.org/" target="_blank">Plinkel</a></span><br>
     <span>Additional SFX: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
@@ -1106,13 +1112,6 @@ const settingsHTML = `
                 </div>
             </div>
             <div class="settingsCheckboxContainer">
-                <div class="genericCheckbox" id="scb-presentationMode"></div>
-                <div class="settingsCheckboxInfo">
-                    <span>Presentation Mode</span>
-                    <span>Removes inappropriate language.</span>
-                </div>
-            </div>
-            <div class="settingsCheckboxContainer">
                 <div class="genericCheckbox" id="scb-showGameOverflow"></div>
                 <div class="settingsCheckboxInfo">
                     <span>Show area overflow</span>
@@ -1124,6 +1123,13 @@ const settingsHTML = `
                 <div class="settingsCheckboxInfo">
                     <span>Skunk Mode</span>
                     <span>"Fixes" keybinds.</span>
+                </div>
+            </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-autoReload"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Auto Reload</span>
+                    <span>Enables reloading when left clicking at 0 ammo.</span>
                 </div>
             </div>
             <div class="settingsCheckboxContainer">
@@ -1155,6 +1161,14 @@ const settingsHTML = `
                     <span>Particles</span>
                     <span>Enhances graphics using particles.</span>
                 </div>
+            </div>
+            <div class="settingsRangeContainer" id="particlesRangeContainer">
+                <div>
+                    <span style="font-weight: 700;">Particle Limit: </span>
+                    <span id="sr-particleLimit-label">???</span>
+                </div>
+                <div class="coolLine"></div>
+                <input type="range" min="0" step="1000" max="10000" id="sr-particleLimit">
             </div>
         </div>
         <div class="settingsSection" id="settingsSection-sound">
@@ -1216,6 +1230,19 @@ function openSettings() {
         }
         save()
     })
+    
+    doge('prompt').querySelectorAll('.settingsRangeContainer input').forEach(range => {
+        const setting = range.id.replace('sr-','')
+        range.value = saveData.settings[setting]
+        doge(`sr-${setting}-label`).innerText = range.value
+        range.onchange = update
+        range.onmousemove = update
+
+        function update() {
+            doge(`sr-${setting}-label`).innerText = range.value
+            saveData.settings[setting] = range.value
+        }
+    })
 }
 
 function openSettingsMenu(menu) {
@@ -1225,6 +1252,7 @@ function openSettingsMenu(menu) {
         })
 
         doge(`settingsSection-${menu}`).style.display = 'unset'
+        updateSettings()
     }
 }
 
@@ -1245,11 +1273,9 @@ function updateSettings() {
 
     if(saveData.settings.debug) {
         doge('gameDebug').style.display = 'unset'
-        doge('gameStatsContainer').style.display = 'flex'
         doge('performanceDebug').style.display = 'unset'
     } else {
         doge('gameDebug').style.display = 'none'
-        doge('gameStatsContainer').style.display = 'none'
         doge('performanceDebug').style.display = 'none'
     }
 
@@ -1272,4 +1298,13 @@ function updateSettings() {
     } else {
         saveData.keybinds.melee = 'f'
     }
+
+    if(doge('particlesRangeContainer')) {
+        if(saveData.settings.particles) {
+            doge('particlesRangeContainer').style.display = 'flex'
+        } else {
+            doge('particlesRangeContainer').style.display = 'none'
+        }
+    }
+    renderStats()
 } updateSettings()
