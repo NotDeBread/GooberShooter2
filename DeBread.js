@@ -420,7 +420,7 @@ const particles = [
 ]
 
 function createParticle(layer, pos, vel, velDiv, angle, size, sizeDiv, duration, styles) {
-    if(particles.length < saveData.settings.particleLimit && saveData.setting.particles) {
+    if(particles.length < saveData.settings.particleLimit && saveData.settings.particles) {
         particles.push(
             {
                 layer: layer,
