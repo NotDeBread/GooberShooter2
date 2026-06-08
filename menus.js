@@ -34,7 +34,8 @@ const funFacts = [
     'Goober Shooter 2 was originally going to be like TBOI, where you have to clear floors to progress.',
     'Many items are pulled straight out of the original Goober Shooter!',
     'Originally, the player could\'ve had \'shield\' on top of thier health, but it caused too many issues so it was scrapped.',
-    'You can press H in the sandbox to toggle the sandbox menu!'
+    'You can press H in the sandbox to toggle the sandbox menu!',
+    'You can hold SHIFT+R in game to quickly restart!'
 ]
 
 const startScreenTimeouts = []

@@ -489,6 +489,11 @@ const upgrades = [
             apply: () => {
                 modifyStat(['bullet','range'], '+=15')
                 modifyStat(['bullet','damage'], '*=0.9')
+
+                const speedDivBefore = player.stats.bullet.speedDiv - 1
+                const speedDivAfter = speedDivBefore * 0.95
+
+                modifyStat(['bullet','speedDiv'], `-=${speedDivBefore-speedDivAfter}`)
             }
         },
         bean_bag_rounds: {
@@ -512,6 +517,25 @@ const upgrades = [
 
             apply: () => {
                 modifyStat(['melee','heal'], '+=2')
+            }
+        },
+        sharp_plug: {
+            name: 'Sharp Plug',
+            desc: `
+                Fills up the <cp>POWER</cp> bar<br>
+                Lose <cb>1</cb>HP for each POWER point gained
+            `,
+
+            priceMult: 0.75,
+            apply: () => {
+                const difference = player.stats.player.maxPower - player.power
+                player.getPower(difference)
+                player.damage(difference, true)
+                DeBread.playSound('audio/hit.mp3', 0.25)
+            },
+
+            requirement: () => {
+                return player.power < player.stats.player.maxPower
             }
         },
     },
@@ -939,7 +963,7 @@ const upgrades = [
         golden_ammo: {
             name: 'Golden Ammo',
             desc: `
-                Hitting an enemy with a bullet gains a <cg>+1%</cg> chance to spawn a copper coin
+                Hitting an enemy with a bullet gains a <cg>+1%</cg> chance to spawn a random coin
             `,
             priceMult: 1.5,
             unlockable: true,
@@ -1123,6 +1147,18 @@ const upgrades = [
                 } else {
                     modifyStat(['ammo','chargeTime'], '*=0.75')
                 }
+            }
+        },
+        black_feather: {
+            name: 'Black Feather',
+            desc: `
+                Every time a bullet hits an enemy, its damage gets multiplied by <cg>1.1</cg> (+<cg>0.1</cg>)
+            `,
+            priceMult: 1.5,
+            unlockable: true,
+
+            apply: () => {
+                modifyStat(['bullet','hitDamageMult'],'+=0.1')
             }
         },
         chicken_alfredo: {
@@ -3390,11 +3426,12 @@ function closeShop() {
         }, 1000);
     })
 
-    setTimeout(() => {
-        player.wavesPaused = false
-        player.lastWaveDate = -1e67
+    createTimeout(() => {
+        progressWave(true)
+        player.lastWaveDate = e.gameUpdates
+        player.autoWavesPaused = false
         player.inPortal = false
-    }, 2000);
+    }, 100);
 
     if(player.tutorial.stage === 20) {
         player.tutorial.goalValue++

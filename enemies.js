@@ -138,6 +138,13 @@ const enemies = {
             //     damage: 10,
             //     rate: 10,
             // }
+
+            poisonFieldChance: 100,
+            poisonFieldSize: 75,
+            poisonFieldDmgPercent: 20,
+            poisonFieldTicks: 10,
+            poisonFieldColor: [51,116,51],
+            poisonFieldTarget: [player.elem]
         },
 
         credits: 20,
@@ -397,7 +404,8 @@ const enemies = {
             poisonFieldSize: 50,
             poisonFieldDmgPercent: 50,
             poisonFieldTicks: 10,
-            poisonFieldColor: [151,240,91]
+            poisonFieldColor: [151,240,91],
+            poisonFieldTarget: [player.elem]
         },
 
         poisonField: {
@@ -431,6 +439,16 @@ const enemies = {
             split: 3,
             splits: 2,
         },
+    },
+    behemoth: {
+        name: 'Behemoth',
+        desc: 'A very large, slow moving enemy that deals massive melee damage.',
+        color: [84, 117, 83],
+        size: 125,
+        health: 2500,
+        speed: 1,
+        credits: 75,
+        meleeDamage: 100,
     },
     dummy: {
         name: 'Dummy',
@@ -510,6 +528,7 @@ const enemies = {
     debreadCube: {
         name: 'DeBread Cube',
         desc: '<em style="color: grey;">Sandbox only</em><br>Run',
+        texture: 'debreadCube.gif',
         color: [244, 175, 84],
         size: 75,
         health: 7777,
@@ -542,6 +561,361 @@ const enemies = {
             damage: 25,
             rate: 10,
         },
+    },
+}
+
+const bosses = {
+    testBoss: {
+        name: 'Test Boss',
+        desc: 'Boss used for testing!',
+        health: 1000,
+        size: 100,
+        color: [100, 100, 100],
+        boss: true,
+        weight: 5,
+        texture: 'testBossNormal.png',
+
+        moves: [
+            { //Dash
+                duration: 25,
+                do: boss => {
+                    boss.style.backgroundImage = 'url(graphics/enemies/testBossDash.png)'
+
+                    const playerAngle = Math.atan2(
+                        player.centerPos[1] - boss.data.centerPos[1],
+                        player.centerPos[0] - boss.data.centerPos[0]
+                    )
+
+                    boss.data.dirVels.push({
+                        speed: 15,
+                        angle: playerAngle,
+                        div: 1.1
+                    })
+                }
+            },
+            { //Fire
+                duration: 25,
+                do: boss => {
+                    boss.style.backgroundImage = 'url(graphics/enemies/testBossNormal.png)'
+                    const projPos = [boss.data.pos[0] + (boss.data.size)/2, boss.data.pos[1] + (boss.data.size)/2]
+                    const projAngle = Math.atan2(
+                        projPos[1] - DeBread.randomNum(boss.data.target.pos[1], boss.data.target.pos[1] + boss.data.target.elem.offsetHeight),
+                        projPos[0] - DeBread.randomNum(boss.data.target.pos[0], boss.data.target.pos[0] + boss.data.target.elem.offsetWidth),
+                    )
+
+                    const projData = {
+                        damage: 50,
+                        size: 25,
+                        speed: 7,
+                    }
+
+                    createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
+                }
+            },
+            { //Burst
+                duration: 125,
+                do: boss => {
+                    boss.style.backgroundImage = 'url(graphics/enemies/testBossBurstCharge.png)'
+
+                    createTimeout(() => {
+                        const projData = {
+                            damage: 50,
+                            size: 20,
+                            speed: 10,
+                        }
+
+                        for(let i = 0; i < 10; i++) {
+                            createProjectile(1,[...boss.data.centerPos],(Math.PI * 2 / 10) * i, projData, [player.elem], boss.data)
+                        }
+
+                        boss.style.backgroundImage = 'url(graphics/enemies/testBossBurst.png)'
+                    }, 75)
+                }
+            }
+        ]
+    },
+    sasha: {
+        name: 'SASHA',
+        desc: 'Run',
+        health: 500,
+        size: 36,
+        color: [91, 73, 57],
+        boss: true,
+        weight: 0.1,
+        speed: 0,
+        texture: 'sashaPortrait.png',
+        textureSheet: 'sasha.png',
+
+        tick: boss => {
+            const frames = {
+                "-3": 0,
+                "-2": 1,
+                "-1": 2,
+                "0": 5,
+                "1": 8,
+                "2": 7,
+                "3": 6,
+                "4": 3,
+                "-4": 3
+            }
+
+            const dx = player.centerPos[0] - boss.data.centerPos[0]
+            const dy = player.centerPos[1] - boss.data.centerPos[1]
+
+            const angle = Math.atan2(dy, dx)
+
+            const dir = Math.round(angle / (Math.PI / 4))
+            boss.querySelector('.enemyTextureContainer').querySelector('img').style.translate = `-${(frames[dir] * 36) + 2 * frames[dir]}px 0px`
+
+            boss.data.dirVels.push({
+                speed: 0.75,
+                angle: angle,
+                div: 1.05
+            })
+        },
+
+        moves: [
+            { //Dash
+                duration: 50,
+                do: boss => {
+                    const playerAngle = Math.atan2(
+                        player.centerPos[1] - boss.data.centerPos[1],
+                        player.centerPos[0] - boss.data.centerPos[0]
+                    )
+
+                    boss.data.dirVels.push({
+                        speed: 25,
+                        angle: playerAngle,
+                        div: 1.1
+                    })
+                }
+            },
+            { //Fire
+                duration: 25,
+                do: boss => {
+                    const projPos = [boss.data.pos[0] + (boss.data.size)/2, boss.data.pos[1] + (boss.data.size)/2]
+                    const projAngle = Math.atan2(
+                        projPos[1] - DeBread.randomNum(boss.data.target.pos[1], boss.data.target.pos[1] + boss.data.target.elem.offsetHeight),
+                        projPos[0] - DeBread.randomNum(boss.data.target.pos[0], boss.data.target.pos[0] + boss.data.target.elem.offsetWidth),
+                    )
+
+                    const projData = {
+                        damage: 50,
+                        size: 25,
+                        speed: 10,
+                    }
+
+                    createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
+                }
+            },
+            { //Burst
+                duration: 125,
+                do: boss => {
+                    const projData = {
+                        damage: 50,
+                        size: 20,
+                        speed: 10,
+                    }
+
+                    createExplosion([...boss.data.centerPos], 250, 0, 100, false, [[0,0],[0,0],[0,0],0])
+                    for(let i = 0; i < 10; i++) {
+                        createProjectile(1,[...boss.data.centerPos],(Math.PI * 2 / 10) * i, projData, [player.elem], boss.data)
+                    }
+                }
+            }
+        ]
+    },
+    jake: {
+        name: 'JAKE',
+        desc: 'Run',
+        health: 1000,
+        size: 36,
+        color: [231, 219, 205],
+        boss: true,
+        speed: 0,
+        texture: 'jakePortrait.png',
+        textureSheet: 'jake.png',
+
+        tick: boss => {
+            const frames = {
+                "-3": 0,
+                "-2": 1,
+                "-1": 2,
+                "0": 5,
+                "1": 8,
+                "2": 7,
+                "3": 6,
+                "4": 3,
+                "-4": 3
+            }
+
+            const dx = player.centerPos[0] - boss.data.centerPos[0]
+            const dy = player.centerPos[1] - boss.data.centerPos[1]
+
+            const angle = Math.atan2(dy, dx)
+
+            const dir = Math.round(angle / (Math.PI / 4))
+            boss.querySelector('.enemyTextureContainer').querySelector('img').style.translate = `-${(frames[dir] * 36) + 2 * frames[dir]}px 0px`
+        },
+
+        moves: [
+            { //Dash
+                duration: 50,
+                do: boss => {
+                    const playerAngle = Math.atan2(
+                        player.centerPos[1] - boss.data.centerPos[1],
+                        player.centerPos[0] - boss.data.centerPos[0]
+                    )
+
+                    boss.data.dirVels.push({
+                        speed: 25,
+                        angle: playerAngle,
+                        div: 1.1
+                    })
+                }
+            },
+            { //Fire
+                duration: 25,
+                do: boss => {
+                    const projPos = [boss.data.pos[0] + (boss.data.size)/2, boss.data.pos[1] + (boss.data.size)/2]
+                    const projAngle = Math.atan2(
+                        projPos[1] - DeBread.randomNum(boss.data.target.pos[1], boss.data.target.pos[1] + boss.data.target.elem.offsetHeight),
+                        projPos[0] - DeBread.randomNum(boss.data.target.pos[0], boss.data.target.pos[0] + boss.data.target.elem.offsetWidth),
+                    )
+
+                    const projData = {
+                        damage: 50,
+                        size: 25,
+                        speed: 10,
+                        poisonFieldChance: 100,
+                        poisonFieldSize: 100,
+                        poisonFieldTicks: 5,
+                        poisonFieldDmgPercent: 40,
+                        poisonFieldColor: [255,0,0],
+                    }
+
+                    createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
+                }
+            },
+            { //Burst
+                duration: 125,
+                do: boss => {
+                    const projData = {
+                        damage: 50,
+                        size: 20,
+                        speed: 10,
+                        speedDiv: 1.01,
+                        range: 50,
+                        poisonFieldChance: 100,
+                        poisonFieldSize: 100,
+                        poisonFieldTicks: 5,
+                        poisonFieldDmgPercent: 40,
+                        poisonFieldColor: [255,0,0],
+                        bounces: 2,
+                        magnetStrength: 0.5,
+                    }
+
+                    createExplosion([...boss.data.centerPos], 250, 0, 100, false, [[0,0],[0,0],[0,0],0])
+                    for(let i = 0; i < 6; i++) {
+                        createProjectile(1,[...boss.data.centerPos],(Math.PI * 2 / 6) * i, projData, [player.elem], boss.data)
+                    }
+                }
+            },
+            { //Mitosis
+                duration: 125,
+                do: boss => {
+                    const jakeling = {...bosses.jake}
+                    jakeling.name = 'Jakeling'
+
+                    spawnEnemy([...boss.data.pos],jakeling,0,0,{health: 25, regen: -0.1})
+                }
+            }
+        ]
+    },
+    plonk: {
+        name: 'PLONK',
+        desc: 'Run',
+        health: 1000,
+        size: 36,
+        color: [97, 104, 58],
+        boss: true,
+        speed: 0,
+        weight: 0.25,
+        texture: 'plonkPortrait.png',
+        textureSheet: 'plonk.png',
+
+        tick: boss => {
+            const frames = {
+                "-3": 0,
+                "-2": 1,
+                "-1": 2,
+                "0": 5,
+                "1": 8,
+                "2": 7,
+                "3": 6,
+                "4": 3,
+                "-4": 3
+            }
+
+            const dx = player.centerPos[0] - boss.data.centerPos[0]
+            const dy = player.centerPos[1] - boss.data.centerPos[1]
+
+            const angle = Math.atan2(dy, dx)
+
+            const dir = Math.round(angle / (Math.PI / 4))
+            boss.querySelector('.enemyTextureContainer').querySelector('img').style.translate = `-${(frames[dir] * 36) + 2 * frames[dir]}px 0px`
+
+            boss.data.dirVels.push({
+                speed: 0.25,
+                angle: angle,
+                div: 1.05
+            })
+        },
+
+        moves: [
+            { //Dash
+                duration: 25,
+                do: boss => {
+                    const playerAngle = Math.atan2(
+                        player.centerPos[1] - boss.data.centerPos[1],
+                        player.centerPos[0] - boss.data.centerPos[0]
+                    )
+
+                    boss.data.dirVels.push({
+                        speed: 15,
+                        angle: playerAngle + (Math.PI * [-1,1][DeBread.randomNum(0,1)]) / 2,
+                        div: 1.1
+                    })
+                }
+            },
+            { //Spray
+                duration: 50,
+                do: boss => {
+                    for(let i = 0; i < 10; i++) {
+                        boss.data.timeouts.push(createTimeout(() => {
+                            const projPos = [boss.data.pos[0] + (boss.data.size)/2, boss.data.pos[1] + (boss.data.size)/2]
+                            const projAngle = Math.atan2(
+                                projPos[1] - DeBread.randomNum(boss.data.target.pos[1], boss.data.target.pos[1] + boss.data.target.elem.offsetHeight),
+                                projPos[0] - DeBread.randomNum(boss.data.target.pos[0], boss.data.target.pos[0] + boss.data.target.elem.offsetWidth),
+                            )
+
+                            const projData = {
+                                damage: 10,
+                                size: 10,
+                                speed: 8,
+                                poisonFieldChance: 100,
+                                poisonFieldSize: 25,
+                                poisonFieldTicks: 3,
+                                poisonFieldDmgPercent: 25,
+                                poisonFieldColor: [186, 161, 39],
+                            }
+
+                            createProjectile(1, [...projPos], projAngle + DeBread.randomNum(-1,1,10), projData, [player.elem], boss.data)
+                        }, i))
+                    }
+                }
+            },
+        ]
     },
 }
 
@@ -592,8 +966,8 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
         alive: true,
         active: false,
 
-        maxHealth: extraData.health ?? data.health * (1 + level / 2),
-        health: extraData.health ?? data.health * (1 + level / 2),
+        maxHealth: extraData.health ?? data.health * (1 + level / 5),
+        health: extraData.health ?? data.health * (1 + level / 5),
         lastHitDate: e.gameUpdates + 30,
         spawnDate: e.gameUpdates,
         
@@ -603,6 +977,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
             pos[1]+(data.size * sizeMult[1])/2
         ],
         size: extraData.size ?? data.size,
+        weight: data.weight ?? 1,
 
         dirVels: [],
         speed: data.speed ?? 0,
@@ -622,6 +997,11 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
 
         lastSfxDate: 0,
         ticks: 0,
+
+        //Boss stuff
+        currentAttack: {duration: 0},
+        lastAttackDate: e.gameUpdates + 100,
+        timeouts: []
     }
     const enemyData = enemy.data
 
@@ -644,6 +1024,39 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
         transition: `left linear ${e.gameUpdateInterval}ms, top linear ${e.gameUpdateInterval}ms, background-color ease-in-out 1s`
     })
 
+    if(data.textureSheet) {
+        addStyles(enemy, {
+            backgroundColor: 'transparent',
+            borderRadius: '0px'
+        })
+
+        const div = document.createElement('div')
+        div.classList.add('enemyTextureContainer')
+        addStyles(div, {
+            position: 'absolute',
+            width: (extraData.size ?? data.size) * sizeMult[0] + 'px',
+            height: (extraData.size ?? data.size) * sizeMult[1] + 'px',
+            overflow: 'hidden'
+        })
+
+        const img = document.createElement('img')
+        addStyles(img, {
+            height: '74px',
+        })
+        img.src = `graphics/enemies/${data.textureSheet}`
+
+        div.append(img)
+        enemy.append(div)
+    } else if(data.texture) {
+        addStyles(enemy, {
+            backgroundColor: 'transparent',
+            backgroundImage: `url(graphics/enemies/${data.texture})`,
+            backgroundSize: `${(extraData.size ?? data.size) * sizeMult[0]}px ${(extraData.size ?? data.size) * sizeMult[1]}px`,
+            borderRadius: '0px'
+        })
+    }
+
+
     if(!saveData.settings.enemyEasing) {
         enemy.style.transition = 'background-color ease-in-out 1s'
     }
@@ -656,7 +1069,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
     }
 
     //Bossbar
-    if(data.useBossBar) {
+    if(data.boss || data.useBossBar) {
         enemyData.bossBar = document.createElement('div')
         enemyData.bossBar.classList.add('gameBossbar')
         enemyData.bossBar.innerHTML = `
@@ -711,7 +1124,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                 enemyData.pos[1] -= Math.sin(angle) * (enemyData.speed * player.stats.enemy.speedMult * enemyData.speedMult + overlap)
                 
                 if(data.meleeDamage && e.gameUpdates - enemyData.lastHitDate >= 25) {
-                    enemyData.target.damage(data.meleeDamage * (1 + level / 2))
+                    enemyData.target.damage(data.meleeDamage * (1 + level / 5))
                     enemyData.lastHitDate = e.gameUpdates
 
                     if(enemyData.explosive) {
@@ -764,8 +1177,8 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
         }
 
         //Regen
-        if(data.regen) {
-            enemy.data.damage(-data.regen, true)
+        if(extraData.regen || data.regen) {
+            enemy.data.damage(-(extraData.regen ?? data.regen), true)
         }
 
         //Explosive stuff
@@ -857,6 +1270,22 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
         }
 
         enemyData.ticks++
+
+        //Boss stuff
+        if(data.boss && enemyData.active) {
+            const randomAttack = data.moves[DeBread.randomNum(0, data.moves.length-1)]
+
+            if(e.gameUpdates - enemyData.lastAttackDate > enemyData.currentAttack.duration ?? 0) {
+                randomAttack.do(enemy)
+                enemyData.lastAttackDate = e.gameUpdates
+                enemyData.currentAttack = randomAttack
+            }
+        }
+
+        //Tick events
+        if(data.tick && enemyData.active) {
+            data.tick(enemy)
+        }
     }
 
     if(data.projectile) {
@@ -884,7 +1313,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                 )
 
                 const projData = {...data.projectile}
-                projData.damage *= (1 + level / 2)
+                // projData.damage *= (1 + level / 5)
                 projData.speed *= player.stats.enemy.speedMult
                 projData.speed *= enemyData.speedMult
 
@@ -911,12 +1340,12 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
             enemy.style.backgroundColor = 'transparent'
         }
 
-        if(data.useBossBar) {
+        if(data.boss || data.useBossBar) {
             enemyData.bossBar.querySelector('div').style.width = enemyData.health / enemyData.maxHealth * 100 + '%'
         }
     }
 
-    enemy.data.damage = (amountBase, silent) => {
+    enemy.data.damage = (amountBase, silent, origin) => {
         if(enemyData.active) {
             let amount = amountBase
             if(enemyData.isBleeding) {
@@ -943,7 +1372,9 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                 }, e.gameUpdateInterval)
             }
             
-            if(enemyData.health <= 0) {enemy.data.kill()}
+            if(enemyData.health <= 0) {
+                enemy.data.kill(origin)
+            }
 
             enemyData.damageTaken += amount
             player.gameOverStats.damageGiven += amount
@@ -955,7 +1386,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
             if(amount > 0) {
                 player.comboStrength++
 
-                if(data.useBossBar) {
+                if(data.boss || data.useBossBar) {
                     addStyles(enemyData.bossBar.querySelector('div'), {
                         width: enemyData.health / enemyData.maxHealth * 100 + '%',
                         animation: 'none'
@@ -980,7 +1411,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
         }  
     }
     
-    enemy.data.kill = () => {
+    enemy.data.kill = (origin) => {
         if(enemyData.alive) {
             enemyData.alive = false
             player.gameOverStats.enemiesKilled++
@@ -1001,19 +1432,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                 )
             }
 
-            // createParticles(
-            //     [...enemyData.centerPos], 
-            //     10, 
-            //     enemyData.size / 2, 
-            //     [0,100], 
-            //     500, 
-            //     'ease-out',
-            //     {
-            //         backgroundColor: `rgb(${data.color})`
-            //     }
-            // )
-
-            if(data.useBossBar) {
+            if(data.boss || data.useBossBar) {
                 enemyData.bossBar.remove()
             }
 
@@ -1067,35 +1486,25 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                 )
             }
     
-            if(doge('area').querySelectorAll('.enemy').length === 0 && ![2,3].includes(saveData.gameSettings.gamemode)) {
-                // area.createNotice(`Quick wave clear! - +$${player.wave}`)
-                // player.getMoney(player.wave)
-                
-                if(player.wavesPaused) {
-                    setTimeout(() => {
-                        spawnPortal()
-                        }, 1000);
-                } else {
-                    spawnWave(player.wave)
-                    doge('gameWaveCounter').innerText = player.wave
-                    doge('pageTitle').innerText = `Goober Shooter - Wave ${player.wave}`
-                    doge('gameWaveShopCounter').innerText = `${4 - player.wave % 5} waves until shop`
-                    player.wave++
-                    player.lastWaveDate = e.gameUpdates
-    
-                    if(player.wave % 5 === 0) {
-                        player.wavesPaused = true
-                    }
-                }
-            }
-    
             if(player.tutorial.stage === 3) {
                 player.tutorial.goalValue++
                 updateTutorialGoal()
             }
 
-            getCombo()
-            getStyle(styles.kill)
+            if(origin) {
+                origin.kills++
+                if(origin.kills >= 4) {
+                    getStyle(styles.multi_kill)
+                } else if(origin.kills >= 3) {
+                    getStyle(styles.triple_kill)
+                } else if(origin.kills >= 2) {
+                    getStyle(styles.double_kill)
+                } else {
+                    getStyle(styles.kill)
+                }
+            } else {
+                getStyle(styles.kill)
+            }
 
             if(saveData.gameSettings.gamemode !== 2) {
                 saveData.stats.list.Enemies_Killed++
@@ -1125,6 +1534,22 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                     false
                 )
             }
+
+            player.lastKillDate = e.gameUpdates
+        }
+
+        if(doge('area').querySelectorAll('.enemy').length === 0 && saveData.gameSettings.gamemode !== 2) {
+            progressWave()
+        }
+
+        //Clear enemy attached timeouts
+        for(const id of enemyData.timeouts) {
+            timeouts[id].finished = true
+        }
+
+        if(data.boss) {
+            player.fightingBoss = false
+            player.wave++
         }
     }
 
@@ -1270,34 +1695,62 @@ function spawnWave(wave, poor) {
     }
 }
 
-const bosses = {
-    beast: {
-        name: 'Beast',
-        health: 5000,
-        size: 100,
-        color: '#6b2340',
-
-        moves: {
-            dash: {
-                duration: 50,
-                do: boss => {
-                    const playerAngle = Math.atan2(
-                        boss.centerPos[1] + player.centerPos[1],
-                        boss.centerPos[0] + player.centerPos[0]
+function progressWave(portal) {
+    if(saveData.gameSettings.gamemode !== 2) {
+        if(player.wave % 5 === 0 && player.wave > 0 && !portal) {
+            if(elems.enemies.length === 0 && e.gameUpdates - player.lastKillDate > 100) {
+                if(player.wave % 25 === 0) {
+                    player.fightingBoss = true
+                    const bossKey = DeBread.randomNum(0, Object.keys(bosses).length - 1)
+                    const boss = bosses[Object.keys(bosses)[bossKey]]
+                    startBossSequence(
+                        {
+                            name: characters[saveData.selectedCharacter].name,
+                            imgSrc: `graphics/characters/${saveData.selectedCharacter}PortraitLarge.png`
+                        },
+                        {
+                            name: boss.name,
+                            imgSrc: `graphics/enemies/${boss.name}PortraitLarge.png`
+                        }
                     )
-
-                    boss.dirVels.push({
-                        angle: playerAngle,
-                        div: 1.1
-                    })
+                    createTimeout(() => {
+                        spawnEnemy([doge('area').offsetWidth / 2, doge('area').offsetHeight / 2], boss, 1, 100)
+                    }, 100)
+                } else {
+                    spawnPortal()
                 }
+            }
+        } else {
+            player.wave++
+            spawnWave(player.wave)
+            player.lastWaveDate = e.gameUpdates
+        
+            doge('gameWaveCounter').innerText = player.wave
+        
+            doge('gameWaveCounter').style.animation = 'none'
+            requestAnimationFrame(() => {
+                doge('gameWaveCounter').style.animation = 'wavePulse 1s ease-out 1 forwards'
+            })
+    
+            if(player.wave % 5 === 0) {
+                player.lastWaveDate = 0
             }
         }
     }
 }
 
-function startBossSequence(opponentData = {}) {
+function startBossSequence(playerData = {}, opponentData = {}) {
+    doge('bossPopupPlayerName').innerText = playerData.name ?? '???'
+    doge('bossPopupPlayerImg').src = playerData.imgSrc
+    if(playerData.modifier) {
+        doge('bossPopupPlayerModifier').innerText = playerData.modifier
+        doge('bossPopupPlayerModifier').style.display = 'unset'
+    } else {
+        doge('bossPopupPlayerModifier').style.display = 'none'
+    }
+
     doge('bossPopupOpponentName').innerText = opponentData.name ?? '???'
+    doge('bossPopupOpponentImg').src = opponentData.imgSrc
     if(opponentData.modifier) {
         doge('bossPopupOpponentModifier').innerText = opponentData.modifier
         doge('bossPopupOpponentModifier').style.display = 'unset'
@@ -1323,80 +1776,4 @@ function startBossSequence(opponentData = {}) {
             })
         }, 250);
     }, 100)
-}
-
-function spawnBoss(pos, data, spawnTime = 20) {
-    const boss = enemyBase.cloneNode()
-    boss.classList.add('entity')
-    elems.enemies.push(boss)
-    addStyles(boss, {
-        backgroundColor: 'white',
-        position: 'absolute',
-        width: data.size + 'px',
-        height: data.size + 'px',
-        backgroundColor: data.color //Dont worry bosses will have textures
-    })
-    
-    boss.data = data
-    boss.pos = [...pos]
-    boss.centerPos = [boss.pos[0] + data.size / 2, boss.pos[1] + data.size / 2]
-    boss.active = false
-    boss.dateSpawned = e.gameUpdates
-    boss.health = data.health
-    boss.maxHealth = data.health
-    boss.dirVels = []
-
-    boss.healthBar = document.createElement('div')
-    boss.healthBar.classList.add('gameBossbar')
-    boss.healthBar.innerHTML = `
-        <span>${data.name.toUpperCase()}</span>
-        <div style="width: 0%; background-color: ${data.color};"></div>
-    `
-    doge('gameBossbarContainer').append(boss.healthBar)
-
-    boss.init = () => {
-        boss.active = true
-        boss.style.animation = 'enemyInit 500ms ease-out 1 forwards'
-        boss.style.opacity = '1'
-
-        boss.style.boxShadow = '0px 0px 0px 10px transparent'
-
-        boss.healthBar.querySelector('div').style.width = '100%'
-
-        if(saveData.selectedChallenge === 'hidden') {
-            boss.style.backgroundColor = 'transparent'
-        }
-    }
-
-    boss.tick = () => {
-        if(e.gameUpdates - boss.dateSpawned >= spawnTime && !boss.active) {
-            boss.init()
-        }
-
-        boss.centerPos = [boss.pos[0] + data.size / 2, boss.pos[1] + data.size / 2]
-    }
-
-    boss.damage = damage => {
-        boss.health -= damage
-        
-        addStyles(boss.healthBar.querySelector('div'), {
-            width: boss.health / boss.maxHealth * 100 + '%',
-            animation: 'none'
-        })
-        requestAnimationFrame(() => {
-            boss.healthBar.querySelector('div').style.animation = 'bossbarPulse 250ms ease-out 1 forwards'
-        })
-
-        if(boss.health <= 0) boss.kill()
-    }
-
-    boss.kill = () => {
-        elems.enemies.splice(elems.enemies.indexOf(boss),1)
-        createParticles([...boss.centerPos], 25, data.size, [0,data.size*1.5],500,'ease-out',{backgroundColor: 'red'})
-        boss.healthBar.remove()
-
-        boss.remove()
-    }
-
-    doge('area').append(boss)
 }

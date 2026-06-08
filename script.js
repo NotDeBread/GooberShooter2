@@ -87,6 +87,7 @@ const defaultSaveData = {
     stats: {
         list: {
             Enemies_Killed: 0,
+            Times_Died: 0,
         },
         itemsCollected: [],
     },
@@ -166,8 +167,11 @@ addStyles(popupTextBase, {
     animation: 'popupMove 2s ease-out 1 forwards',
     color: 'transparent',
     translate: '-50% -50%',
+    textAlign: 'center',
+    lineHeight: '1',
     zIndex: 10,
 })
+
 function createPopupText(text, pos) {
     const popup = popupTextBase.cloneNode()
     popup.classList.add('popup')
@@ -374,9 +378,9 @@ const weaponPresets = {
             modifyStat(['bullet','multishot'], '=5')
             modifyStat(['bullet','grow'], '=-10')
 
-            modifyStat(['ammo','reloadSpeed'], '=1000')
+            modifyStat(['ammo','reloadSpeed'], '=75')
             modifyStat(['bullet','range'], '=7')
-            modifyStat(['bullet','shotCooldown'], '=500')
+            modifyStat(['bullet','shotCooldown'], '=25')
             modifyStat(['bullet','recoil'], '=3')
         }
     },
@@ -408,9 +412,9 @@ const weaponPresets = {
             modifyStat(['ammo','max'], '=20')
             modifyStat(['bullet','slow'], '=0.25')
 
-            modifyStat(['ammo','reloadSpeed'], '=1250')
+            modifyStat(['ammo','reloadSpeed'], '=100')
             modifyStat(['bullet','range'], '=7')
-            modifyStat(['bullet','shotCooldown'], '=600')
+            modifyStat(['bullet','shotCooldown'], '=30')
             modifyStat(['bullet','recoil'], '=2')
         }
     },
@@ -433,9 +437,9 @@ const weaponPresets = {
         apply: () => {
             modifyStat(['bullet','damage'], '=5')
             modifyStat(['bullet','speed'], '=20')
-            modifyStat(['bullet','shotCooldown'], '=0')
+            modifyStat(['bullet','shotCooldown'], '=1')
 
-            modifyStat(['ammo','reloadSpeed'], '=1000')
+            modifyStat(['ammo','reloadSpeed'], '=100')
             modifyStat(['ammo','max'], '=8')
 
             modifyStat(['ammo','garandReload'], '=true')
@@ -463,9 +467,9 @@ const weaponPresets = {
             modifyStat(['bullet','speed'], '=15')
 
             modifyStat(['ammo','max'], '=5')
-            modifyStat(['ammo','reloadSpeed'], '=1500')
+            modifyStat(['ammo','reloadSpeed'], '=80')
             modifyStat(['ammo','penetratingRounds'], '=true')
-            modifyStat(['bullet','shotCooldown'], '=500')
+            modifyStat(['bullet','shotCooldown'], '=15')
 
             updateUI()
         }
@@ -488,7 +492,7 @@ const weaponPresets = {
         ],
 
         apply: () => {
-            modifyStat(['bullet','shotCooldown'], '=0')
+            modifyStat(['bullet','shotCooldown'], '=1')
             modifyStat(['ammo','max'], '=50')
             modifyStat(['ammo','current'], '=50')
             modifyStat(['bullet','poisonFieldChance'], '=100')
@@ -498,9 +502,11 @@ const weaponPresets = {
             modifyStat(['bullet','poisonFieldColor'], '=[186, 161, 39]')
             modifyStat(['bullet','knockback'], '=0.1')
             
-            modifyStat(['ammo','reloadSpeed'], '=2500')
+            modifyStat(['ammo','reloadSpeed'], '=125')
             modifyStat(['bullet','damage'], '=2.5')
             modifyStat(['ammo','autoFire'], '=true')
+
+            modifyStat(['bullet','shotParticleColor'], '=[186, 161, 39]')
         }
     },
     bite: {
@@ -526,11 +532,11 @@ const weaponPresets = {
         apply: () => {
             modifyStat(['bullet','drillTicks'], '=8')
             modifyStat(['bullet', 'damage'], '=15')
-            modifyStat(['ammo','reloadSpeed'], '=100')
+            modifyStat(['ammo','reloadSpeed'], '=10')
             modifyStat(['bullet','size'], '=50')
             
             modifyStat(['bullet','range'], '=8')
-            modifyStat(['bullet','shotCooldown'], '=100')
+            modifyStat(['bullet','shotCooldown'], '=20')
             modifyStat(['bullet','speed'], '=1')
             modifyStat(['ammo','max'], '=1')
         }
@@ -559,8 +565,8 @@ const weaponPresets = {
             modifyStat(['bullet','size'], '=25')
 
             modifyStat(['bullet','speed'], '=5')
-            modifyStat(['ammo','reloadSpeed'], '=2000')
-            modifyStat(['bullet','shotCooldown'], '=500')
+            modifyStat(['ammo','reloadSpeed'], '=100')
+            modifyStat(['bullet','shotCooldown'], '=30')
 
             modifyStat(['bullet','recoil'], '=15')
         }
@@ -583,11 +589,11 @@ const weaponPresets = {
         ],
         
         apply: () => {
-            modifyStat(['bullet','shotCooldown'], '=0')
+            modifyStat(['bullet','shotCooldown'], '=1')
             modifyStat(['ammo','max'], '=50')
             modifyStat(['ammo','current'], '=50')
             
-            modifyStat(['ammo','reloadSpeed'], '=2000')
+            modifyStat(['ammo','reloadSpeed'], '=100')
             modifyStat(['bullet','damage'], '=2.5')
             modifyStat(['ammo','autoFire'], '=true')
             modifyStat(['ammo','stationaryFire'], '=true')
@@ -618,7 +624,7 @@ const weaponPresets = {
             modifyStat(['bullet','poisonFieldDmgPercent'], '=40')
             modifyStat(['bullet','size'], '=40')
             modifyStat(['bullet','accuracy'], '=40')
-            modifyStat(['bullet','shotCooldown'], '=200')
+            modifyStat(['bullet','shotCooldown'], '=10')
             modifyStat(['bullet','damageMult'], '=1.5')
             
             modifyStat(['player','parryPoisonDmg'], '=20')
@@ -719,7 +725,7 @@ const weaponPresets = {
         apply: () => {
             modifyStat(['bullet','drillTicks'], '=25')
             modifyStat(['bullet','damageMult'], '=0.2')
-            modifyStat(['bullet','shotCooldown'], '=100')
+            modifyStat(['bullet','shotCooldown'], '=10')
             modifyStat(['bullet','size'], '=32')
             modifyStat(['bullet','spin'], '=20')
         }
@@ -855,6 +861,7 @@ const characters = {
         taunts: 7,
         tag: 'Fox',
         tagCol: '#e0a24a',
+        color: [244, 175, 84],
 
         tagList: [
             {text: 'GS1',col: '#e0a24a'}
@@ -887,6 +894,7 @@ const characters = {
         info: `Starts with the \'Poker Chip\' Power Item.<br>${powerItems[1].poker_chip.desc}`,
         tag: 'Raccoon',
         tagCol: '#775db9',
+        color: [84, 84, 84],
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
@@ -904,13 +912,7 @@ const characters = {
         taunts: 9,
         tag: 'Cat',
         tagCol: 'rgb(72, 72, 72)',
-        // info: `
-        //     Starts with the \'Heroin\' consumable.<br>
-        //     <em style="color:grey;">For 5 seconds:</em><br>
-        //     <cg>x10</cg> Damage<br>
-        //     <cg>x2</cg> Speed<br>
-        //     After the 5 seconds, take <cb>75</cb> damage.
-        //     `,
+        color: [127, 127, 127],
 
         tagList: [
             {text: 'GS1',col: '#e0a24a'},
@@ -928,6 +930,7 @@ const characters = {
         desc: 'bro thinks hes james sunderland',
         tag: 'Arctic Fox',
         tagCol: 'rgb(89, 150, 168)',
+        color: [105, 51, 78],
         taunts: 1,
 
         tagList: [
@@ -942,6 +945,7 @@ const characters = {
         desc: 'Some other other guy',
         tag: 'Dire Wolf',
         tagCol: 'rgb(147, 151, 182)',
+        color: [76, 81, 128],
 
         tagList: [
             {text: 'GS2',col: '#775db9'},
@@ -955,6 +959,7 @@ const characters = {
         desc: 'ACAB? Even her?',
         tag: 'Black Wolf',
         tagCol: '#592c23',
+        color: [45, 27, 30],
         taunts: 1,
 
         tagList: [
@@ -969,6 +974,7 @@ const characters = {
         desc: '',
         tag: 'Dhole',
         tagCol: 'rgb(92, 189, 230)',
+        color: [255,255,255],
 
         tagList: [
             {text: 'GS2',col: '#775db9'},
@@ -982,6 +988,7 @@ const characters = {
         desc: '',
         tag: 'Cat thing??',
         tagCol: 'rgb(230, 92, 92)',
+        color: [219, 219, 219],
 
         tagList: [
             {text: 'GS1',col: '#e0a24a'}
@@ -995,6 +1002,7 @@ const characters = {
         taunts: 2,
         tag: 'Vampire',
         tagCol: 'rgb(100,0,10)',
+        color: [248, 226, 213],
 
         pros: [
             'Healing melees',
@@ -1023,6 +1031,7 @@ const characters = {
         taunts: 2,
         tag: 'Fox',
         tagCol: '#6072ad',
+        color: [255, 255, 255],
 
         info: `Starts with the 'Demon Core' Power Item <br>${powerItems[3].demon_core.desc}`,
 
@@ -1041,6 +1050,7 @@ const characters = {
         desc: '',
         tag: 'Raccoon',
         tagCol: '#514d47',
+        color: [128, 127, 123],
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
@@ -1054,6 +1064,7 @@ const characters = {
         taunts: 1,
         tag: 'German, Shepherd',
         tagCol: '#53463a',
+        color: [98, 82, 63],
 
         info: `Starts with the 'Tennis Ball' Power Item <br>${powerItems[1].tennis_ball.desc}`,
 
@@ -1101,6 +1112,7 @@ const characters = {
         taunts: 1,
         tag: 'The Horse',
         tagCol: '#6b563c',
+        color: [153, 110, 75],
 
         tagList: [
             {text: 'GS2',col: '#775db9'},
@@ -1127,6 +1139,7 @@ const characters = {
         taunts: 3,
         tag: 'Car',
         tagCol: '#403b39',
+        color: [129, 113, 106],
 
         tagList: [
             {text: 'GS1',col: '#e0a24a'},
@@ -1140,6 +1153,7 @@ const characters = {
         desc: 'use this one if you wanna be really swag',
         tag: 'Cat',
         tagCol: 'hotpink',
+        color: [95, 86, 85],
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
@@ -1153,6 +1167,7 @@ const characters = {
         taunts: 1,
         tag: 'Walf',
         tagCol: 'gray',
+        color: [158, 158, 158],
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
@@ -1180,6 +1195,7 @@ const characters = {
         info: `Starts with the \'Pepper\' Power Item.<br>${powerItems[1].pepper.desc}`,
         tag: 'Dog',
         tagCol: '#ab886d',
+        color: [231, 219, 205],
 
         tagList: [
             {text: 'GS2',col: '#775db9'},
@@ -1204,6 +1220,7 @@ const characters = {
         desc: '',
         tag: 'Crow',
         tagCol: '#0c0026',
+        color: [41, 41, 41],
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
@@ -1217,6 +1234,7 @@ const characters = {
         taunts: 1,
         tag: 'Cat',
         tagCol: '#a57f4b',
+        color: [176, 126, 64],
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
@@ -1229,6 +1247,7 @@ const characters = {
         desc: '',
         tag: 'Bean',
         tagCol: 'rgb(113, 82, 45)',
+        color: [178, 101, 29],
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
@@ -1295,6 +1314,8 @@ const characters = {
         taunts: 1,
         tag: 'Fox🔥',
         tagCol: '#FF5500',
+        color: [248, 135, 0],
+
         info: `
             Colliding with enemies sets them on fire.<br>
             Has a <cg>50%</cg> to create an explosion dealing <cg>100%</cg> of your damage when hit.
@@ -1320,6 +1341,8 @@ const characters = {
             modifyStat(['player','explosiveHitDamage'],'=1')  
 
             modifyStat(['melee','damage'], '=40')
+
+            player.visibleStats.push('bullet-speedDiv')
         },
 
         weapon: weaponPresets.fire_paws
@@ -1330,6 +1353,8 @@ const characters = {
         taunts: 1,
         tag: 'Protogen',
         tagCol: '#f67c20',
+        color: [40, 32, 12],
+
         info: `Starts with the \'Tesla Coil\' Power Item.<br>${powerItems[4].tesla_coil.desc}`,
 
         tagList: [
@@ -1355,6 +1380,7 @@ const characters = {
         taunts: 1,
         tag: 'Raccoon',
         tagCol: '#a16e97',
+        color: [167, 166, 167],
         info: `Starts with the \'Blunt\' Power Item.<br>${powerItems[0].blunt.desc}`,
 
         tagList: [
@@ -1393,6 +1419,7 @@ const characters = {
         taunts: 1,
         tag: 'Skunk',
         tagCol: 'rgb(50,50,50)',
+        color: [79, 79, 79],
 
         info: `Starts with the \'Beer Bottle\' Power Item.<br>${powerItems[2].beer_bottle.desc}`,
         pros: ['Poisonous parries'],
@@ -1431,6 +1458,7 @@ const characters = {
         info: 'All stats are randomly multiplied between 0.1x and 10x at run start.',
         tag: 'Guy',
         tagCol: 'rgb(0,150,0)',
+        color: [0, 255, 0],
 
         tagList: [
             {text: 'GS1',col: '#e0a24a'}
@@ -1456,6 +1484,8 @@ const characters = {
         taunts: 5,
         tag: 'Cat ?',
         tagCol: '#5268da',
+        color: [237, 237, 237],
+
         info: `
             Starts with the \'Diet Pepsi\' Power Item.<br>${powerItems[5].diet_pepsi.desc}
         `,
@@ -1481,6 +1511,7 @@ const characters = {
         taunts: 1,
         tag: 'Fox',
         tagCol: '#9c4321',
+        color: [240, 142, 66],
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
@@ -1501,6 +1532,7 @@ const characters = {
         desc: 'BRITISH PEOPLE 🤮🤮🤮🤮',
         tag: 'Wolf',
         tagCol: '#420d28',
+        color: [112, 86, 78],
 
         tagList: [
             {text: 'GS1',col: '#e0a24a'},
@@ -1514,6 +1546,7 @@ const characters = {
         desc: 'AUSTRALIAN PEOPLE 🤮🤮🤮🤮',
         tag: 'Australian Shepherd',
         tagCol: 'rgb(247, 146, 148)',
+        color: [247, 230, 217],
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
@@ -1526,6 +1559,7 @@ const characters = {
         desc: 'this game is pissing me off',
         tag: 'the&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsporiginal',
         tagCol: 'rgb(107, 106, 52)',
+        color: [247, 230, 217],
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
@@ -1539,6 +1573,7 @@ const characters = {
         taunts: 1,
         tag: 'Lynx',
         tagCol: '#3f3c4e',
+        color: [175, 184, 204],
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
@@ -1579,6 +1614,7 @@ const characters = {
         taunts: 1,
         tag: 'Alien',
         tagCol: '#185225',
+        color: [43, 255, 68],
 
         tagList: [
             {text: 'GS2',col: '#775db9'},
@@ -1594,6 +1630,7 @@ const characters = {
         taunts: 1,
         tag: 'Dragon',
         tagCol: '#7c2f96',
+        color: [141, 58, 183],
 
         tagList: [
             {text: 'GS2',col: '#775db9'},
@@ -1609,6 +1646,7 @@ const characters = {
         taunts: 1,
         tag: '???',
         tagCol: '#050634',
+        color: [255,255,255],
 
         tagList: [
             {text: 'GS2',col: '#775db9'}
@@ -1927,7 +1965,7 @@ const challenges = {
         
         apply: () => {
             player.scoreMult = 2.5
-            modifyStat(['misc','waveInterval'],'=0')
+            modifyStat(['misc','waveInterval'],'=10')
         }
     },
     greed: {
@@ -2244,6 +2282,17 @@ const achievements = {
         name: 'Crow Perfection',
         desc: 'Reach wave 100 using Crow.',
         difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Black Feather',
+            src: 'graphics/upgrades/black_feather.png',
+            data: upgrades[4].black_feather
+        },
+
+        run: () => {
+            saveData.items.push('black_feather')
+        }
     },
     krazy_Perfection: {
         name: 'Krazy Perfection',
@@ -2387,6 +2436,12 @@ function getAchievement(key) {
 
         if(achievement.run) achievement.run()
         save()
+    }
+}
+
+function getAllAchievements() {
+    for(key in achievements) {
+        getAchievement(key)
     }
 }
 

@@ -16,6 +16,10 @@
         <span id="dbE">-E</span>
     </div>
 
+    <!-- <div id="devloperHeader" style="position: absolute; bottom: 0; left: 0; width: 100dvw; height: 15px; display: flex; justify-content: center; align-items: center; z-index: 999999999999; pointer-events: none; background: repeating-linear-gradient(-55deg,rgb(255, 255, 157),rgb(255, 255, 157) 10px,rgb(199, 186, 104) 10px,rgb(199, 186, 104) 20px);">
+        <span style="letter-spacing: 10px; color: black; font-size: 0.9em; font-weight: 900;">DEVELOPMENT BUILD</span>
+    </div> -->
+
     <div id="gameStartScreen">
         <div class="gameStartScreenText">A game made by</div><br>
         <div style="font-size: 1.5em; font-weight: 700;" class="gameStartScreenText">DeBread</div>
@@ -73,7 +77,7 @@
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
             <div style="line-height: 1;">
-                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest14</a></span><br>
+                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest15</a></span><br>
                 <a style="font-size: 0.75em; opacity: 0.5; cursor: pointer;" href="https://forms.gle/JDaQUZ1wR6GhAscZ8" target="_blank">Report a bug</a>
             </div>
         </div>
@@ -348,7 +352,7 @@
             </div>
         </div>
     </div>
-    <div id="menu-game" class="menu">
+    <div id="menu-game" class="menu" style="user-select: none;">
         <div id="gamePauseContainer">
             <div id="gamePauseTitle"></div>
             <div id="gamePause">
@@ -530,6 +534,16 @@
                             <input type="number" id="sandboxDamageInput" placeholder="Amount" style="width: 75px;">
                             <input type="number" id="sandboxHardDamageInput" placeholder="HD" style="width: 50px;">
                         </div>
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <div>
+                                <span>Tick speed: </span>
+                                <span id="tickSpeedSliderValue">20ms</span>
+                            </div>
+                            <input type="range" min="0" max="1000" step="20" id="tickSpeedSlider">
+                        </div>
+                        <div style="width: 100%; line-height: 1; translate: 0px -10px;">
+                            <em style="font-size: 0.75em; color: grey;">Default: 20ms</em>
+                        </div>
                     </div>
                     <div id="sandboxMenu-powerItems"></div>
                     <div id="sandboxMenu-characters" style="display: flex; flex-direction: column; gap: 5px; margin-top: 5px;"></div>
@@ -609,10 +623,10 @@
             <div id="gameBossPopupContainer">
                 <div id="gameBossPopup">
                     <div class="gameBossPopupCharacter">
-                        <img src="graphics/characters/fellaPortraitLarge.png" style="scale: -1 1;">
+                        <img id="bossPopupPlayerImg" style="scale: -1 1;">
                         <div class="gameBossPopupText">
-                            <!-- <span>-</span> -->
-                            <span>Fella</span>
+                            <em id="bossPopupPlayerModifier">❗Enraged</em>
+                            <span id="bossPopupPlayerName">Sasha</span>
                         </div>
                     </div>
                     <em id="gameBossVs">vs.</em>
@@ -621,7 +635,7 @@
                             <em id="bossPopupOpponentModifier">❗Enraged</em>
                             <span id="bossPopupOpponentName">Sasha</span>
                         </div>
-                        <img src="graphics/characters/sashaPortraitLarge.png" id="bossPopupOpponentImg">
+                        <img id="bossPopupOpponentImg">
                     </div>
                 </div>
             </div>
@@ -719,15 +733,17 @@
                 </div>
             </div>
             <div id="gameRunInfo">
-                <em>Wave</em>
-                <div style="display: flex; align-items: end; margin: 4px 0px;">
-                    <div id="gameWaveCounter">0</div>
-                    <span>/∞</span>
+                <div style="display: flex; align-items: end; margin: 4px 0px; gap: 10px;">
+                    <div style="width: 100px; display: flex; justify-content: space-between; align-items: end;">
+                        <span>Wave</span>
+                        <div id="gameWaveCounter">0</div>
+                    </div>
+                    <!-- <span>/∞</span> -->
                 </div>
                 <div id="gameWaveBar">
                     <div id="gameInnerWaveBar"></div>
                 </div>
-                <span id="gameWaveShopCounter">0 waves until shop</span>
+                <!-- <span id="gameWaveShopCounter">0 waves until shop</span> -->
             </div>
         </div>
 
