@@ -8,15 +8,15 @@ const startSequence = [
             'graphics/characters/fellaPortrait.png',
         ]
     },
-    // {
-    //     text: [
-    //         'With music by',
-    //         'B Dawgs'
-    //     ],
-    // },
     {
         text: [
-            'with extra art from',
+            'With music by',
+            'B Dawgs'
+        ],
+    },
+    {
+        text: [
+            'and extra art by',
             'Plinkel'
         ],
         images: [
@@ -40,6 +40,9 @@ const funFacts = [
 
 const startScreenTimeouts = []
 function startTitle() {
+    tracks.menu.playbackRate = 0.75
+    tracks.menu.preservesPitch = false
+    tracks.menu.play()
     for(let i = 0; i < startSequence.length + 1; i++) {
         if(i < startSequence.length) {
             let data = startSequence[i]
@@ -99,10 +102,12 @@ function startTitle() {
 
 function startMainMenu(removeStartScreen = true) {
     if(!saveData.firstLogin) {
-        if(removeStartScreen) doge('gameStartScreen').remove()
+        if(removeStartScreen) {
+            doge('gameStartScreen').remove()
+            tracks.menu.currentTime = 10.75
+        }
         openMenu('main')
     
-        tracks.menu.currentTime = 10.2
     
         //Auto start game
         if(e.keysDown.includes('shift')) {
@@ -301,14 +306,16 @@ function openMenu(menu) {
         submenuTitle.text = submenuTitle.innerText
         applyFlowText(submenuTitle)
     }
-
+    
     currentMenu = menu
-
+    
     if(menu === 'main') {
         document.title = 'Goober Shooter 2 - Main Menu'
         e.gameActive = false
         doge('menuTitle1').innerText = 'Goober'
         doge('menuTitle2').innerText = 'Shooter'
+
+        changeTrack('menu')
         
         if(DeBread.randomNum(1,500) === 1) {
             doge('menuTitle1').innerText = 'Googer'
@@ -355,6 +362,7 @@ function openMenu(menu) {
                     tumbleweed.remove()
                 }
             }, 20)
+
         } else {
             for(let i = 0; i < 4; i++) {createMenuCharacter()}
         }
@@ -406,7 +414,9 @@ function openMenu(menu) {
     }
 
     if(menu === 'game') {
-        topper() 
+        topper()
+
+        changeTrack('gameClean')
     }
 
     if(menu === 'achievements') {
@@ -716,118 +726,6 @@ function renderAchievementList() {
     doge('innerAchBar').style.width = percent*100+'%'
 }
 
-function renderCollectionPage(page) {
-    doge('collectionList').innerHTML = ''
-    if(page === 'items') {
-        let itemProgress = [0,0]
-        for(const rarity in upgrades) {
-            for(const key in upgrades[rarity]) {
-                const item = document.createElement('div')
-                addStyles(item, {
-                    border: '2px solid grey',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    width: '50px',
-                    height: '50px'
-                })
-
-                let textureExtension = 'png'
-                if(upgrades[rarity][key].animatedTexture) textureExtension = 'gif'
-
-                item.innerHTML = `<img src="graphics/upgrades/${key}.${textureExtension}" style="width: 32px;">`
-
-                if(rarity === '4') {
-                    item.style.animation += 'mythicBorder 5s linear infinite forwards'
-                    item.querySelector('img').style.animation = 'mythicGlow 5s linear infinite forwards'
-                } else {
-                    item.querySelector('img').style.filter = `drop-shadow(0px 0px 5px ${rarities[rarity].color})`
-                    item.style.boxShadow = `inset 0px 0px 0px 3px ${rarities[rarity].color}`
-                }
-
-                if(rarity !== '5') { //Exclude sandbox upgrades
-                    doge('collectionList').append(item)
-                }
-                
-                const data = upgrades[rarity][key]
-                let isUnlocked = true
-                if(data.unlockable && !saveData.items.includes(key)) {
-                    isUnlocked = false
-                }
-
-                let isCollected = saveData.stats.itemsCollected.includes(key)
-
-                if(isCollected || saveData.settings.devMode) {
-                    item.onmouseenter = () => {
-    
-                        doge('collectionImg').src = `graphics/upgrades/${key}.${textureExtension}`
-    
-                        if(typeof data.name === 'function') {
-                            doge('collectionItemName').innerText = data.name()
-                        } else {
-                            doge('collectionItemName').innerText = data.name
-                        }
-    
-                        if(typeof data.desc === 'function') {
-                            doge('collectionItemDesc').innerHTML = data.desc()
-                        } else {
-                            doge('collectionItemDesc').innerHTML = data.desc
-                        }
-    
-                        const tags = [
-                            {text: rarities[rarity].name, col: rarities[rarity].color},
-                            {text: 'ITEM',col: 'rgb(50,50,50)'}
-                        ]
-    
-                        doge('collectionItemTags').innerHTML = ''
-                        for(const tag of tags) {
-                            const div = document.createElement('div')
-                            div.classList.add('tooltipTag')
-                            div.innerHTML = tag.text
-                            div.style.background = tag.col
-    
-                            doge('collectionItemTags').append(div)
-                        }
-                    }
-
-                    itemProgress[0]++
-                } else {
-                    if(!isUnlocked) {
-                        item.querySelector('img').src = 'graphics/icons/lock.png'
-    
-                        item.onmouseenter = () => {
-                            doge('collectionImg').src = 'graphics/icons/lock.png'
-        
-                            doge('collectionItemName').innerText = 'Locked'
-                            doge('collectionItemDesc').innerHTML = 'Play more to unlock this item!'
-                            doge('collectionItemTags').innerHTML = ''
-                        }
-                        item.querySelector('img').style.filter = 'brightness(50%)'
-                    } else if(!isCollected) {
-                        item.querySelector('img').src = 'graphics/icons/unknown.png'
-    
-                        item.onmouseenter = () => {
-                            doge('collectionImg').src = 'graphics/icons/unknown.png'
-        
-                            doge('collectionItemName').innerText = 'Not collected'
-                            doge('collectionItemDesc').innerHTML = 'Buy this item from the shop to add it to the collection page!'
-                            doge('collectionItemTags').innerHTML = ''
-                        }
-                        item.querySelector('img').style.filter = 'brightness(50%)'
-                    }
-                }
-
-                itemProgress[1]++
-            }
-        }
-
-        doge('collectionProgressBarText').innerText = `${itemProgress[0]}/${itemProgress[1]} (${DeBread.round(itemProgress[0]/itemProgress[1]*100,1)}%)`
-        doge('innerCollectionProgressBar').style.width = itemProgress[0]/itemProgress[1]*100 + '%'
-    }
-
-    doge('collectionProgressTitle').innerText = page.toUpperCase()
-}
-
 const gamemodeNames = [
     'Survival',
     'Sprint',
@@ -1085,8 +983,277 @@ const creditsHTML = `
     <span>Playtesters: Nova, TrueSkywalkr, Dottr, <a href="https://plinkel.neocities.org/" target="_blank">Plinkel</a></span><br>
     <span>Save filler: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
     <br>
-    <span>Supporters 💖: xX_DeBread_H8ER_Xx</span>
+    <span>Supporters 💖: xX_DeBread_H8ER_Xx</span><br>
+    <button onclick="openPrompt('Character Credits', getCharacterCreditsHTML(), [{text: 'Back', onclick: () => {openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,350])}}], [400,500])">Characters</button>
 `
+
+const creditProfiles = {
+    debread: {
+        name: 'DeBread',
+        socials: {
+            Website: 'https://debread.space/',
+            Twitter: 'https://twitter.com/notdebread',
+            YEEN_TOWN: 'https://yeen.town/@debread',
+            Discord_Server: 'https://discord.gg/ecCBTRD2hN',
+        }
+    },
+    plinkel: {
+        name: 'Plinkel',
+        socials: {
+            Website: 'https://plinkel.neocities.org/',
+            YEEN_TOWN: 'https://yeen.town/@plinkel',
+        }
+    },
+    nyan: {
+        name: 'Nyan',
+        socials: {
+            Twitter: 'https://twitter.com/JakobNyan'
+        }
+    },
+    jaden: {
+        name: 'Jaden',
+        socials: {}
+    },
+    peep: {
+        name: 'Peep',
+        socials: {
+            Twitter: 'https://twitter.com/LePeeperSauvage'
+        }
+    },
+    slip: {
+        name: 'Slip',
+        socials: {}
+    },
+    redjive: {
+        name: 'Redjive2',
+        socials: {
+            YouTube_Channel: 'https://www.youtube.com/@redjive2'
+        }
+    },
+    garn: {
+        name: 'Garn47',
+        socials: {
+            Twitter: 'https://twitter.com/Garn47',
+            Game: 'https://floombo.itch.io/garn47'
+        }
+    },
+    erix: {
+        name: 'erix',
+        socials: {
+            Twitter: 'https://twitter.com/erixmeows',
+            Carrd: 'https://erixmeows.carrd.co/'
+        }
+    },
+    walf: {
+        name: 'GrayWalf',
+        socials: {
+            Twitter: 'https://twitter.com/gray_walf',
+            YouTube_Channel: 'https://www.youtube.com/channel/UCnXp9XjA0CDeyCOiNhFjTEg',
+            Twitch: 'https://www.twitch.tv/graywalf'
+        }
+    },
+    chalk: {
+        name: 'Chalk',
+        socials: {
+            YEEN_TOWN: 'https://yeen.town/@Chalkllate'
+        }
+    },
+    remagworc: {
+        name: 'Remagworc',
+        socials: {
+            YouTube_Channel: 'https://www.youtube.com/channel/UCoO3xGSGzkEZILV0kwjY2UQ'
+        }
+    },
+    krazy: {
+        name: 'Krazy',
+        socials: {
+            Bluesky: 'https://bsky.app/profile/did:plc:eyiwixsbgexry6sybk6axcph'
+        }
+    },
+    bean: {
+        name: 'Bean',
+        socials: {
+            Twitter: 'https://twitter.com/bean_casual02',
+            Bluesky: 'https://bsky.app/profile/did:plc:r726g5ortmkfxnzzolgyhigt'
+        },
+    },
+    fancyman: {
+        name: 'Fancyman',
+        socials: {
+            twitter: 'https://twitter.com/PhoenixFire135'
+        }
+    },
+    allx: {
+        name: 'Allx',
+        socials: {
+            Bluesky: 'https://bsky.app/profile/did:plc:t7dcy24ueduvzy4zjqcpu4ax'
+        }
+    },
+    dottr: {
+        name: 'dottr',
+        socials: {
+            Twitter: 'https://twitter.com/Dottr__',
+            Twitch: 'https://www.twitch.tv/dottr_',
+            Bluesky: 'https://bsky.app/profile/did:plc:mjtjll6lpnvpvwner5ehcbv7',
+            YEEN_TOWN: 'https://yeen.town/@dottr' 
+        }
+    },
+    skunk: {
+        name: 'UnlivingSkunk',
+        socials: {
+            YouTube_Channel: 'https://www.youtube.com/channel/UCdaQIpqsr5aMWKPXV2NvrFg',
+            Twitter: 'https://x.com/UnlivingSkunk',
+            Steam: 'https://steamcommunity.com/profiles/76561198324517387',
+            Twitch: 'https://www.twitch.tv/unlivingskunk',
+            TikTok: 'https://www.tiktok.com/@unlivingskunk',
+            Reddit: 'https://www.reddit.com/u/UnlivingSkunk',
+            GitHub: 'https://github.com/UnlivingSkunk',
+            Spotify: 'https://open.spotify.com/user/31rjvljm22fq3mw37xqlgzfhgdgm',
+            Ebay: 'https://www.ebay.com/usr/unlivingskunk',
+        }
+    },
+    udev: {
+        name: 'udev',
+        socials: {}
+    },
+    robin: {
+        name: 'Robin',
+        socials: {}
+    },
+    wasp: {
+        name: 'Wasp',
+        socials: {}
+    },
+    wolff: {
+        name: 'Wolff',
+        socials: {}
+    },
+    chip: {
+        name: 'Chip',
+        socials: {
+            Twitter: 'https://twitter.com/Sirchipsicle'
+        }
+    },
+    skywalkr: {
+        name: 'Skywalkr',
+        socials: {}
+    },
+    fae: {
+        name: 'Fae',
+        socials: {}
+    },
+    kadence: {
+        name: 'Kadence',
+        socials: {
+            itchDOTio: 'https://hkaden.itch.io/'
+        }
+    },
+    corvid: {
+        name: 'Corvid',
+        socials: {}
+    }
+}
+
+const characterCredits = {
+    debread: 'debread',
+    fella: 'debread',
+    plonk: 'plinkel',
+    ashton: 'plinkel',
+    tammy: 'plinkel',
+    lorna: 'plinkel',
+    tana: 'plinkel',
+    nyan: 'nyan',
+    jaden: 'jaden',
+    peep: 'peep',
+    slip: 'slip',
+    sasha: 'redjive',
+    car: 'garn',
+    erix: 'erix',
+    walf: 'walf',
+    jake: 'chalk',
+    crow: 'remagworc',
+    krazy: 'krazy',
+    bean: 'bean',
+    phoenix: 'fancyman',
+    allx: 'allx',
+    dottr: 'dottr',
+    skunk: 'skunk',
+    udev: 'udev',
+    snorp: 'robin',
+    wasp: 'wasp',
+    wolff: 'wolff',
+    chip: 'chip',
+    skywalkr: 'skywalkr',
+    meringue: 'fae',
+    glorp: 'kadence',
+    tico: 'corvid'
+}
+
+function getCharacterCreditsHTML() {
+    const outerBody = document.createElement('div')
+    const body = document.createElement('div')
+    addStyles(body, {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '5px',
+        overflowY: 'scroll',
+        height: '425px'
+    })
+    for(const key in characterCredits) {
+        const section = document.createElement('div')
+        section.classList.add('creditsCharacter')
+        section.innerHTML = `
+            <div style="display: flex; gap: 5px;">
+                <img src="graphics/characters/${key}Portrait.png">
+                <div style="line-height: 1;">
+                    <span style="font-weight: 700;">${characters[key].name}</span><br>
+                    <span style="font-size: 0.9em;"> By ${creditProfiles[characterCredits[key]].name}</span>
+                </div>
+            </div>
+            <button onclick="openCharacterCredit('${characterCredits[key]}')">Socials</button>
+        `
+
+        if(Object.keys(creditProfiles[characterCredits[key]].socials).length === 0) {
+            section.querySelector('button').remove()
+        }
+
+        body.append(section)
+    }
+
+    outerBody.append(body)
+    return outerBody.innerHTML
+}
+
+function openCharacterCredit(author) {
+    console.log(author)
+
+    const outerBody = document.createElement('div')
+    const body = document.createElement('div')
+
+    for(const key in creditProfiles[author].socials) {
+        const social = creditProfiles[author].socials[key]
+
+        const div = document.createElement('div')
+        addStyles(div, {
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: '5px',
+            alignItems: 'center',
+            whiteSpace: 'nowrap'
+        })
+        div.innerHTML = `
+            <span>${key.replaceAll('_',' ').replace('DOT','.')}</span>
+            <div class="coolLine"></div>
+            <button onclick="window.open('${social}')">Open</button>
+        `
+
+        body.append(div)
+    }
+
+
+    outerBody.append(body)
+    openPrompt(creditProfiles[author].name+'\'s Socials',outerBody.innerHTML,[{text: 'Back', onclick: () => {openPrompt('Character Credits', getCharacterCreditsHTML(), [{text: 'Back', onclick: () => {openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,350])}}], [400,500])}}])
+}
 
 const settingsHTML = `
     <div id="settings">
@@ -1117,6 +1284,13 @@ const settingsHTML = `
                 <div class="settingsCheckboxInfo">
                     <span>Show area overflow</span>
                     <span>Displays area objects located outside of the game bounds.</span>
+                </div>
+            </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-hidePopupTexts"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Hide popup texts</span>
+                    <span>Hides damage numbers.</span>
                 </div>
             </div>
             <div class="settingsCheckboxContainer">
@@ -1173,6 +1347,37 @@ const settingsHTML = `
             </div>
         </div>
         <div class="settingsSection" id="settingsSection-sound">
+            <span>Music tracks (Requires restart):</span>
+            <select id="sdd-musicTracks">
+                <option>
+                    <span>Goober Shooter 2</span>
+                </option>
+                <option>
+                    <span>TBOI Mausoleum</span>
+                </option>
+                <option>
+                    <span>TBOI Chest</span>
+                </option>
+                <option>
+                    <span>ULTRAKILL TWLR</span>
+                </option>
+            </select>
+            <div class="settingsRangeContainer" id="musicVolumeRangeContainer">
+                <div>
+                    <span style="font-weight: 700;">Music volume: </span>
+                    <span id="sr-musicVolume-label">???</span>
+                </div>
+                <div class="coolLine"></div>
+                <input type="range" min="0" step="0.01" max="1" id="sr-musicVolume">
+            </div>
+            <div class="settingsRangeContainer" id="sfxVolumeRangeContainer">
+                <div>
+                    <span style="font-weight: 700;">SFX volume: </span>
+                    <span id="sr-sfxVolume-label">???</span>
+                </div>
+                <div class="coolLine"></div>
+                <input type="range" min="0" step="0.01" max="1" id="sr-sfxVolume">
+            </div>
         </div>
         <div class="settingsSection" id="settingsSection-fun">
             <span>Enemy voice lines:</span>
@@ -1182,6 +1387,9 @@ const settingsHTML = `
                 </option>
                 <option>
                     <span>Dottr</span>
+                </option>
+                <option>
+                    <span>Plinkel</span>
                 </option>
             </select>
         </div>
@@ -1228,8 +1436,8 @@ function openSettings() {
 
         dropdown.onchange = () => {
             saveData.settings[setting] = dropdown.value
+            save()
         }
-        save()
     })
     
     doge('prompt').querySelectorAll('.settingsRangeContainer input').forEach(range => {
@@ -1240,8 +1448,16 @@ function openSettings() {
         range.onmousemove = update
 
         function update() {
+            const beforeValue = saveData.settings[setting]
             doge(`sr-${setting}-label`).innerText = range.value
             saveData.settings[setting] = range.value
+            
+            if(beforeValue !== saveData.settings[setting]) {
+                DeBread.playSound('audio/sliderTick.mp3')
+                save()
+            }
+
+            updateSettings()
         }
     })
 }
@@ -1307,5 +1523,224 @@ function updateSettings() {
             doge('particlesRangeContainer').style.display = 'none'
         }
     }
+
+    if(currentTrack) {
+        tracks[currentTrack].volume = saveData.settings.musicVolume
+    }
+
     renderStats()
 } updateSettings()
+
+const collectionHTML = `
+    <div style="display: flex; gap: 5px;">
+        <button onclick="renderCollectionItems(upgrades, saveData.stats.collection.items, 'upgrades')">Items</button>
+        <button onclick="renderCollectionItems(powerItems, saveData.stats.collection.powerItems, 'powerItems')">Power Items</button>
+        <button onclick="renderCollectionItems(elixirs, saveData.stats.collection.elixirs, 'elixirs')">Elixirs</button>
+    </div>
+    <div id="collectionList">
+
+    </div>
+    <button style="position: absolute; left: 5px; bottom: 5px; z-index: 5;" onclick="closePrompt()">Close</button>
+    <div id="collectionFooterContainer">
+        <span id="collectionProgressTitle">PROGRESS</span>
+        <div id="collectionProgressBar">
+            <span id="collectionProgressBarText">-/0 (0%)</span>
+            <div id="innerCollectionProgressBar"></div>
+        </div>
+    </div>
+`
+
+function openCollection() {
+    openPrompt('Collection', collectionHTML, [], [500,300])
+    renderCollectionItems(upgrades, saveData.stats.collection.items, 'upgrades')
+}
+
+function renderCollectionItems(targetList, collectedList, texturePath) {
+    doge('collectionList').innerHTML = ''
+    let itemsUnlocked = 0
+    let totalItems = 0
+
+    for(const rarity in targetList) {
+        for(const key in targetList[rarity]) {
+            const item = targetList[rarity][key]
+            const div = document.createElement('div')
+            addStyles(div, {
+                border: '2px solid grey',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                width: '50px',
+                height: '50px'
+            })
+
+            let textureExtension = 'png'
+            if(item.animatedTexture) textureExtension = 'gif'
+            div.innerHTML = `<img src="graphics/${texturePath}/${key}.${textureExtension}" style="width: 32px;">`
+
+            if(rarity === '4') {
+                div.style.animation += 'mythicBorder 5s linear infinite forwards'
+                div.querySelector('img').style.animation = 'mythicGlow 5s linear infinite forwards'
+            } else {
+                div.style.boxShadow = `inset 0px 0px 0px 3px ${rarities[rarity].color}`
+                div.querySelector('img').style.filter = `drop-shadow(0px 0px 5px ${rarities[rarity].color})`
+            }
+
+            let isBought = false
+            let timesBought = 0
+
+            for(const constipationProclamation in collectedList) {
+                const collectionItem = collectedList[constipationProclamation]
+                timesBought = collectionItem.count
+
+                if(collectionItem.name === item.name) {
+                    isBought = true
+                    itemsUnlocked++
+                    break
+                }
+            }
+
+            if(rarity !== '5') {
+                doge('collectionList').append(div)
+                totalItems++
+            }
+
+            if(isBought || saveData.settings.devMode) {
+                div.onmouseenter = () => {
+                    const itemRect = div.getBoundingClientRect()
+                    let itemName = item.name
+                    if(typeof item.name === 'function') {
+                        itemName = item.name()
+                    }
+    
+                    let itemDesc = item.desc
+                    if(typeof item.desc === 'function') {
+                        itemDesc = item.desc()
+                    }
+    
+                    tooltip(
+                        [itemRect.left + div.offsetWidth / 2, itemRect.bottom],
+                        itemName,
+                        [],
+                        itemDesc + `<br><br>Bought ${timesBought} times`
+                    )
+                }
+    
+                div.onmouseleave = () => {
+                    doge('tooltip').style.opacity = '0'
+                }
+            } else {
+                div.querySelector('img').src = 'graphics/icons/unknown.png'
+                div.querySelector('img').style.filter = 'brightness(50%)'
+            }
+        }
+    }
+
+    doge('collectionProgressBarText').innerText = `${itemsUnlocked}/${totalItems} (${DeBread.round(itemsUnlocked/totalItems*100,1)}%)`
+    doge('innerCollectionProgressBar').style.width = itemsUnlocked/totalItems*100 + '%'
+}
+
+// function renderCollectionPage(page) {
+//     doge('collectionList').innerHTML = ''
+//     if(page === 'items') {
+//         let itemProgress = [0,0]
+//         for(const rarity in upgrades) {
+//             for(const key in upgrades[rarity]) {
+//                 const item = document.createElement('div')
+//                 addStyles(item, {
+//                     border: '2px solid grey',
+//                     display: 'flex',
+//                     justifyContent: 'center',
+//                     alignItems: 'center',
+//                     width: '50px',
+//                     height: '50px'
+//                 })
+
+//                 let textureExtension = 'png'
+//                 if(upgrades[rarity][key].animatedTexture) textureExtension = 'gif'
+
+//                 item.innerHTML = `<img src="graphics/upgrades/${key}.${textureExtension}" style="width: 32px;">`
+
+//                 if(rarity === '4') {
+//                     item.style.animation += 'mythicBorder 5s linear infinite forwards'
+//                     item.querySelector('img').style.animation = 'mythicGlow 5s linear infinite forwards'
+//                 } else {
+//                     item.querySelector('img').style.filter = `drop-shadow(0px 0px 5px ${rarities[rarity].color})`
+//                     item.style.boxShadow = `inset 0px 0px 0px 3px ${rarities[rarity].color}`
+//                 }
+
+//                 if(rarity !== '5') { //Exclude sandbox upgrades
+//                     doge('collectionList').append(item)
+//                 }
+                
+//                 const data = upgrades[rarity][key]
+//                 let isUnlocked = true
+//                 if(data.unlockable && !saveData.items.includes(key)) {
+//                     isUnlocked = false
+//                 }
+
+//                 let isCollected = false
+
+//                 if(isCollected || saveData.settings.devMode) {
+//                     itemProgress[0]++
+//                 } else {
+//                     if(!isUnlocked) {
+//                         item.querySelector('img').src = 'graphics/icons/lock.png'
+//                         item.querySelector('img').style.filter = 'brightness(50%)'
+//                     } else if(!isCollected) {
+//                         item.querySelector('img').src = 'graphics/icons/unknown.png'
+//                         item.querySelector('img').style.filter = 'brightness(50%)'
+//                     }
+//                 }
+
+//                 item.onmouseenter = () => {
+//                     let itemName = data.name
+//                     if(typeof data.name === 'function') {
+//                         itemName = data.name()
+//                     }
+    
+//                     let itemDesc = data.desc
+//                     if(typeof data.desc === 'function') {
+//                         itemDesc = data.desc()
+//                     }
+
+//                     const itemRect = item.getBoundingClientRect()
+//                     if(isCollected) {
+//                         tooltip(
+//                             [itemRect.left + item.offsetWidth / 2, itemRect.bottom],
+//                             itemName,
+//                             [],
+//                             itemDesc
+//                         )
+//                     } else {
+//                         if(isUnlocked) {
+//                             tooltip(
+//                                 [itemRect.left + item.offsetWidth / 2, itemRect.bottom],
+//                                 'Not collected',
+//                                 [],
+//                                 'But this item from the shop to add it to the collection!'
+//                             )
+//                         } else {
+//                             tooltip(
+//                                 [itemRect.left + item.offsetWidth / 2, itemRect.bottom],
+//                                 'Locked',
+//                                 [],
+//                                 'Play more to unlock this item!'
+//                             )
+//                         }
+//                     }
+//                 }
+
+//                 item.onmouseleave = () => {
+//                     doge('tooltip').style.opacity = '0'
+//                 }
+
+//                 itemProgress[1]++
+//             }
+//         }
+
+//         doge('collectionProgressBarText').innerText = `${itemProgress[0]}/${itemProgress[1]} (${DeBread.round(itemProgress[0]/itemProgress[1]*100,1)}%)`
+//         doge('innerCollectionProgressBar').style.width = itemProgress[0]/itemProgress[1]*100 + '%'
+//     }
+
+//     doge('collectionProgressTitle').innerText = page.toUpperCase()
+// }

@@ -92,7 +92,7 @@ const DeBread = {
     * @param volume The volume to play the sound at.
     * @param speed The speed to play the sound at.
     */
-    playSound(sound, volume = 1, speed = 1, preservePitch = false) {
+    playSound(sound, speed = 1, preservePitch = false) {
         // function updateCounter() {
         //     doge('dbAUD').innerText = `${audios}AUD`
         //     doge('dbAUD').style.color = `hsl(0deg, 100%, ${100 - (audios / audioLimit * 50)}%)`
@@ -104,7 +104,7 @@ const DeBread = {
             }
     
             const audio = soundPool[sound]
-            audio.volume = volume
+            audio.volume = saveData.settings.sfxVolume
             audio.playbackRate = speed
             audio.preservesPitch = preservePitch
     
@@ -121,7 +121,7 @@ const DeBread = {
                 }, audio.duration * 1000);
             } else {
                 const audioClone = audio.cloneNode();
-                audioClone.volume = volume
+                audioClone.volume = saveData.settings.sfxVolume
                 audioClone.playbackRate = speed
                 audioClone.preservesPitch = preservePitch
                 audioClone.play().catch((error) => {

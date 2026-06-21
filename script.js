@@ -22,6 +22,7 @@ const defaultSaveData = {
         weaponEasing: true,
         enemyEasing: true,
         particles: true,
+        hidePopupTexts: false,
         presentationMode: false,
         showGameQuitWarning: true,
         showPowerItemWarning: true,
@@ -32,6 +33,9 @@ const defaultSaveData = {
         autoReload: false,
         particleLimit: 5000,
 
+        musicTracks: 'Goober Shooter 2',
+        musicVolume: 0,
+        sfxVolume: 0.1,
         enemyVoiceLines: 'none'
     },
 
@@ -89,7 +93,16 @@ const defaultSaveData = {
             Enemies_Killed: 0,
             Times_Died: 0,
         },
-        itemsCollected: [],
+        collection: {
+            items: [],
+            powerItems: [],
+            elixirs: []
+        },
+        unlocked: {
+            items: [],
+            powerItems: [],
+            elixirs: []
+        }
     },
     achievements: [],
     items: []
@@ -193,6 +206,10 @@ function createPopupText(text, pos) {
 
     if(doge('area').querySelectorAll('.popup').length > 50) {
         doge('area').querySelectorAll('.popup')[0].remove()
+    }
+
+    if(saveData.settings.hidePopupTexts) {
+        popup.style.display = 'none'
     }
 
     return popup
@@ -594,7 +611,7 @@ const weaponPresets = {
             modifyStat(['ammo','current'], '=50')
             
             modifyStat(['ammo','reloadSpeed'], '=100')
-            modifyStat(['bullet','damage'], '=2.5')
+            modifyStat(['bullet','damage'], '=5')
             modifyStat(['ammo','autoFire'], '=true')
             modifyStat(['ammo','stationaryFire'], '=true')
         }
@@ -851,6 +868,29 @@ const weaponPresets = {
         apply: () => {
             modifyStat(['ammo','burst'],'=Infinity')
         }
+    },
+    tears: {
+        name: 'Tears',
+        desc: '',
+        ammoChar: '💧',
+        textureSize: [0,0],
+        bulletTexture: true,
+
+        pros: [
+            'Infinite ammo',
+            'Projectile size',
+            'Autofire'
+        ],
+        cons: [
+            'Shot cooldown',
+        ],
+
+        apply: () => {
+            modifyStat(['ammo','max'],'=Infinity')
+            modifyStat(['bullet','size'],'=20')
+            modifyStat(['ammo','autoFire'],'=true')
+            modifyStat(['bullet','shotCooldown'],'=20')
+        }
     }
 }
 
@@ -1058,6 +1098,26 @@ const characters = {
 
         weapon: weaponPresets.gun //odst pistol
     },
+    // poppy: {
+    //     name: 'Poppy',
+    //     desc: 'Infinite energy',
+    //     taunts: 1,
+    //     tag: 'Pomeranian',
+    //     tagCol: '#616161',
+    //     color: [97,97,97],
+
+    //     pros: ['Speed'],
+
+    //     tagList: [
+    //         {text: 'GS2',col: '#775db9'}
+    //     ],
+
+    //     weapon: weaponPresets.gun,
+        
+    //     applyStats: () => {
+    //         modifyStat(['player','speed'],'+=1')
+    //     }     
+    // },
     sasha: {
         name: 'Sasha',
         desc: 'the chomnpner',
@@ -1078,6 +1138,7 @@ const characters = {
         
         applyStats: () => {
             player.powerItem = powerItems[1].tennis_ball
+            modifyStat(['player','speed'],'+=1')
         }
     },
     // olive: {
@@ -1148,6 +1209,25 @@ const characters = {
 
         weapon: weaponPresets.gun,
     },
+    isaac: {
+        name: 'Isaac',
+        desc: '',
+        tag: 'The Binding of Isaac',
+        tagCol: '#a9c3ce',
+        color: [129, 113, 106],
+
+        tagList: [
+            {text: 'GS2',col: '#775db9'},
+        ],
+
+        info: `Starts with \'The D6\' Power Item.<br>${powerItems[3].the_d6.desc}`,
+
+        weapon: weaponPresets.tears,
+
+        applyStats: () => {
+            player.powerItem = powerItems[3].the_d6
+        },
+    },
     erix: {
         name: 'erix',
         desc: 'use this one if you wanna be really swag',
@@ -1175,6 +1255,10 @@ const characters = {
 
         pros: ['POWER regen'],
 
+        cons: [
+            'Power items cannot appear in the shop'
+        ],
+
         info: `
             Cannot fire thier own projectiles.<br>
             <br>
@@ -1184,6 +1268,7 @@ const characters = {
         weapon: weaponPresets.none,
 
         applyStats: () => {
+            player.shopWeights[1] = 0
             modifyStat(['player','powerRegen'],'=0.1')
             player.powerItem = powerItems[5].walfling
         },
@@ -2046,7 +2131,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('red_mushroom')
+            saveData.stats.unlocked.items.push('red_mushroom')
         }
     },
     Stylish: {
@@ -2062,7 +2147,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('feedbacker')
+            saveData.stats.unlocked.items.push('feedbacker')
         }
     },
     Intentional_Game_Design: {
@@ -2078,7 +2163,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('knuckleblaster')
+            saveData.stats.unlocked.items.push('knuckleblaster')
         }
     },
     Greed: {
@@ -2094,7 +2179,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('golden_ammo')
+            saveData.stats.unlocked.items.push('golden_ammo')
         }
     },
     Knuckle_Sandwich: {
@@ -2110,8 +2195,13 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('boxing_gloves')
+            saveData.stats.unlocked.items.push('boxing_gloves')
         }
+    },
+    Item_Abuse: {
+        name: 'Item Abuse',
+        desc: 'Reroll a mythic item using The D6.',
+        difficulty: 0,
     },
     Knowledgeable: {
         name: 'Knowledgeable',
@@ -2151,7 +2241,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('the_tophat')
+            saveData.stats.unlocked.items.push('the_tophat')
         }
     },
     fella_Perfection: {
@@ -2167,7 +2257,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('raccoon_tail')
+            saveData.stats.unlocked.items.push('raccoon_tail')
         }
     },
     plonk_Perfection: {
@@ -2183,7 +2273,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('used_needle')
+            saveData.stats.unlocked.items.push('used_needle')
         }
     },
     ashton_Perfection: {
@@ -2229,7 +2319,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('beret')
+            saveData.stats.unlocked.items.push('beret')
         }
     },
     slip_Perfection: {
@@ -2252,6 +2342,22 @@ const achievements = {
         desc: 'Reach wave 100 using car.',
         difficulty: 0,
     },
+    isaac_Perfection: {
+        name: 'Isaac Perfection',
+        desc: 'Reach wave 100 using Isaac.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Power Item',
+            name: 'The D6',
+            src: 'graphics/powerItems/the_d6.png',
+            data: powerItems[3].the_d6
+        },
+
+        run: () => {
+            saveData.stats.unlocked.powerItems.push('the_d6')
+        }
+    },
     erix_Perfection: {
         name: 'erix Perfection',
         desc: 'Reach wave 100 using erix.',
@@ -2270,7 +2376,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('wisp')
+            saveData.stats.unlocked.powerItems.push('wisp')
         }
     },
     jake_Perfection: {
@@ -2291,7 +2397,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('black_feather')
+            saveData.stats.unlocked.items.push('black_feather')
         }
     },
     krazy_Perfection: {
@@ -2322,7 +2428,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('tesla_coil')
+            saveData.stats.unlocked.powerItems.push('tesla_coil')
         }
     },
     dottr_Perfection: {
@@ -2338,7 +2444,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('soap')
+            saveData.stats.unlocked.items.push('soap')
         }
     },
     skunk_Perfection: {
@@ -2354,7 +2460,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.items.push('pepto_bismol.')
+            saveData.stats.unlocked.items.push('pepto_bismol')
         }
     },
     udev_Perfection: {
@@ -2367,6 +2473,10 @@ const achievements = {
             name: 'Old Laptop',
             src: 'graphics/upgrades/old_laptop.png',
             data: upgrades[4].old_laptop
+        },
+
+        run: () => {
+            saveData.stats.unlocked.items.push('old_laptop')
         }
     },
     snorp_Perfection: {
@@ -2519,18 +2629,24 @@ function createAchNoti(ach, key) {
 //Music stuff
 
 const tracks = {
-    menu: new Audio('audio/music/menu.mp3'),
-    // game: new Audio('audio/music/game.ogg'),
-    // gameCombat: new Audio('audio/music/gameCombat.ogg')
-}
+    menu: new Audio(`audio/music/${saveData.settings.musicTracks.replaceAll(' ','_')}/menu.mp3`),
+    gameClean: new Audio(`audio/music/${saveData.settings.musicTracks.replaceAll(' ','_')}/gameClean.mp3`),
+    gameCombat: new Audio(`audio/music/${saveData.settings.musicTracks.replaceAll(' ','_')}/gameCombat.mp3`),
+    gameBoss: new Audio(`audio/music/${saveData.settings.musicTracks.replaceAll(' ','_')}/gameBoss.mp3`)
+} 
 const totalTracks = Object.keys(tracks).length
 let loadedTracks = 0
+let currentTrack = ''
 
 for(const key in tracks) {
     const track = tracks[key]
+    track.loop = true
+    track.play()
+    track.preservesPitch = false
     track.onloadeddata = () => {
         loadedTracks++
         console.log(`${loadedTracks}/${totalTracks} Tracks loaded!`)
+        track.volume = 0
 
         if(loadedTracks === totalTracks) {
             startScreenTimeouts.push(setTimeout(() => {
@@ -2549,6 +2665,42 @@ for(const key in tracks) {
         }
         throw Error(`Track ${key} failed to load! Proceeding anyways...`)
     }
+}
+
+function changeTrack(trackKey, carryTime) {
+    if(trackKey === currentTrack) return
+
+    if(carryTime) {
+        const oldTrack = tracks[currentTrack]
+        const newTrack = tracks[trackKey]
+
+        newTrack.currentTime = oldTrack.currentTime
+
+        //Crossfade
+        const steps = 20
+        const duration = 500
+        for(let i = 0; i <= steps; i++) {
+            setTimeout(() => {
+                newTrack.volume = (i / steps) * saveData.settings.musicVolume
+                oldTrack.volume = (1 - (i / steps)) * saveData.settings.musicVolume
+
+
+                if(i === steps) {
+                    newTrack.volume = saveData.settings.musicVolume
+                    oldTrack.volume = 0
+                }
+            }, (duration / steps) * i);
+        }
+    } else {
+        tracks[trackKey].currentTime = 0
+
+        if(currentTrack) {
+            tracks[currentTrack].volume = 0
+        }
+        tracks[trackKey].volume = saveData.settings.musicVolume
+
+    }
+    currentTrack = trackKey
 }
 
 function createNotification(title, desc, img, timeout = 5000, onclick) {

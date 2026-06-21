@@ -686,64 +686,18 @@
 
 /* Collection */
 
-#collectionContainer {
-    border: 2px solid white;
-    background-color: rgb(0,0,0,0.5);
-    backdrop-filter: blur(10px);
-    display: flex;
-    width: 800px;
-    height: 500px;
-    display: flex;
-}
-
-#collectionItemContainer {
-    border-right: 2px solid white;
-    padding: 5px;
-    height: calc(100% - 10px);
-}
-
-#collectionImgContainer {
-    display: flex;
-    gap: 5px;
-    padding: 5px;
-    width: 250px;
-}
-
-#collectionImg {
-    height: 32px;
-    width: 32px;
-}
-
-#collectionItemName {
-    font-weight: 700;
-    font-size: 1.25em;
-}
-
-#collectionItemTags {
-    display: flex;
-    gap: 5px;
-    padding: 5px;
-}
-
-#collectionProgressContainer {
-    padding: 5px;
-    border-bottom: 2px solid white;
-    width: calc(100% - 10px);
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-#collectionProgressTitle {
-    font-weight: 700;
-    padding: 5px;
-}
-
 #collectionProgressBar {
     border: 2px solid white;
     height: 25px;
-    width: calc(100% - 4px);
+    width: 200px;
     position: relative;
+    background-color: rgb(0,0,0,0.75);
+    backdrop-filter: blur(10px);
+}
+
+#collectionProgressTitle {
+    font-size: 0.75em;
+    font-weight: 700;
 }
 
 #collectionProgressBarText {
@@ -778,6 +732,27 @@
     justify-content: center;
     padding: 5px;
     gap: 5px;
+    overflow-y: auto;
+    max-height: 229px;
+    margin-top: 5px;
+    margin-bottom: 100px;
+}
+
+#collectionList div:last-child {
+    margin-bottom: 50px;
+}
+
+#collectionFooterContainer {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    bottom: 0;
+    left: 0;
+    width: calc(100% - 10px);
+    padding: 5px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent, black);
 }
 
 /* Settings */
@@ -831,4 +806,16 @@
 
 .settingsRangeContainer input:hover::-moz-range-thumb {
     height: 25px;
+}
+
+.creditsCharacter {
+    display: flex;
+    justify-content: space-between;
+    border: 2px solid grey;
+    padding: 5px;
+}
+
+.creditsCharacter img {
+    width: 36px;
+    height: 36px;
 }

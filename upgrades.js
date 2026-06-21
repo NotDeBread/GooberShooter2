@@ -85,6 +85,10 @@ const upgrades = [
 
             apply: () => {
                 modifyStat(['ammo','reloadSpeed'], '*=0.9')
+            },
+
+            requirement: () => {
+                return player.stats.ammo.max < Infinity
             }
         },
         bandage: {
@@ -247,6 +251,10 @@ const upgrades = [
             apply: () => {
                 modifyStat(['ammo','max'], '+=3')
                 modifyStat(['ammo','reloadSpeed'], '*=1.1')
+            },
+
+            requirement: () => {
+                return player.stats.ammo.max < Infinity
             }
         },
         medkit: {
@@ -577,6 +585,10 @@ const upgrades = [
                 modifyStat(['ammo','max'], '+=10')
                 modifyStat(['ammo','reloadSpeed'], '*=1.5')
                 modifyStat(['bullet','shotCooldown'], '*=1.25')
+            },
+
+            requirement: () => {
+                return player.stats.ammo.max < Infinity
             }
         },
         drill_ammo: {
@@ -816,6 +828,18 @@ const upgrades = [
                 createNotification('Stats decreased!',`${randomDamageStat[0]} ${randomDamageStat[1]}, ${randomCooldownStat[0]} ${randomCooldownStat[1]}`)
             }
         },
+        hamsa: {
+            name: 'Hamsa',
+            desc: `
+                Grants homing to parried projectiles<br>
+                <cg>+1</cg> Luck
+            `,
+    
+            apply: () => {
+                modifyStat(['player','parryHoming'],'+=1')
+                modifyStat(['shop','luck'],'+=1')
+            }
+        },
     },
     {
         black_hole: {
@@ -834,20 +858,10 @@ const upgrades = [
                 modifyStat(['ammo','reloadSpeed'], '*=1.1')
                 modifyStat(['bullet','speed'], '*=0.5')
                 modifyStat(['bullet','shotCooldown'], '*=1.5')
-            }
-        },
-        cluster_ammo: {
-            name: 'Cluster Ammo',
-            desc: `
-                Bullets split into <cg>+3</cg> when hitting a wall or enemy.<br> <em style="color: grey;">Split bullets deal half damage.</em>
-            `,
-            priceMult: 1.5,
+            },
 
-            apply: () => {
-                modifyStat(['bullet','split'], '+=3')
-                if(player.stats.bullet.splits === 0) {
-                    modifyStat(['bullet','splits'], '+=1')
-                }
+            requirement: () => {
+                return player.stats.ammo.max < Infinity
             }
         },
         electric_ammo: {
@@ -1052,6 +1066,20 @@ const upgrades = [
                 modifyStat(['bullet','shotCooldown'], '*=0.5')
                 player.health = player.stats.player.maxHealth
                 modifyStat(['player','maxHealth'], '+=100')
+            }
+        },
+        cluster_ammo: {
+            name: 'Cluster Ammo',
+            desc: `
+                Bullets split into <cg>+3</cg> when hitting a wall or enemy.<br> <em style="color: grey;">Split bullets deal half damage.</em>
+            `,
+            priceMult: 1.5,
+
+            apply: () => {
+                modifyStat(['bullet','split'], '+=3')
+                if(player.stats.bullet.splits === 0) {
+                    modifyStat(['bullet','splits'], '+=1')
+                }
             }
         },
         the_tophat: {
@@ -1447,6 +1475,23 @@ const powerItems = [
                 player.stats.ammo.current = player.stats.ammo.max
                 DeBread.playSound('audio/reload-long-end.mp3',0.25)
                 updateUI()
+            }
+        },
+        pocket_change: {
+            name: 'Pocket Change',
+            desc: `
+                Uses <cp>5</cp> POWER<br>
+                Spawns one random coin<br>
+                Has a <cg>5%</cg> chance to spawn a battery instead
+                `,
+            charge: 5,
+
+            use: () => {
+                if(DeBread.randomNum(1,20) === 1) {
+                    pickups.battery([...player.centerPos],5)
+                } else {
+                    pickups.coin(getWeightedChance([100,50,20,5,1]),[...player.centerPos],5,1)
+                }
             }
         },
     },
@@ -1891,19 +1936,25 @@ const powerItems = [
             desc: `
                 Uses <cp>75</cp> POWER<br>
                 50% chance to turn all enemies into Lvl 1 Guy<br>
-                50% chance to double all enemies
+                50% chance to double all enemies<br>
+                <br>
+                <em style="color: grey;">Does not work on bosses</em>
             `,
             charge: 75,
 
             use: () => {
                 if(DeBread.randomNum(0,1) === 0) {
                     doge('area').querySelectorAll('.enemy').forEach(enemy => {
-                        spawnEnemy(enemy.data.pos,enemies.guy,1,0)
-                        enemy.data.kill(undefined, true)
+                        if(!enemy.data.data.boss) {
+                            spawnEnemy(enemy.data.pos,enemies.guy,1,0)
+                            enemy.data.kill(undefined, true)
+                        }
                     })
                 } else {
                     doge('area').querySelectorAll('.enemy').forEach(enemy => {
-                        spawnEnemy([enemy.data.pos[0]+1, enemy.data.pos[1]+1],enemy.data.data,enemy.data.level,0)
+                        if(!enemy.data.data.boss) {
+                            spawnEnemy([enemy.data.pos[0]+1, enemy.data.pos[1]+1],enemy.data.data,enemy.data.level,0)
+                        }
                     })
                 }
             }
@@ -2102,11 +2153,12 @@ const powerItems = [
         the_d6: {
             name: 'The D6',
             desc: `
-                Uses <cp>100</cp> POWER<br>
-                Rerolls all items in the shop within their types and rarities. Rerolled items become twice as expensive.
+                Uses <cp>75</cp> POWER<br>
+                Rerolls all items in the shop within their types and rarities.
             `,
-            charge: 100,
+            charge: 75,
             canUseInShop: true,
+            unlockable: true,
             requirement: () => {
                 return player.inPortal
             },
@@ -2123,18 +2175,36 @@ const powerItems = [
                         itemList = elixirs
                     }
                     
-                    const keys = Object.keys(itemList[elem.data.rarity])
-                    const randomKey = keys[DeBread.randomNum(0,keys.length-1)]
-                    const randomItem = itemList[elem.data.rarity][randomKey]
+                    let itemPicked = false
 
-                    items.push({
-                        data: randomItem,
-                        id: randomKey,
-                        rarity: elem.data.rarity,
-                        type: elem.data.type,
-                        cost: DeBread.round(rarities[elem.data.rarity].costBase * (1 + player.wave / 10) * (randomItem.priceMult ?? 1)) * 2
-                    })
+                    while(!itemPicked) {
+                        const keys = Object.keys(itemList[elem.data.rarity])
+                        const randomKey = keys[DeBread.randomNum(0,keys.length-1)]
+                        const randomItem = itemList[elem.data.rarity][randomKey]
+
+                        let meetsRequirement = true
+                        if(randomItem.requirement) {
+                            meetsRequirement = randomItem.requirement()
+                        }
+
+                        if(meetsRequirement) {
+                            items.push({
+                                data: randomItem,
+                                id: randomKey,
+                                rarity: elem.data.rarity,
+                                type: elem.data.type,
+                                cost: DeBread.round(rarities[elem.data.rarity].costBase * (1 + player.wave / 10) * (randomItem.priceMult ?? 1)) * 2
+                            })
+
+                            itemPicked = true
+                        }
+                    }
+
+                    if(elem.data.rarity === 4) {
+                        getAchievement('Item_Abuse')
+                    }
                 })
+
 
                 createShopItems(items)
             }
@@ -2170,6 +2240,7 @@ const powerItems = [
                 -Wisps explode after 500 ticks, dealing up to <cg>100</cg> damage.
             `,
             charge: 75,
+            unlockable: true,
 
             use: () => {
                 const wisp = document.createElement('div')
@@ -2212,6 +2283,7 @@ const powerItems = [
                 Spawns a Tesla Coil on your crosshair, dealing constant electricity damage to random enemies.
             `,
             charge: 75,
+            unlockable: true,
 
             use: () => {
                 const teslaCoil = document.createElement('div')
@@ -2397,7 +2469,7 @@ const powerItems = [
                     bottle.destroy = () => {
                         createParticles([...bottle.pos], 5, 10, [25,50], 250, 'ease-out',{backgroundColor: 'white'})
                         createExplosion([...bottle.pos], 250, 0, 100, true, [[0,0],[0,0],[0,0],0])
-                        DeBread.playSound('audio/pringlesCan.mp3',0.05,DeBread.randomNum(0.95,1.05,5),false)
+                        DeBread.playSound('audio/pringlesCan.mp3',DeBread.randomNum(0.95,1.05,5),false)
                         bottle.remove()
                     }
 
@@ -2444,7 +2516,7 @@ const powerItems = [
                     ['bullet','range','+=5'],
                     ['bullet','critChance','+=5'],
                     ['bullet','critDamageMult','+=0.1'],
-                    ['bullet','drillTicks','+=1'],
+                    ['bullet','drillChance','+=1'],
                     ['bullet','bounces','+=1'],
                     ['melee','damage','+=2'],
                     ['melee','cooldown','*=0.95'],
@@ -2541,7 +2613,7 @@ const powerItems = [
                     ['bullet','range','+=5'],
                     ['bullet','critChance','+=5'],
                     ['bullet','critDamageMult','+=0.1'],
-                    ['bullet','drillTicks','+=1'],
+                    ['bullet','drillChance','+=1'],
                     ['bullet','bounces','+=1'],
                     ['melee','damage','+=2'],
                     ['melee','cooldown','*=0.95'],
@@ -2907,7 +2979,7 @@ function createShopItems(items) {
 
                     let isUnlocked = true
                     if(randomItem.unlockable) {
-                        if(!saveData.items.includes(randomKey)) {
+                        if(!saveData.stats.unlocked[['items','powerItems','elixirs'][itemType]].includes(randomKey)) {
                             isUnlocked = false
                         }
                     }
@@ -3119,13 +3191,38 @@ function createShopItems(items) {
                 updateTutorialGoal()
             }
 
-            if(
-                !saveData.stats.itemsCollected.includes(randomItems[key].id) &&
-                ![2,3].includes(saveData.gameSettings.gamemode) &&
-                saveData.selectedChallenge === 'none'
-            ) {
-                saveData.stats.itemsCollected.push(randomItems[key].id)
+            const typeNames = [
+                'items',
+                'powerItems',
+                'elixirs',
+            ]
+
+            if(![2,3].includes(saveData.gameSettings.gamemode) && saveData.selectedChallenge === 'none') {
+                const collectionList = saveData.stats.collection[typeNames[itemMeta.type]]
+                let collectionHasItem = false
+                for(const key in collectionList) {
+                    if(collectionList[key].name === item.name) {
+                        collectionList[key].count++
+                        collectionHasItem = true
+                        break
+                    }
+                }
+    
+                if(!collectionHasItem) {
+                    collectionList.push({
+                        name: item.name,
+                        count: 1,
+                    })
+                }
             }
+
+            // if(
+            //     !saveData.stats.itemsCollected.includes(randomItems[key].id) &&
+            //     ![2,3].includes(saveData.gameSettings.gamemode) &&
+            //     saveData.selectedChallenge === 'none'
+            // ) {
+            //     saveData.stats.itemsCollected.push(randomItems[key].id)
+            // }
             save()
         }
     }

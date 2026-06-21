@@ -1132,6 +1132,44 @@
     font-family: 'Roboto Mono', monospace;
 }
 
+#gameLargeBossPopupContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100dvw;
+    height: 100dvh;
+    background-color: black;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 0px;
+    opacity: 0;
+    transition: opacity ease-in-out 1s, gap ease-out 2.5s;
+}
+
+.gameLargeBossPopupSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+    font-size: 2em;
+    font-weight: 900;
+    letter-spacing: 0px;
+    opacity: 0;
+    transition: letter-spacing ease-out 2.5s, opacity ease-in-out 2.5s;
+}
+
+#gameLargeBossImgContainer {
+    width: 512px;
+    mask-image: linear-gradient(to bottom, white, transparent);
+}
+
+#gameLargeBossImgContainer img {
+    width: 512px;
+}
+
 #gameBossPopupContainer {
     position: absolute;
     top: 0;
@@ -1571,7 +1609,7 @@
 @keyframes explosion {
     to {
         opacity: 0;
-        /* filter: blur(5px); */
+        filter: blur(5px);
     }
 }
 

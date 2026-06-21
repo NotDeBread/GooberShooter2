@@ -77,13 +77,13 @@
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
             <div style="line-height: 1;">
-                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest15</a></span><br>
+                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest16</a></span><br>
                 <a style="font-size: 0.75em; opacity: 0.5; cursor: pointer;" href="https://forms.gle/JDaQUZ1wR6GhAscZ8" target="_blank">Report a bug</a>
             </div>
         </div>
         <div id="menuButtons">
             <button onclick="tryPlay()" style="height: 50px;">PLAY</button>
-            <button onclick="openMenu('collection')">COLLECTION</button>
+            <button onclick="openCollection()">COLLECTION</button>
             <button onclick="openMenu('achievements')">ACHIEVEMENTS</button>
             <button onclick="openSettings()">SETTINGS</button>
             <button onclick="openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,350])">CREDITS</button>
@@ -135,7 +135,8 @@
                     </div>
                 </div>
                 <div id="gameSettingsMenu-1" style="display: none;">
-                    <span>Select challenge:</span>
+                    <span>Select challenge:</span><br>
+                    <em style="font-size: 0.75em; color: grey;">Achievements and collection additions are disabled with challenges</em>
                     <div id="gameSettingsChallenges">
                         <div class="gameSettingsChallenge">
                             <img src="graphics/challenges/high_stakes.png">
@@ -313,40 +314,6 @@
                             <strong>Intentional Game Design</strong>
                             <span>Parry a player projectile<br><em style="color: grey; font-size: 0.75em;">may be an ULTRAKILL reference...</em></span>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="menu-collection" class="menu">
-        <div>
-            <div class="submenuTitle">COLLECTION</div>
-        </div>
-
-        <div id="collectionContainer">
-            <div id="collectionItemContainer">
-                <div id="collectionImgContainer">
-                    <img id="collectionImg" src="graphics/placeholder.png">
-                    <span id="collectionItemName">Some really long item name</span><br>
-                </div>
-                <div id="collectionItemTags"></div>
-                <div style="padding: 5px;">
-                    <span id="collectionItemDesc">Some super awesome descriptioon</span>
-                </div>
-            </div>
-            <div style="display: flex; flex-direction: column;">
-                <div id="collectionProgressContainer">
-                    <div style="width: 250px;">
-                        <span id="collectionProgressTitle">CONSUMABLES</span>
-                    </div>
-                    <div id="collectionProgressBar">
-                        <span id="collectionProgressBarText">-/0 (0%)</span>
-                        <div id="innerCollectionProgressBar"></div>
-                    </div>
-                </div>
-                <div id="collectionListContainer">
-                    <div id="collectionList">
-
                     </div>
                 </div>
             </div>
@@ -619,6 +586,17 @@
                 <span id="dbTickInterval">Tick Interval: 0/0</span><br>
                 <span id="dbStatus">Status Effects: []</span><br>
                 <span id="dbElems">Elems: []</span><br>
+            </div>
+            <div id="gameLargeBossPopupContainer">
+                <div class="gameLargeBossPopupSection">
+                    <span id="gameLargeBossPopupOpponentName">THE TUTORIALIST</span>
+                    <div id="gameLargeBossImgContainer">
+                        <img src="graphics/enemies/the_tutorialist.png" id="gameLargeBossOpponentImg">
+                    </div>
+                </div>
+                <div class="gameLargeBossPopupSection">
+                    <img src="graphics/characters/fellaPortrait.png" width="72" id="gameLargeBossPlayerImg">
+                </div>
             </div>
             <div id="gameBossPopupContainer">
                 <div id="gameBossPopup">

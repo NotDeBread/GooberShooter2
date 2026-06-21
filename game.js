@@ -135,6 +135,7 @@ function createPlayer() {
                 parryPoisonTicks: 0, //How many times a poison field (from a parried bullet) attempts to damage an enemy before destroying.
                 parryPoisonSize: 0, //How big (in pixels) the parried poison fields are.
                 parryShrapnel: 0,
+                parryHoming: 0,
 
                 contactDamage: 0, //How much damage the player deals to colliding enemies every tick.
 
@@ -279,7 +280,7 @@ function createPlayer() {
         damage: (baseAmount, light, origin, hardDamage = 0) => {
             let idolAlive = false
             for(const enemy of elems.enemies) {
-                if(enemy.data.name === 'Idol' && enemy.active) {
+                if(enemy.data.data.name === 'Idol' && enemy.data.active) {
                     idolAlive = true
                     break
                 }
@@ -315,7 +316,7 @@ function createPlayer() {
                 
                 if(!light) {
                     player.getPower(-(Math.min(amount / 2, 15)))
-                    DeBread.playSound('audio/hit.mp3', 0.25)
+                    DeBread.playSound('audio/hit.mp3')
                     
                     player.combo = Math.round(player.combo / 2)
 
@@ -324,12 +325,13 @@ function createPlayer() {
 
                     player.perfectWave = false
                     player.lastHitDate = e.gameUpdates
+
+                    //Explosive Damage
+                    if(DeBread.randomNum(1,100) < player.stats.player.explosiveHitChance) {
+                        createExplosion([...player.centerPos],player.stats.player.size * 3, player.stats.bullet.damage * player.stats.player.explosiveHitDamage, 50, true)
+                    }
                 }
 
-                //Explosive Damage
-                if(DeBread.randomNum(1,100) < player.stats.player.explosiveHitChance) {
-                    createExplosion([...player.centerPos],player.stats.player.size * 3, player.stats.bullet.damage * player.stats.player.explosiveHitDamage, 50, true)
-                }
             }
 
             doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'   
@@ -482,6 +484,7 @@ function createPlayer() {
                 elems.enemies.forEach(enemy => {
                     if(isColliding(doge('meleeHitbox'), enemy) && enemy.data.active) {
                         enemy.data.damage(player.stats.melee.damage * player.stats.melee.damageMult)
+
                         if(!enemy.data.alive) {
                             getAchievement('Knuckle_Sandwich')
                         }
@@ -542,6 +545,14 @@ function createPlayer() {
                         projectile.targetList = elems.enemies
                         projectile.isParried = true
 
+                        if(player.stats.player.parryHoming) {
+                            if(projectile.data.magnetStrength) {
+                                projectile.data.magnetStrength += player.stats.player.parryHoming
+                            } else {
+                                projectile.data.magnetStrength = player.stats.player.parryHoming
+                            }
+                        }
+
                         projectileHit = true
 
                         const parryEffect = document.createElement('div')
@@ -559,7 +570,7 @@ function createPlayer() {
                         })
 
                         doge('area').append(parryEffect)
-                        DeBread.playSound('audio/newParry.mp3', 0.1)
+                        DeBread.playSound('audio/parry.mp3')
 
                         setTimeout(() => {
                             parryEffect.remove()
@@ -883,6 +894,8 @@ function startGame() {
         doge('pageTitle').innerText = 'Goober Shooter 2 - Wave 0'
     }
 
+    player.stats.ammo.current = player.stats.ammo.max
+
     if(saveData.gameSettings.gamemode === 2) {
         doge('pageTitle').innerText = 'Goober Shooter 2 - Sandbox'
     }
@@ -988,7 +1001,7 @@ const weapons = {
                                 )
                             )
                             
-                            DeBread.playSound('audio/shoot.mp3', 0.25, DeBread.randomNum(0.95,1.05,5), false)
+                            DeBread.playSound('audio/shoot.mp3', DeBread.randomNum(0.95,1.05,5), false)
             
                             if(player.tutorial.stage === 1) {
                                 player.tutorial.goalValue++
@@ -1016,7 +1029,7 @@ const weapons = {
                                     
                                     player.bulletsShot++
 
-                                    for(let i = 0; i < 5; i++) {
+                                    for(let i = 0; i < 5; i++) { //looking back at this now, i is defined twice but still works?!?!?!????
                                         createParticle(
                                             1, //layer
                                             [...bulletPos], //position 
@@ -1062,7 +1075,7 @@ const weapons = {
                                 weapon.r()
                             }
                             if(player.stats.ammo.max > 0) {
-                                DeBread.playSound('audio/noAmmo.mp3', 0.5)
+                                DeBread.playSound('audio/noAmmo.mp3')
                             }
                         }
             
@@ -1092,9 +1105,9 @@ const weapons = {
                 player.stats.ammo.reloadDate = e.gameUpdates
                 
                 if(player.stats.ammo.reloadSpeed <= 50) {
-                    DeBread.playSound('audio/reload-full.mp3', 0.1, 50 / player.stats.ammo.reloadSpeed, false)
+                    DeBread.playSound('audio/reload-full.mp3', 50 / player.stats.ammo.reloadSpeed, false)
                 } else {
-                    DeBread.playSound('audio/reload-full.mp3', 0.1)
+                    DeBread.playSound('audio/reload-full.mp3')
                 }
             }
             if(!player.stats.ammo.isReloading && player.stats.ammo.current < player.stats.ammo.max) {
@@ -1102,7 +1115,7 @@ const weapons = {
                     if(player.stats.ammo.current === 0) {
                         reload()
                     } else {
-                        DeBread.playSound('audio/noAmmo.mp3', 0.5)
+                        DeBread.playSound('audio/noAmmo.mp3')
                     }
                 } else {
                     reload()
@@ -1329,7 +1342,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
             proj.damage *= 1 + 0.01 * (data.grow ?? 0)
             proj.size *= 1 + 0.01 * (data.grow ?? 0)
         }
-        proj.size = Math.min(proj.size, 50)
+        proj.size = Math.max(Math.min(proj.size, 50),5)
         
         //Speed div
         proj.speed /= data.speedDiv ?? 1
@@ -1450,7 +1463,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
         let closestTarget = {elem: undefined, dist: Infinity}
         proj.targetList.forEach(target => {
             //Get closest enemy for magnetic ammo 
-            if(data.magnetStrength > 0 && proj.targetList.length > 0) {
+            if(proj.data.magnetStrength > 0 && proj.targetList.length > 0) {
                 const targetDist = Math.sqrt(
                     Math.pow(proj.pos[0] - target.data.centerPos[0],2),
                     Math.pow(proj.pos[1] - target.data.centerPos[1],2)
@@ -1501,16 +1514,36 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
     
                     //Apply fire
                     if(data.fireyAmmo) {
-                        target.data.onFire = true
+                        if(target === player.elem) {
+                            for(const statusEffect of player.statusEffects) {
+                                if(statusEffect.class === 'fire') {
+                                    statusEffect.duration = statusEffect.maxDuration
+                                }
+                            }
+                            if(!player.onFire) {                
+                                player.statusEffects.push({
+                                    duration: 100,
+                                    maxDuration: 100,
+                                    class: 'fire',
+                                    
+                                    end: () => {
+                                        player.onFire = false;
+                                    }
+                                })
+                                player.onFire = true
+                            }
+                        } else {
+                            target.data.onFire = true
+                        }
                     }
 
                     //Coins
                     if(pData.coinChance > 0) {
                         function getCoin() {
                             if(elems.pickups.length > 100) {
-                                player.getMoney(1)
+                                player.getMoney([1,5,10,25,100][getWeightedChance([100,50,20,5,1])])
                             } else {
-                                pickups.coin(0,[...proj.pos],5,1)
+                                pickups.coin(getWeightedChance([100,50,20,5,1]),[...proj.pos],5,1)
                             }
                         }
     
@@ -1618,7 +1651,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
 
             delta = Math.atan2(Math.sin(delta), Math.cos(delta))
 
-            proj.angle += delta * 0.1 * data.magnetStrength
+            proj.angle += delta * 0.1 * proj.data.magnetStrength
             if(data.spin > 0) {
                 proj.style.rotate = proj.spin + 'deg'
             } else {
@@ -1775,9 +1808,13 @@ function updateUI() {
         doge('gameInnerAmmoBar').style.width = player.stats.ammo.current / player.stats.ammo.max * 100 + '%'
         doge('gameAmmoCount').innerText = player.stats.ammo.current.toString().padStart(2,'0')
 
-
-        doge('gameAmmoLinesCurrent').innerText = player.characterWeapon.ammoChar.repeat(Math.min(player.stats.ammo.current, 50))
-        doge('gameAmmoLinesMax').innerText = player.characterWeapon.ammoChar.repeat(Math.min(player.stats.ammo.max, 50) - Math.min(player.stats.ammo.current, 50))
+        if(player.stats.ammo.max === Infinity) {
+            doge('gameAmmoLinesCurrent').innerText = player.characterWeapon.ammoChar
+            doge('gameAmmoLinesMax').innerText = ''
+        } else {
+            doge('gameAmmoLinesCurrent').innerText = player.characterWeapon.ammoChar.repeat(Math.min(player.stats.ammo.current, 50))
+            doge('gameAmmoLinesMax').innerText = player.characterWeapon.ammoChar.repeat(Math.min(player.stats.ammo.max, 50) - Math.min(player.stats.ammo.current, 50))
+        }
     }
 
     //Consumables
@@ -1936,7 +1973,7 @@ const updateInterval = DeBread.createInterval(() => {
                     player.stats.ammo.isReloading = false
                     player.stats.ammo.current = player.stats.ammo.max
                     DeBread.shake(doge('gameAmmo'), e.gameUpdateInterval, 6.7, 0, 100,)
-                    DeBread.playSound('audio/reload-long-end.mp3',0.25)
+                    DeBread.playSound('audio/reload-long-end.mp3')
                     
                     if(player.tutorial.stage === 2) {
                         player.tutorial.goalValue++
@@ -2021,7 +2058,7 @@ const updateInterval = DeBread.createInterval(() => {
                     }
     
                     player.lastGrazeDate = e.gameUpdates
-                    DeBread.playSound('audio/graze.wav',0.1,1 + Math.max(player.power / 200, 0))
+                    DeBread.playSound('audio/graze.mp3',1 + Math.max(player.power / 200, 0))
                 }
     
                 if(projectile.origin !== player) {
@@ -2034,7 +2071,13 @@ const updateInterval = DeBread.createInterval(() => {
             })
     
             //Waves
-            if((e.gameUpdates - player.lastWaveDate) >= player.stats.misc.waveInterval && saveData.gameSettings.gamemode < 2 && player.alive && !player.autoWavesPaused && !player.fightingBoss) {
+            if(
+                (e.gameUpdates - player.lastWaveDate) >= player.stats.misc.waveInterval && 
+                saveData.gameSettings.gamemode < 2 && 
+                player.alive && 
+                !player.autoWavesPaused && 
+                !player.fightingBoss
+            ) {
                 progressWave(player.inPortal)
             }
 
@@ -2056,11 +2099,11 @@ const updateInterval = DeBread.createInterval(() => {
                 pickup.pos[0] -= Math.cos(angle) / (distance / 100) * player.stats.player.pickupRange
                 pickup.pos[1] -= Math.sin(angle) / (distance / 100) * player.stats.player.pickupRange
     
-                if(isColliding(player.elem, pickup)) {
+                if(isColliding(player.elem, pickup) && pickup.ticksActive >= 25) {
                     if(pickup.live && pickup.requirement()) {
                         pickup.action(pickup.value)
                         pickup.destroy()
-                        DeBread.playSound(`audio/money${DeBread.randomNum(0,3)}.mp3`,0.5, DeBread.randomNum(0.9,1.1,3), false)
+                        DeBread.playSound(`audio/money${DeBread.randomNum(0,3)}.mp3`, DeBread.randomNum(0.9,1.1,3), false)
                     }
                 }
     
@@ -2236,7 +2279,7 @@ const updateInterval = DeBread.createInterval(() => {
         //Special enemies
         let leechAlive = false
         for(const enemy of elems.enemies) {
-            if(enemy.data.data.name === 'Leech' && enemy.data.active) {
+            if(['Leech'].includes(enemy.data.data.name) && enemy.data.active) {
                 leechAlive = true
                 break
             }
@@ -2244,7 +2287,7 @@ const updateInterval = DeBread.createInterval(() => {
     
         let idolAlive = false
         for(const enemy of elems.enemies) {
-            if(enemy.data.data.name === 'Idol' && enemy.data.active) {
+            if(['Idol'].includes(enemy.data.data.name) && enemy.data.active) {
                 idolAlive = true
                 break
             }
@@ -2395,6 +2438,25 @@ const updateInterval = DeBread.createInterval(() => {
             elem.tick(elems.enemies)
         })
     
+
+        //Music stuff
+        if(player.alive) {
+            if(player.fightingBoss) {
+                changeTrack('gameBoss', true)
+            } else if(elems.enemies.length > 0) {
+                changeTrack('gameCombat', true)
+            }
+    
+            if(elems.enemies.length === 0 && currentTrack === 'gameCombat' && e.gameUpdates - player.lastKillDate > 25) {
+                changeTrack('gameClean', true)
+            }
+        } else if(currentTrack !== 'gameClean') {
+            changeTrack('gameClean', true)
+        }
+
+        // tracks.gameClean.playbackRate = 20 / e.gameUpdateInterval
+        // tracks.gameCombat.playbackRate = 20 / e.gameUpdateInterval
+
         //Random stuff
         if(e.gameUpdates % 500 === 0 && saveData.selectedChallenge === 'skillsUSA') {
             createNotification('Tip!','You can parry by pressing <strong>F</strong>! Give it a try!', undefined, 5000)
@@ -2461,19 +2523,36 @@ document.addEventListener('mousedown', ev => {
             if(sandBoxEnemy) {
                 if(e.keysDown.includes('control') && sandBoxEnemy.boss) {
                     const enemy = sandBoxEnemy
-                    startBossSequence(
-                        {
-                            name: characters[saveData.selectedCharacter].name,
-                            imgSrc: `graphics/characters/${saveData.selectedCharacter}PortraitLarge.png`
-                        },
-                        {
-                            name: sandBoxEnemy.name,
-                            imgSrc: `graphics/enemies/${sandBoxEnemy.name}PortraitLarge.png`
-                        }
-                    )
-                    createTimeout(() => {
-                        spawnEnemy([e.relCursorPos[0] - enemy.size / 2, e.relCursorPos[1] - enemy.size / 2], enemy, 0)
-                    }, 100)
+                    const cursorPos = [e.relCursorPos[0] - enemy.size / 2, e.relCursorPos[1] - enemy.size / 2]
+                    if(sandBoxEnemy.miniboss) {
+                        startBossSequence(
+                            {
+                                name: characters[saveData.selectedCharacter].name,
+                                imgSrc: `graphics/characters/${saveData.selectedCharacter}PortraitLarge.png`
+                            },
+                            {
+                                name: sandBoxEnemy.name,
+                                imgSrc: `graphics/enemies/${sandBoxEnemy.name}PortraitLarge.png`
+                            }
+                        )
+                        createTimeout(() => {
+                            spawnEnemy(cursorPos, enemy, 0)
+                        }, 100)
+                    } else {
+                        startLargeBossSequence(
+                            {
+                                name: characters[saveData.selectedCharacter].name,
+                                imgSrc: `graphics/characters/${saveData.selectedCharacter}PortraitLarge.png`
+                            },
+                            {
+                                name: sandBoxEnemy.name,
+                                imgSrc: `graphics/enemies/${sandBoxEnemy.name}PortraitLarge.png`
+                            }
+                        )
+                        createTimeout(() => {
+                            spawnEnemy(cursorPos, enemy, 0)
+                        }, 500)
+                    }
                 } else {
                     spawnEnemy([e.relCursorPos[0] - sandBoxEnemy.size / 2, e.relCursorPos[1] - sandBoxEnemy.size / 2], sandBoxEnemy, 0)
                 }
@@ -2584,10 +2663,12 @@ function getClosest(from, cls) {
 function createFire(pos, ticks, ignorePlayer) {
     const fire = document.createElement('div')
     fire.classList.add('fire')
+    fire.pos = [...pos]
+    fire.dirVels = []
     addStyles(fire, {
         position: 'absolute',
-        left: pos[0]+'px',
-        top: pos[1]+'px',
+        left: fire.pos[0]+'px',
+        top: fire.pos[1]+'px',
         translate: '-50% -50%',
         width: '64px',
         height: '64px',
@@ -2605,11 +2686,27 @@ function createFire(pos, ticks, ignorePlayer) {
         if(fire.ticksActive > ticks) {
             fire.destroy()
         }
+
+        for(let i = 0; i < fire.dirVels.length; i++) {
+            const dirVel = fire.dirVels[i]
+            fire.pos[0] += Math.cos(dirVel.angle) * dirVel.speed
+            fire.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
+
+            dirVel.speed /= dirVel.div
+            if(dirVel.speed <= 0.1) {
+                fire.dirVels.splice(i, 1)
+            }
+        }
+
+        addStyles(fire, {
+            left: fire.pos[0]+'px',
+            top: fire.pos[1]+'px'
+        })
     }
 
     fire.destroy = () => {
         fire.remove()
-        createParticles([...pos], 10, 10, [0,50], 500, 'ease-out', {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`,filter:'blur(10px)'})
+        createParticles([...fire.pos], 10, 10, [0,50], 500, 'ease-out', {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`,filter:'blur(10px)'})
     }
 
     doge('area').append(fire)
@@ -2915,6 +3012,7 @@ function createPickup(pos, size, speed, texture, col, action, value, requirement
     pickup.scale = 1
     pickup.live = true
     pickup.dirVels = []
+    pickup.ticksActive = 0
     pickup.requirement = requirement ?? function() {return true}
 
     pickup.angle = DeBread.randomNum(0,Math.PI*2,5)
@@ -2991,6 +3089,8 @@ function createPickup(pos, size, speed, texture, col, action, value, requirement
                 other.pos[1] += ny * push
             }
         })
+
+        pickup.ticksActive++
     }
 
     pickup.destroy = () => {
@@ -3297,7 +3397,7 @@ function openSandboxMenu(menu) {
     if(menu === 'enemies') {
         doge('sandboxMenu-enemies').innerHTML = ''
 
-        let allEnemies = {...enemies, ...bosses}
+        let allEnemies = {...enemies, ...minibosses, ...bosses}
 
         for(const key in allEnemies) {
             const enemy = allEnemies[key]
@@ -3335,7 +3435,9 @@ function openSandboxMenu(menu) {
 
             let tag = {text: 'ENEMY', col: '#7f293a'}
             let desc = enemy.desc ?? ''
-            if(enemy.boss) {
+            if(enemy.miniboss) {
+                tag = {text: 'MINIBOSS', col: '#34297f'}
+            } else if(enemy.boss) {
                 tag = {text: 'BOSS', col: '#5b297f'}
             }  else {
                 if(enemy.credits !== Infinity) {
