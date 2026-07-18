@@ -106,7 +106,7 @@ const upgrades = [
             }
         },
         helmet: {
-            name: 'Helmet',
+            name: 'Hard Hat',
             desc: `
                 <cg>+20</cg> Max HP
             `,
@@ -211,7 +211,7 @@ const upgrades = [
             name: 'Heavy Ammo',
             desc: `
             <cg>+2</cg> Damage<br>
-            <cb>-10%</cb> Bullet speed`,
+            <cb>-10%</cb> Projectile speed`,
             apply: () => {
                 modifyStat(['bullet', 'damage'], '+=3')
                 modifyStat(['bullet', 'speed'], '*=0.9')
@@ -220,7 +220,7 @@ const upgrades = [
         light_ammo: {
             name: 'Light Ammo',
             desc: `
-                <cg>+0.25</cg> Bullet speed<br>
+                <cg>+0.25</cg> Projectile speed<br>
                 <cb>-5%</cb> Damage
             `,
             priceMult: 0.8,
@@ -294,11 +294,11 @@ const upgrades = [
         bouncy_ammo: {
             name: 'Bouncy Ammo',
             desc: `
-            <cg>+2</cg> Bullet bounces<br>
-            <cg>+0.25</cg> Bullet knockback<br>
+            <cg>+2</cg> Projectile bounces<br>
+            <cg>+0.25</cg> Projectile knockback<br>
             <cb>-20%</cb> Damage<br>
             <cb>-20%</cb> Reload speed<br>
-            <em style="color: grey;">Bounces multiply bullet damage by 1.2.</em>
+            <em style="color: grey;">Bounces multiply projectile damage by 1.2.</em>
             `,
             priceMult: 1.25,
             
@@ -321,6 +321,19 @@ const upgrades = [
                 modifyStat(['bullet','critChance'], '+=10')
             }
         },
+        grip: {
+            name: 'Grip',
+            desc: `
+                <cg>+10%</cg> Accuracy<br>
+                <cg>-5%</cg> Shot cooldown
+            `,
+            priceMult: 1.15,
+
+            apply: () => {
+                modifyStat(['bullet','accuracy'], '*=0.9')
+                modifyStat(['bullet','shotCooldown'], '*=0.95')
+            }
+        },
         totem: {
             name: 'Totem',
             desc: `
@@ -336,7 +349,7 @@ const upgrades = [
         brass_knuckles: {
             name: 'Brass Knuckles',
             desc: `
-                <cg>+2</cg> Melee damage <br>
+                <cg>+2</cg> Melee damage
             `,
 
             apply: () => {
@@ -346,7 +359,7 @@ const upgrades = [
         screw: {
             name: 'Screw',
             desc: `
-                Bullets gain a +<cg>10%</cg> chance to hit an enemy an additional time<br>
+                Player projectiles gain a +<cg>10%</cg> chance to hit an enemy an additional time<br>
                 <cb>-20%</cb> Reload speed
             `,
             priceMult: 1.5,
@@ -397,7 +410,7 @@ const upgrades = [
             `,
 
             apply: () => {
-                modifyStat(['melee','cooldown'], '*=0.85', )
+                modifyStat(['melee','cooldown'], '*=0.85')
             }
         },
         boxing_gloves: {
@@ -409,8 +422,8 @@ const upgrades = [
             unlockable: true,
 
             apply: () => {
-                modifyStat(['melee','size'], '+=10', )
-                modifyStat(['melee','damage'], '*=0.75', )
+                modifyStat(['melee','size'], '+=10')
+                modifyStat(['melee','damage'], '*=0.75')
             }
         },
         feedbacker: {
@@ -421,20 +434,20 @@ const upgrades = [
             unlockable: true,
 
             apply: () => {
-                modifyStat(['player','parryHeal'], '+=10', )
+                modifyStat(['player','parryHeal'], '+=10')
             }
         },
         skates: {
             name: 'Skates',
             desc: `
-                <cg>+3</cg> Speed<br>
-                <cb>-40%</cb> Friction
+                <cg>+2</cg> Speed<br>
+                <cb>-30%</cb> Friction
             `,
             priceMult: 0.8,
 
             apply: () => {
-                modifyStat(['player','speed'], '+=3', )
-                modifyStat(['player','speedStep'], '*=0.6', )
+                modifyStat(['player','speed'], '+=2')
+                modifyStat(['player','speedStep'], '*=0.7')
             },
 
             requirement: () => {
@@ -471,7 +484,7 @@ const upgrades = [
         pepto_bismol: {
             name: 'Pepto Bismol',
             desc: `
-                Parried bullets spawn poison fields on impact.
+                Parried projectiles spawn poison fields on impact.
             `,
             priceMult: 0.75,
             unlockable: true,
@@ -539,12 +552,38 @@ const upgrades = [
                 const difference = player.stats.player.maxPower - player.power
                 player.getPower(difference)
                 player.damage(difference, true)
-                DeBread.playSound('audio/hit.mp3', 0.25)
+                DeBread.playSound('audio/hit.mp3')
             },
 
             requirement: () => {
                 return player.power < player.stats.player.maxPower
             }
+        },
+        store_credit: {
+            name: 'Store Credit',
+            desc: `
+                Gain <cp>+$3</cp> when entering the shop.
+            `,
+
+            priceMult: 1.1,
+            apply: () => {
+                modifyStat(['player','couponBonus'],'+=3')
+            },
+        },
+        coupon: {
+            name: 'Coupon',
+            desc: `
+                <cg>-15%</cg> shop reroll price
+            `,
+
+            priceMult: 1.25,
+            apply: () => {
+                modifyStat(['shop','rerollPrice'],'*=0.85')
+
+                if(player.rerolls === 0) {
+                    doge('rerollPrice').innerText = `($${Math.floor(player.stats.shop.rerollPrice)})`
+                }
+            },
         },
     },
     {
@@ -594,7 +633,7 @@ const upgrades = [
         drill_ammo: {
             name: 'Drill Ammo',
             desc: `
-                Bullets hit <cg>+1</cg> times when hitting an enemy.<br>
+                Player projectiles hit <cg>+1</cg> additional times when hitting an enemy.<br>
                 <cg>+2</cg> Damage<br>
                 <cb>-25%</cb> Bullet speed
             `,
@@ -610,7 +649,7 @@ const upgrades = [
         magnetic_ammo: {
             name: 'Magnetic Ammo',
             desc: `
-                Bullets become attracted towards the nearest enemy.<br>
+                Player projectiles become attracted towards nearby enemies.<br>
                 <cb>-20%</cb> Max ammo
             `,
             priceMult: 1.25,
@@ -640,7 +679,7 @@ const upgrades = [
         nuclear_waste: {
             name: 'Nuclear Waste',
             desc: `
-                Bullets get a <cg>+10%</cg> chance to create a poison field, dealing <cg>+100%</cg> of your damage for <cg>+5</cg> ticks.<br>
+                Player projectiles get a <cg>+10%</cg> chance to create a poison field, dealing <cg>+100%</cg> of your damage for <cg>+5</cg> ticks.<br>
                 <cg>+5</cg> Poison field size <br>
                 <cb>-50%</cb> Max health
             `,
@@ -670,7 +709,7 @@ const upgrades = [
         grow: {
             name: 'Grow',
             desc: `
-                Every tick a bullet is active, multiply damage and size by 1.0025 (<cg>+0.0025</cg>)
+                Every tick a player projectile is active, multiply damage and size by 1.0025 (<cg>+0.0025</cg>)
             `,
 
             apply: () => {
@@ -694,7 +733,7 @@ const upgrades = [
         explosive_vest: {
             name: 'Explosive Vest',
             desc: `
-                Getting hit by an enemy has a <cg>+10%</cg> to create an explosion, dealing <cg>+100%</cg> of your damage.<br>
+                Getting hit by an enemy has a <cg>+10%</cg> chance to create an explosion, dealing <cg>+100%</cg> of your damage.<br>
                 <cb>-20%</cb> Speed<br>
                 <em style="color: grey;">Explosion does not damage player.</em>
             `,
@@ -840,14 +879,36 @@ const upgrades = [
                 modifyStat(['shop','luck'],'+=1')
             }
         },
+        credit_card: {
+            name: 'Credit Card',
+            desc: `
+                <cp>+$5</cp> interest cap
+            `,
+
+            priceMult: 1.1,
+            apply: () => {
+                modifyStat(['player','interestCap'],'+=5')
+            },
+        },
+        hot_hands: {
+            name: 'Hot Hands',
+            desc: `
+                Touching an enemy with your weapon deals <cg>+1</cg> damage every tick. 
+            `,
+            priceMult: 0.75,
+    
+            apply: () => {
+                modifyStat(['player','weaponContactDamage'], '+=1')
+            }
+        },
     },
     {
         black_hole: {
             name: 'Black Hole',
             desc: `
-                Condenses half the total damage in your magazine into one bullet.<br>
+                Condenses half the total damage in your magazine into one projectile.<br>
                 <cb>-10%</cb> Reload speed<br>
-                <cb>-50%</cb> Bullet speed<br>
+                <cb>-50%</cb> Projectile speed<br>
                 <cb>+50%</cb> Shot cooldown<br>
             `,
             priceMult: 1.25,
@@ -867,8 +928,8 @@ const upgrades = [
         electric_ammo: {
             name: 'Electric Ammo',
             desc: `
-                Hit bullets deal damage to <cg>+1</cg> other nearby enemies.<br>
-                <em style="color: grey;">Arcs deal bullet damage / # of times arced.</em><br>
+                Hit player projectiles deal damage to <cg>+1</cg> other nearby enemies.<br>
+                <em style="color: grey;">Arcs deal projectile damage / # of times arced.</em><br>
                 <cg>+10</cg> Arc reach<br>
                 <cb>-20%</cb> Reload speed<br>
             `,
@@ -883,7 +944,7 @@ const upgrades = [
         ghost_ammo: {
             name: 'Ghost Ammo',
             desc: `
-                Bullets can hit up to <cg>+25</cg> times when hitting an enemy.<br>
+                Player projectiles can hit up to <cg>+25</cg> additional times when hitting an enemy.<br>
                 <cb>-75%</cb> Damage<br>
                 <cb>-50%</cb> Damage multiplier<br>
                 <cb>-75%</cb> Knockback
@@ -912,7 +973,7 @@ const upgrades = [
         rigged_dice: {
             name: 'Rigged Dice',
             desc: `
-                Bullets gain a random damage multiplier between 1 and 2(<cg>+1</cg>)
+                Player projectiles gain a random damage multiplier between 1 and 2(<cg>+1</cg>)
             `,
             
             apply: () => {
@@ -958,8 +1019,8 @@ const upgrades = [
         explosive_ammo: {
             name: 'Explosive Ammo',
             desc: `
-            Bullets explode when colliding with a wall or enemy.<br>
-            <cg>+10</cg> Bullet explosion size <br>
+            Player projectiles explode when colliding with a wall or enemy.<br>
+            <cg>+10</cg> Projectile explosion size <br>
             <cg>+5</cg> Damage<br>
             <em style="color: grey;">Explosions can damage player.</em>
             `,
@@ -977,7 +1038,7 @@ const upgrades = [
         golden_ammo: {
             name: 'Golden Ammo',
             desc: `
-                Hitting an enemy with a bullet gains a <cg>+1%</cg> chance to spawn a random coin
+                Hitting an enemy with a projectile gains a <cg>+1%</cg> chance to spawn a random coin
             `,
             priceMult: 1.5,
             unlockable: true,
@@ -989,7 +1050,7 @@ const upgrades = [
         radioactive_ammo: {
             name: 'Radioactive Ammo',
             desc: `
-                Bullets gain a damaging aura, dealing up to <cg>+150%</cg> of your damage every 10 ticks<br>
+                Player projectiles gain a damaging aura, dealing up to <cg>+150%</cg> of your damage every 10 ticks<br>
                 <cg>+10</cg> Radiation size
             `,
             priceMult: 1.75,
@@ -1002,10 +1063,32 @@ const upgrades = [
                 }
             }
         },
+        sharp_ammo: {
+            name: 'Sharp Ammo',
+            desc: `
+                Player projectiles gain a <cg>+2</cg>% chance to apply bleeding to enemies and deal <cg>1.5x</cg> damage.
+            `,
+            priceMult: 2,
+    
+            apply: () => {
+                modifyStat(['bullet','sharpChance'], '+=2')
+            }
+        },
+        multishot: {
+            name: 'Multi-shot',
+            desc: `
+                Shoot <cg>+1</cg> more projectiles at a time.
+            `,
+            priceMult: 1.1,
+    
+            apply: () => {
+                modifyStat(['bullet','multishot'], '+=1')
+            }
+        },
         third_eye: {
             name: 'Third Eye',
             desc: `
-                Every 50 ticks, <cg>+1</cg> bullets automatically shoots towards the nearest enemy.<br>
+                Every 50 ticks, <cg>+1</cg> projectiles automatically shoot towards the nearest enemy.<br>
                 <em style="color: grey;">Does not consume ammo.</em>
             `,
             priceMult: 1.25,
@@ -1017,7 +1100,7 @@ const upgrades = [
         shrapnel: {
             name: 'Shrapnel',
             desc: `
-                Hitting an enemy with a parried projectile creates <cg>+3</cg> projectiles that mimic player bullet attributes with <cb>50%</cb> less damage.
+                Hitting an enemy with a parried projectile creates <cg>+3</cg> projectiles that mimic player projectile attributes with <cb>50%</cb> less damage.
             `,
             priceMult: 1.5,
 
@@ -1025,15 +1108,56 @@ const upgrades = [
                 modifyStat(['player','parryShrapnel'], '+=3')
             }
         },
-        multishot: {
-            name: 'Multi-shot',
+        overstock: {
+            name: 'Overstock',
             desc: `
-                Shoot <cg>+1</cg> more bullets at a time.
+                Gain <cg>+1</cg> free shop reroll.
             `,
-            priceMult: 1.1,
+            priceMult: 2,
     
             apply: () => {
-                modifyStat(['bullet','multishot'], '+=1')
+                modifyStat(['shop','rerolls'], '+=1')
+            }
+        },
+        car_battery: {
+            name: 'Car Battery',
+            desc: `
+                Power items have a <cg>+1%</cg> chance to repeat its ability. 
+            `,
+            priceMult: 2,
+    
+            apply: () => {
+                modifyStat(['player','powerItemRepeatChance'], '+=1')
+            }
+        },
+        cannon_ball: {
+            name: 'Cannon Ball',
+            desc: `
+                <cg>+15</cg> Damage<br>
+                <cg>+5</cg> Projectile size<br>
+                <cb>+20</cb> Projectile inaccuracy<br>
+                <cb>-20%</cb> Projectile speed<br>
+                <cb>+25%</cb> Shot cooldown 
+            `,
+            priceMult: 2,
+    
+            apply: () => {
+                modifyStat(['bullet','damage'], '+=15')
+                modifyStat(['bullet','size'], '+=5')
+                modifyStat(['bullet','accuracy'], '+=20')
+                modifyStat(['bullet','speed'], '*=0.8')
+                modifyStat(['bullet','shotCooldown'], '*=1.25')
+            }
+        },
+        bankruptcy_form: {
+            name: 'Bankruptcy Form',
+            desc: `
+                <cg>-75%</cg> Shop reroll price 
+            `,
+            priceMult: 5,
+    
+            apply: () => {
+                modifyStat(['shop','rerollPrice'], '*=0.25')
             }
         },
     },
@@ -1082,6 +1206,64 @@ const upgrades = [
                 }
             }
         },
+        jumper_cables: {
+            name: 'Jumper Cables',
+            desc: `
+                Using a power item retriggers its effect <cg>+1</cg> more times.
+            `,
+            priceMult: 2,
+
+            apply: () => {
+                modifyStat(['player','powerItemRepeats'],'+=1')
+            }
+        },
+        backpack: {
+            name: 'Backpack',
+            desc: `
+                Allows the player to carry <cg>2</cg> power items.<br>
+                <br>
+                <em>You can switch power items by pressing <strong>E</strong></em>
+            `,
+            priceMult: 1.5,
+
+            apply: () => {
+                if(!player.powerItem) {
+                    player.powerItem = powerItems[5].empty
+                }
+                modifyStat(['player','canCarrySecondaryPowerItem'],'=true')
+            },
+
+            requirement: () => {
+                return !player.stats.player.canCarrySecondaryPowerItem && Boolean(player.powerItem)
+            }
+        },
+        chicken_alfredo: {
+            name: 'Chicken Alfredo',
+            desc: `
+                <cg>2x</cg> Max HP<br>
+                <cg>+100%</cg> HP<br>
+                <em style="color: grey;">only the best!</em>
+            `,
+            priceMult: 0.9,
+
+            apply: () => {
+                modifyStat(['player','maxHealth'],'*=2')
+                player.health = player.stats.player.maxHealth
+            }
+        },
+        debread_sale: {
+            name: 'debread.space Sale',
+            desc: `
+                Sets shop reroll price to <cp>$5</cp><br>
+                All shop items become <cg>50%</cg> cheaper.
+            `,
+            priceMult: 2,
+
+            apply: () => {
+                modifyStat(['shop','rerollPrice'],'=5')
+                modifyStat(['shop','priceMult'],'*=0.5')
+            }
+        },
         the_tophat: {
             name: 'The Tophat',
             desc: `
@@ -1096,7 +1278,7 @@ const upgrades = [
         raccoon_tail: {
             name: 'Raccoon Tail',
             desc: `
-                Enables penetrating rounds<br>
+                Hitting an enemy with a projectile has a <cg>+25%</cg> chance to apply bleeding and deal 1.5x damage<br>
                 <cg>+7</cg> Damage<br>
                 <cg>+1</cg> Bullet speed<br>
                 <cg>+2</cg> Luck
@@ -1104,7 +1286,7 @@ const upgrades = [
             unlockable: true,
             
             apply: () => {
-                modifyStat(['ammo','penetratingRounds'], '=true')
+                modifyStat(['bullet','sharpChance'], '=25')
                 modifyStat(['bullet','damage'], '+=7')
                 modifyStat(['bullet','speed'], '+=1')
                 modifyStat(['shop','luck'], '+=2')
@@ -1127,7 +1309,7 @@ const upgrades = [
             desc: `
                 Enables autofire<br>
                 <cg>+20</cg> Max ammo<br>
-                <cg>-75%</cg> Shot cooldown<br>
+                <cg>-50%</cg> Shot cooldown<br>
                 <cb>-75%</cb> Damage
             `,
             unlockable: true,
@@ -1135,7 +1317,7 @@ const upgrades = [
             apply: () => {
                 modifyStat(['ammo','autoFire'], '=true')
                 modifyStat(['ammo','max'], '+=20')
-                modifyStat(['bullet','shotCooldown'],'*=0.25')
+                modifyStat(['bullet','shotCooldown'],'*=0.5')
                 modifyStat(['bullet','damage'], '*=0.25')
             }
         },
@@ -1148,9 +1330,9 @@ const upgrades = [
             unlockable: true,
             
             apply: () => {
-                for(const statCat in player.stats) {
+                for(const statCat in {bullet:{},melee:{}}) {
                     for(const key in player.stats[statCat]) {
-                        if(typeof player.stats[statCat][key] === 'number') {
+                        if(typeof player.stats[statCat][key] === 'number' && !['multishot','speedDiv'].includes(key)) {
                             player.stats[statCat][key] *= Math.pow(10,DeBread.randomNum(-1,1,5))
                             modifyStat([statCat,key],`=${player.stats[statCat][key]}`)
                         }
@@ -1189,18 +1371,20 @@ const upgrades = [
                 modifyStat(['bullet','hitDamageMult'],'+=0.1')
             }
         },
-        chicken_alfredo: {
-            name: 'Chicken Alfredo',
+        drool: {
+            name: 'Drool',
             desc: `
-                <cg>2x</cg> Max HP<br>
-                <cg>+100%</cg> HP<br>
-                <em style="color: grey;">only the best!</em>
+                The player leaves a trail of poison fields, which mimic player projectile attributes.
             `,
-            priceMult: 0.9,
+            priceMult: 2,
+            unlockable: true,
 
             apply: () => {
-                modifyStat(['player','maxHealth'],'*=2')
-                player.health = player.stats.player.maxHealth
+                if(player.stats.player.droolSize === 0) {
+                    modifyStat(['player','droolSize'],'=25')
+                } else {
+                    modifyStat(['player','droolSize'],'+=10')
+                }
             }
         },
     },
@@ -1233,6 +1417,8 @@ const upgrades = [
                     for(let i = 0; i < repeats; i++) {
                         createExplosion([DeBread.randomNum(0,doge('area').offsetWidth),DeBread.randomNum(0,doge('area').offsetHeight)], DeBread.randomNum(100,250)+repeats, 5, 100)
                     }
+
+                    spawnEnemy([0,0],minibosses.plonk,10000,0)
 
                     repeats++
                 }, 100)
@@ -1400,7 +1586,7 @@ const powerItems = [
             name: 'Apple',
             desc: `
                 Uses <cp>25</cp> POWER<br>
-                <cg>+20</cg> HP
+                <cg>+25</cg> HP
                 `,
             charge: 25,
 
@@ -1437,7 +1623,7 @@ const powerItems = [
                     createPoisonField([mater.pos[0], mater.pos[1] - 10], 50, player.stats.bullet.damage * 2.5, 10, 10, elems.enemies, [255,50,50])
                     createParticles(mater.pos, 10, 10, [0,50],500,'ease-out',{backgroundColor: 'red'})
     
-                    DeBread.playSound('audio/splat.mp3', 0.1)
+                    DeBread.playSound('audio/splat.mp3')
                 }, 1000);
             }
         },
@@ -1466,14 +1652,14 @@ const powerItems = [
         extra_mag: {
             name: 'Extra Mag',
             desc: `
-                Uses <cp>50</cp> POWER<br>
+                Uses <cp>20</cp> POWER<br>
                 Immediatly reloads your weapon.
                 `,
-            charge: 50,
+            charge: 20,
 
             use: () => {
                 player.stats.ammo.current = player.stats.ammo.max
-                DeBread.playSound('audio/reload-long-end.mp3',0.25)
+                DeBread.playSound('audio/reload-long-end.mp3')
                 updateUI()
             }
         },
@@ -1916,6 +2102,32 @@ const powerItems = [
                 createExplosion([...player.centerPos], 250, 0, 100, true, [[0,50],[155,255],[255,255],0.5])
             }
         },
+        lucky_penny: {
+            name: 'Lucky Penny',
+            desc: `
+                Uses <cp>15</cp> POWER<br>
+                Has a 50% chance to double every pickup in the area, otherwise, it removes all pickups.
+            `,
+            charge: 15,
+
+            use: () => {
+                let chance = DeBread.randomNum(0,1)
+                for(const key in elems.pickups) {
+                    const pickup = elems.pickups[key]
+                    if(chance) { //Dupe
+                        createPickup(
+                            [
+                                pickup.data.pos[0]+DeBread.randomNum(-1,1,10),
+                                pickup.data.pos[1]+DeBread.randomNum(-1,1,10)
+                            ],
+                            pickup.data
+                        )
+                    } else {
+                        pickup.destroy(true)
+                    }
+                }
+            }
+        },
         // perfume: {
         //     name: 'Perfume',
         //     desc: `
@@ -1962,81 +2174,124 @@ const powerItems = [
         supermagnet: {
             name: 'Supermagnet',
             desc: `
-                Uses <cp>100</cp> POWER<br>
-                Places a magnet on the ground, which attracts enemy bullets. After 500 ticks, the magnet explodes, shooting projectiles away.
+                Uses <cp>75</cp> POWER<br>
+                Throws a supermagnet, which sticks to enemies, attracting nearby enemy projectiles.<br>
+                Enemy projectiles within its yellow circle can deal damage to other enemies.
             `,
-            charge: 100,
+            charge: 75,
 
             use: () => {
                 const magnet = document.createElement('div')
-                magnet.pos = [...e.relCursorPos]
+                magnet.pos = [...player.centerPos]
+                magnet.grav = 0
+                magnet.speed = 25
+                magnet.angle = Math.atan2(
+                    e.relCursorPos[1] - player.centerPos[1],
+                    e.relCursorPos[0] - player.centerPos[0],
+                )
+                magnet.attachedEnemy = undefined
+                magnet.attachedEnemyRelPos = [0,0]
                 magnet.classList.add('entity')
-                magnet.classList.add('superMagnet')
+                magnet.classList.add('supermagnet')
                 addStyles(magnet, {
                     position: 'absolute',
                     translate: '-50% -50%',
                     width: '32px',
-                    height: '32px',
+                    height: '16px',
                     left: magnet.pos[0]+'px',
                     top: magnet.pos[1]+'px',
+                    rotate: magnet.angle+'rad',
                     backgroundImage: 'url(graphics/magnet.png)',
-                    backgroundSize: '32px 32px',
-                    animation: 'magnetIn 250ms cubic-bezier(.5,0,1,.5) 1 forwards'
+                    backgroundSize: '32px 16px'
                 })
 
                 doge('area').append(magnet)
 
-                setTimeout(() => {
-                    createParticles([magnet.pos[0]-4,magnet.pos[1]+16],10, 10, [5,25], 250, 'ease-out',{backgroundColor:'white',zIndex:'5'})
-                }, 250);
+                const magnetArea = document.createElement('div')
+                addStyles(magnetArea, {
+                    width: '200px',
+                    height: '200px',
+                    borderRadius: '50%',
+                    border: '1px solid rgb(255,255,0,0.25)',
+                    translate: 'calc(-50% + 16px) calc(-50% + 8px)',
+                    position: 'absolute'
+                })
+                doge(magnet.append(magnetArea))
 
-                magnet.ticksActive = 0
                 magnet.tick = () => {
-                    magnet.ticksActive++
+                    if(magnet.attachedEnemy) {
+                        magnet.pos = [
+                            magnet.attachedEnemy.data.centerPos[0] + magnet.attachedEnemyRelPos[0],
+                            magnet.attachedEnemy.data.centerPos[1] + magnet.attachedEnemyRelPos[1]
+                        ]
 
-                    if(magnet.ticksActive % 10 === 0) {
-                        createParticles([magnet.pos[0],magnet.pos[1]-15],3, 10, [5,25], 250, 'ease-out',{backgroundColor:`hsl(${60 * (1 - (magnet.ticksActive / 500))}, 100%, 50%)`,zIndex:'5', borderRadius: '0'})
+                        if(!magnet.attachedEnemy.data.alive) {
+                            magnet.attachedEnemy = undefined
+                            magnet.speed = 0
+                            magnet.grav = 0
+                        }
+                    } else {
+                        magnet.movementAngle = Math.atan2(
+                            magnet.pos[1] - (magnet.pos[1] + Math.sin(magnet.angle) * magnet.speed + magnet.grav),
+                            magnet.pos[0] - (magnet.pos[0] + Math.cos(magnet.angle) * magnet.speed)
+                        )
+    
+                        magnet.style.rotate = magnet.movementAngle + 'rad'
+    
+                        magnet.pos[0] += Math.cos(magnet.angle) * magnet.speed 
+                        magnet.pos[1] += Math.sin(magnet.angle) * magnet.speed + magnet.grav
+                        magnet.speed /= 1.025
+                        magnet.grav += 0.3
+
+                        elems.enemies.forEach(enemy => {
+                            if(isColliding(magnet, enemy)) {
+                                magnet.attachedEnemy = enemy
+                                magnet.attachedEnemyRelPos = [
+                                    magnet.pos[0] - enemy.data.centerPos[0],
+                                    magnet.pos[1] - enemy.data.centerPos[1]
+                                ]
+                                enemy.data.damage(player.stats.bullet.damage*2)
+                            }
+                        })
                     }
 
-                    if(magnet.ticksActive > 500) {
+                    if(magnet.pos[1] > doge('area').offsetHeight) {
                         magnet.destroy()
                     }
+
+                    addStyles(magnet, {
+                        left: magnet.pos[0]+'px',
+                        top: magnet.pos[1]+'px'
+                    })
+
+                    doge('area').querySelectorAll('.projectile').forEach(proj => {
+                        if(proj.origin === player) return
+
+                        const dx = proj.pos[0] - magnet.pos[0]
+                        const dy = proj.pos[1] - magnet.pos[1]
+                        const distance = Math.sqrt(dx*dx+dy*dy)
+
+                        const currentAngle = proj.angle
+
+                        const targetAngle = Math.atan2(
+                            proj.pos[1] - magnet.pos[1],
+                            proj.pos[0] - magnet.pos[0]
+                        )
+
+                        let delta = targetAngle - proj.angle
+
+                        delta = Math.atan2(Math.sin(delta), Math.cos(delta))
+
+                        proj.angle += delta * (1/Math.pow(distance, 0.5))
+                        proj.style.rotate = proj.angle+'rad'
+
+                        if(distance <= 100) {
+                            proj.targetList = elems.enemies
+                        }
+                    })
                 }
 
                 magnet.destroy = () => {
-                    const explosion = document.createElement('div')
-                    addStyles(explosion, {
-                        width: '100px',
-                        height: '100px',
-                        borderRadius: '50%',
-                        translate: '-50% -50%',
-                        position: 'absolute',
-                        left: magnet.pos[0]+'px',
-                        top: magnet.pos[1]+'px',
-                        backgroundColor: 'white',
-                        animation: 'magnetExplosion 250ms ease-out 1 forwards'
-                    })
-
-                    doge('area').append(explosion)
-                    createParticles([...magnet.pos], 10, 25, [25, 50], 250, 'ease-out', {backgroundColor: 'white'})
-
-                    doge('area').querySelectorAll('.enemyProjectile').forEach(projectile => {
-                        const dis = Math.sqrt(
-                            Math.pow(magnet.pos[0] - projectile.pos[0],2) +
-                            Math.pow(magnet.pos[1] - projectile.pos[1],2)
-                        )
-
-                        if(dis <= 50) {
-                            projectile.angle = Math.atan2(magnet.pos[1] - projectile.pos[1], magnet.pos[0] - projectile.pos[0])
-                            projectile.parried = true
-                            projectile.canHitEnemy = true
-                            projectile.damage *= 3
-                            projectile.speed = DeBread.randomNum(10,20,5)
-
-                            getStyle(styles.fragmented)
-                        }
-                    })
-
                     magnet.remove()
                 }
             }
@@ -2093,18 +2348,6 @@ const powerItems = [
                         createExplosion([...bottle.pos], 100, player.stats.bullet.damage*2, 10, true)
                         createFire([...bottle.pos], 250, true)
 
-                        createParticle(
-                            0,
-                            [...bottle.pos],
-                            10,
-                            1.1,
-                            DeBread.randomNum(0,Math.PI*2,10),
-                            10,
-                            1.1,
-                            25,
-                            {color: 'white'}
-                        )
-
                         bottle.remove()
                     }
 
@@ -2137,7 +2380,7 @@ const powerItems = [
                     createParticle(
                         0,
                         [...bottle.pos],
-                        5,
+                        DeBread.randomNum(3,7,10),
                         1.25,
                         DeBread.randomNum(0,Math.PI*2,10),
                         5,
@@ -2209,6 +2452,56 @@ const powerItems = [
                 createShopItems(items)
             }
         },
+        the_d100: {
+            name: 'The D100',
+            desc: `
+                Uses <cp>100</cp> POWER<br>
+                Rerolls all of the players items.<br>
+                <cp>!</cp> Can only be used when there are no enemies alive<br>
+                <cs>!</cs> You can look at your items under STATS in the pause menu.
+            `,
+            charge: 100,
+            requirement: () => {
+                return elems.enemies.length === 0
+            },
+
+            use: () => {
+                const playerBefore = player
+
+                player = createPlayer()
+                player.wave = playerBefore.wave
+                player.lastWaveDate = playerBefore.lastWaveDate
+                player.gameOverStats = playerBefore.gameOverStats
+                player.powerItem = playerBefore.powerItem
+                player.health = playerBefore.health
+                player.power = playerBefore.power
+                player.pos = [...playerBefore.pos]
+                renderStats()
+
+                for(let i = 0; i < playerBefore.itemsBought.length; i++) {
+                    createTimeout(() => {
+                        let rarity = getWeightedChance([
+                            55 + playerBefore.stats.shop.luck,
+                            27 + 1.25*playerBefore.stats.shop.luck,
+                            16 + 1.25*playerBefore.stats.shop.luck,
+                            1.95 + 1.25*playerBefore.stats.shop.luck,
+                            0.01 + 0.05*playerBefore.stats.shop.luck
+                        ])
+                        const itemList = upgrades[rarity]
+                        const randomKey = Object.keys(itemList)[DeBread.randomNum(0,Object.keys(itemList).length-1)]
+                        const randomItem = itemList[randomKey]
+                        randomItem.apply()
+
+                        player.itemsBought.push({
+                            data: randomItem,
+                            id: randomKey,
+                            rarity: rarity
+                        })
+                    }, i)
+                }
+                updateUI()
+            }
+        },
         demon_core: {
             name: 'Demon Core',
             desc: `
@@ -2226,6 +2519,75 @@ const powerItems = [
                 elems.enemies.forEach(enemy => {
                     enemy.isBleeding = true
                 })
+            }
+        },
+        lightning_rod: {
+            name: 'Lightning Rod',
+            desc: `
+                Uses <cp>40</cp> POWER<br>
+                Deals <cg>2500%</cg> of the players damage to a random enemy.<br>
+                <cp>!</cp> If there are no enemies on screen, the player is targeted instead.
+            `,
+            charge: 40,
+
+            use: () => {
+                let randomEnemy
+                let pos
+                if(elems.enemies.length > 0) {
+                    randomEnemy = elems.enemies[DeBread.randomNum(0,elems.enemies.length-1)]
+                    pos = [...randomEnemy.data.centerPos]
+                } else {
+                    randomEnemy = player.elem
+                    pos = [...randomEnemy.data.centerPos]
+                }
+                
+
+                const superMagnets = doge('area').querySelectorAll('.supermagnet')
+                let damage
+                if(superMagnets.length > 0) {
+                    const randomMagnet = superMagnets[DeBread.randomNum(0,superMagnets.length-1)]
+                    pos = [...randomMagnet.pos]
+                    createExplosion(pos, 100, player.stats.bullet.damage * 100, 20, true, [[0,50],[155,255],[255,255]])
+                } else {
+                    damage = randomEnemy.data.damage(player.stats.bullet.damage * 25)
+                    const popup = createPopupText(formatNumber(DeBread.round(damage)), [...randomEnemy.data.centerPos])
+                    popup.style.color = 'aqua'
+                    doge('area').append(popup)
+                }
+                console.log(superMagnets.length)
+
+                DeBread.easeShake(doge('area'),10,5,0.2)
+
+                const lightning = document.createElement('div')
+                lightning.classList.add('entity')
+                lightning.backgroundPos = 0
+                let randomYOffset = DeBread.randomNum(0,128)
+                addStyles(lightning, {
+                    width: '32px',
+                    height: '2048px',
+                    position: 'absolute',
+                    translate: '-50% 0',
+                    left: pos[0]+'px',
+                    top: pos[1]-2048+'px',
+                    backgroundImage: 'url(graphics/lightning.png)',
+                    backgroundSize: '160px 128px',
+                    backgroundPosition: `0 ${randomYOffset}px`,
+                    scale: `${[-1,1][DeBread.randomNum(0,1)]} 1`,
+                    filter: 'drop-shadow(0px 0px 5px rgba(0,255,255,0.5))',
+                })
+
+                lightning.tick = () => {
+                    if(e.gameUpdates % 2 === 0) {
+                        lightning.style.backgroundPosition = `-${lightning.backgroundPos*32}px ${randomYOffset}px`
+                        lightning.backgroundPos++
+    
+                        if(lightning.backgroundPos > 4) {
+                            lightning.remove()
+                        }
+                    }
+                }
+
+                doge('area').append(lightning)
             }
         },
     },
@@ -2533,6 +2895,14 @@ const powerItems = [
         },
     },
     {
+        empty: {
+            name: 'Empty',
+            desc: 'Does nothing<br>Used when the player has an empty secondary power item',
+            charge: 0,
+            ignoreReplacementWarning: true,
+
+            use: () => {}
+        },
         walfling: {
             name: 'Walfling',
             desc: `
@@ -2633,6 +3003,101 @@ const powerItems = [
 
                 modifyStat(['shop','pepsifyChance'],'+=2')
                 modifyStat(['misc','pepsiPower'],'+=0.5')
+            }
+        },
+        egg: {
+            name: 'Egg',
+            desc: `
+                Uses <cp>25</cp> POWER<br>
+                Spawns a Chud Chip that attacks enemies dealing <cg>100%</cg> of your damage every 25 ticks<br>
+                After 500 ticks, it explodes dealing <cg>500%</cg> of your damage
+            `,
+            charge: 25,
+
+            use: () => {
+                const bird = document.createElement('div')
+                bird.pos = [player.centerPos[0]+DeBread.randomNum(-0.95,1.05,10),player.centerPos[1]+DeBread.randomNum(-0.95,1.05,10)]
+                bird.dirVels = []
+                bird.classList.add('entity')
+                bird.classList.add('chudChip')
+                bird.lastHitDate = 0
+                bird.ticksActive = 0
+                addStyles(bird, {
+                    width: '36px',
+                    height: '36px',
+                    position: 'absolute',
+                    left: bird.pos[0]+'px',
+                    top: bird.pos[1]+'px',
+                    translate: '-50% -50%',
+                    backgroundImage: 'url(graphics/enemies/chudBird.gif)',
+                    backgroundSize: 'cover',
+                    zIndex: '10'
+                })
+
+                bird.tick = () => {
+                    for(let i = 0; i < bird.dirVels.length; i++) {
+                        const dirVel = bird.dirVels[i]
+                        bird.pos[0] += Math.cos(dirVel.angle) * dirVel.speed
+                        bird.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
+            
+                        dirVel.speed /= dirVel.div
+                        if(Math.abs(dirVel.speed) <= 0.1) {
+                            bird.dirVels.splice(i, 1)
+                        }
+                    }
+
+                    addStyles(bird, {
+                        left: bird.pos[0]+'px',
+                        top: bird.pos[1]+'px',
+                    })
+
+                    const enemy = getClosest(bird, '.enemy')
+                    if(enemy.elem) {
+                        const dx = enemy.elem.data.centerPos[0] - bird.pos[0]
+                        const dy = enemy.elem.data.centerPos[1] - bird.pos[1]
+    
+                        const angle = Math.atan2(dy, dx)
+    
+                        bird.dirVels.push({
+                            speed: 1,
+                            angle: angle,
+                            div: 1.05
+                        })
+
+                        if(isColliding(enemy.elem, bird) && e.gameUpdates - bird.lastHitDate > 25 && enemy.elem.data.active) {
+                            const damage = enemy.elem.data.damage(player.stats.bullet.damage)
+                            bird.lastHitDate = e.gameUpdates
+
+                            const popup = createPopupText(DeBread.round(damage), [...bird.pos])
+                            popup.style.color = '#fff3bc'
+                            popup.style.fontSize = Math.min(Math.max(damage / 5, 15), 50) + 'px'
+                            doge('area').append(popup)
+                        }
+                    }
+
+                    if(bird.ticksActive >= 500 * player.stats.player.passiveAbilityMult) {
+                        createExplosion([...bird.pos],100,player.stats.bullet.damage*5,25,true,)
+                        bird.remove()
+                    }
+
+                    doge('area').querySelectorAll('.chudChip').forEach(otherBird => {
+                        const angle = Math.atan2(otherBird.pos[1] - bird.pos[1], otherBird.pos[0] - bird.pos[0])
+                        if (isColliding(bird, otherBird) && bird !== otherBird) {
+                            const distance = Math.sqrt(
+                                Math.pow(bird.pos[0] - otherBird.pos[0],2) + 
+                                Math.pow(bird.pos[1] - otherBird.pos[1],2)
+                            )
+                            
+                            const overlap = (36 - distance) / 10
+                            bird.pos[0] -= Math.cos(angle) * overlap
+                            bird.pos[1] -= Math.sin(angle) * overlap                    
+                        }
+                    })
+
+                    bird.ticksActive++
+                }
+
+                doge('area').append(bird)
             }
         },
     }
@@ -2833,7 +3298,12 @@ function openShop(upgradeList) {
         e.gameActive = false
         player.rerolls = player.stats.shop.rerolls
         doge('gameShopContainer').style.display = 'flex'
-        doge('rerollPrice').innerText = `(${player.rerolls})`
+
+        if(player.stats.shop.rerolls > 0) {
+            doge('rerollPrice').innerText = `(${player.rerolls})`
+        } else {
+            doge('rerollPrice').innerText = `($${Math.floor(player.stats.shop.rerollPrice)})`
+        }
         doge('gameShopTitle').innerText = 'Shop :)'
         applyFlowText(doge('gameShopTitle'))
 
@@ -2856,11 +3326,7 @@ function openShop(upgradeList) {
         //     updateBankinfo()
         // }
 
-        if(player.stats.shop.rerolls === 0) {
-            doge('gameShopUpgradesButtons').style.display = 'none'
-        } else {
-            doge('gameShopUpgradesButtons').style.display = 'flex'
-        }
+        doge('gameShopUpgradesButtons').style.display = 'flex'
         
         createShopItems(upgradeList)
 
@@ -2943,7 +3409,7 @@ function createShopItems(items) {
                             id: elixirID,
                             rarity: 0,
                             type: 2,
-                            cost: DeBread.round(rarities[rarity].costBase * (1 + player.wave / 10) * (randomElixir.priceMult ?? 1))
+                            cost: DeBread.round(rarities[rarity].costBase * (1 + player.wave / 10) * (randomElixir.priceMult ?? 1)) * player.stats.shop.priceMult
                         })
 
                         randomItemsIDs.push(elixirID)
@@ -2973,7 +3439,7 @@ function createShopItems(items) {
                     const randomKey = filteredKeys[DeBread.randomNum(0, filteredKeys.length - 1)]
                     const randomItem = itemList[rarity][randomKey]
 
-                    let itemCost = DeBread.round(rarities[rarity].costBase * (1 + player.wave / 10) * (randomItem.priceMult ?? 1))
+                    let itemCost = DeBread.round(rarities[rarity].costBase * (1 + player.wave / 10) * (randomItem.priceMult ?? 1)) * player.stats.shop.priceMult
                     
                     if(saveData.selectedChallenge === 'classic') itemCost = 0
 
@@ -3016,7 +3482,7 @@ function createShopItems(items) {
                             rarity: 6,
                             type: 0,
                             id: 'error',
-                            cost: 10,
+                            cost: 100,
                         })
     
                         break
@@ -3149,12 +3615,19 @@ function createShopItems(items) {
 
                     player.itemsBought.push(randomItems[key])
                 } else if(itemMeta.type === 1) { //Power items
-                    if(player.powerItem && saveData.settings.showPowerItemWarning) {
+                    if(!player.powerItem) {
+                        player.powerItem = item
+                        itemSlot.sellOut()
+                    } else if(!player.secondaryPowerItem && player.stats.player.canCarrySecondaryPowerItem) {
+                        player.secondaryPowerItem = item
+                        itemSlot.sellOut()
+                    } else if(saveData.settings.showPowerItemWarning) {
                         openPrompt('Warning!','Buying this power item will override your current one! Are you sure?',[{text: 'Yeah', onclick: () => {player.powerItem = item; itemSlot.sellOut(); closePrompt()}},{text: 'PLEASE NO', onclick: () => {closePrompt()}}])
                     } else {
                         player.powerItem = item
                         itemSlot.sellOut()
                     }
+
                 } else if(itemMeta.type === 2) { //Elixirs
                     //Elixir shit
                     
@@ -3496,18 +3969,37 @@ function updateShopTab() {
 // }
 
 function rerollShop() {
+    if(player.rerolls === 0 && player.money > player.stats.shop.rerollPrice) {
+        player.getMoney(-player.stats.shop.rerollPrice)
+        modifyStat(['shop','rerollPrice'],'*=1.1')
+        doge('rerollPrice').innerText = `($${Math.floor(player.stats.shop.rerollPrice)})`
+
+        createShopItems()
+    }
+
     if(player.rerolls > 0) {
         player.rerolls--
         doge('rerollPrice').innerText = `(${player.rerolls})`
         createShopItems()
 
         player.gameOverStats.rerolls++
+
+        if(player.rerolls === 0) {
+            doge('rerollPrice').innerText = `($${Math.floor(player.stats.shop.rerollPrice)})`
+        }
     }
+
 }
 
 function closeShop() {
     doge('gameShopContainer').style.display = 'none'
     e.gameActive = true
+    player.perfectSet = true
+
+    player.moneyBonusQueue.push({
+        value: Math.min(Math.floor(player.money / 5), player.stats.player.interestCap),
+        text: 'Interest'
+    })
 
     doge('area').querySelectorAll('.portal').forEach(portal => {
         addStyles(portal, {

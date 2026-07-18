@@ -35,7 +35,8 @@ const funFacts = [
     'Many items are pulled straight out of the original Goober Shooter!',
     'Originally, the player could\'ve had \'shield\' on top of thier health, but it caused too many issues so it was scrapped.',
     'You can press H in the sandbox to toggle the sandbox menu!',
-    'You can hold SHIFT+R in game to quickly restart!'
+    'You can hold SHIFT+R in game to quickly restart!',
+    'Press ctrl++ or ctrl+- to change the game scale!'
 ]
 
 const startScreenTimeouts = []
@@ -321,6 +322,10 @@ function openMenu(menu) {
             doge('menuTitle1').innerText = 'Googer'
         }
 
+        if(saveData.gameSettings.gamemode >= 3) {
+            saveData.gameSettings.gamemode = 0
+        }
+
         doge('menuFF').innerText = funFacts[DeBread.randomNum(0,funFacts.length-1)]
         
         applyFlowText(doge('menuTitle1'), 0.75)
@@ -385,6 +390,7 @@ function openMenu(menu) {
         document.title = 'Goober Shooter 2 - Game Settings'
         renderChallenges()
         openGameSettingsMenu(0)
+        selectGamemode(saveData.gameSettings.gamemode)
 
         topper([
             {
@@ -982,9 +988,10 @@ const creditsHTML = `
     <span>Additional SFX: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
     <span>Playtesters: Nova, TrueSkywalkr, Dottr, <a href="https://plinkel.neocities.org/" target="_blank">Plinkel</a></span><br>
     <span>Save filler: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
+    <span>Special thanks: </span><a href="https://yeen.town/@Chalkllate" target="_blank">Jake</a><br>
     <br>
     <span>Supporters 💖: xX_DeBread_H8ER_Xx</span><br>
-    <button onclick="openPrompt('Character Credits', getCharacterCreditsHTML(), [{text: 'Back', onclick: () => {openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,350])}}], [400,500])">Characters</button>
+    <button onclick="openPrompt('Character Credits', getCharacterCreditsHTML(), [{text: 'Back', onclick: () => {openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,375])}}], [400,500])">Characters</button>
 `
 
 const creditProfiles = {
@@ -1035,6 +1042,13 @@ const creditProfiles = {
         socials: {
             Twitter: 'https://twitter.com/Garn47',
             Game: 'https://floombo.itch.io/garn47'
+        }
+    },
+    isaac: {
+        name: 'Edmund McMillen',
+        socials: {
+            Twitter: 'https://twitter.com/edmundmcmillen',
+            TBOI_Steam_Page: 'https://store.steampowered.com/app/250900/The_Binding_of_Isaac_Rebirth/',
         }
     },
     erix: {
@@ -1134,6 +1148,12 @@ const creditProfiles = {
             Twitter: 'https://twitter.com/Sirchipsicle'
         }
     },
+    // belle: {
+    //     name: 'SquishyFishyBelle',
+    //     socials: {
+    //         Website: 'https://squishyfishybelle.carrd.co/',
+    //     }
+    // },
     skywalkr: {
         name: 'Skywalkr',
         socials: {}
@@ -1183,6 +1203,7 @@ const characterCredits = {
     wasp: 'wasp',
     wolff: 'wolff',
     chip: 'chip',
+    // belle: 'belle',
     skywalkr: 'skywalkr',
     meringue: 'fae',
     glorp: 'kadence',
@@ -1615,6 +1636,10 @@ function renderCollectionItems(targetList, collectedList, texturePath) {
                     let itemDesc = item.desc
                     if(typeof item.desc === 'function') {
                         itemDesc = item.desc()
+                    }
+
+                    if(item === upgrades[6].error) {
+                        itemDesc += '<br><br>(Applies 2-5 random, non-mythic upgrades, each rarity having equal chance to be chosen)'
                     }
     
                     tooltip(

@@ -1,11 +1,50 @@
-GAME AREA Z-INDEXES
-9 Crosshair
-8 Tutorialist
-7 Enemy projectiles
-6.5 Pickups
-6 Enemies
-5 Poison fields
-4 Weapon
-3 Player
-2 Portal
-1 Player projectiles
+# Character creation checklist
+- Spritesheet
+- Portrait Texture
+- Large Portrait Texture
+- Wave 100 achievement
+- Character owner credit profile (if needed)
+
+# Stuff I need to do
+
+## Long-term
+- Fix inconsistencies with outline width on menus and buttons.
+- Add controller support
+- Limit number of notifications
+- Consumables
+  - Thick thighs pussy salad
+- Rewrite player damage function
+- Add cosmetics and the ability for them to be unlocked
+- Remake death screen
+- Turn achievements menu into a prompt
+- Scale bosses heath with wave
+- Hide enemy health bars in the hidden challenge
+- Optimize startGame function, gamemode management and challenge management
+
+## Before next release
+- Finish sasha phase 2
+
+# Required Songs (For people to want to make a soundtrack (nobody))
+## Every track must be loopable (Besides the boss finish riff of course)
+## For ideas of what i'd like the music to sound like, listen to the soundtracks of Donut County, Balatro, and MINDWAVE
+- Main Menu
+- Generic (Clean) - Standard melody, no extra tracks
+- Generic (Combat) - More active, more tracks
+- Generic (Boss) - Most active, slightly more than the combat theme, no need to go overboard
+- Generic (Paused) - Chill version of the main melody
+- Boss finish riff (Works the same as TBOIs Boss riff) (Not implemented yet) (Would be cool if the riff was a shortened version of the main melody)
+- Sandbox (Not implemented yet)
+- The Tutorialist (Final Boss) (Not implemented yet)
+- Death Screen (Not implemented yet)
+
+# Needed SFX
+- Glass breaking (For Beer Bottle and Molotov power items)
+- Lightning strike (For Lightning Rod power item)
+- Electicity (For electric stuff)
+- Fire poof (For Wisp power item)
+- Coin flick (For Coin and Lucky Penny power item)
+- Egg cracking (For Egg power item)
+- Throw (Like the minecraft throw sound) (For power items that throw things)
+- Dice roll (For D6 and D100)
+- Charge sound (Similar to TBOIs active item charge sound) (For power items)
+- Player death sound

@@ -420,7 +420,14 @@ const particles = [
 ]
 
 function createParticle(layer, pos, vel, velDiv, angle, size, sizeDiv, duration, styles) {
-    if(particles.length < saveData.settings.particleLimit && saveData.settings.particles) {
+    if(
+        particles.length < saveData.settings.particleLimit && 
+        saveData.settings.particles &&
+        pos[0] > 0 - size &&
+        pos[1] > 0 - size &&
+        pos[0] < player.stats.misc.areaSize + size &&
+        pos[1] < player.stats.misc.areaSize + size
+    ) {
         particles.push(
             {
                 layer: layer,
@@ -455,7 +462,14 @@ function updateParticles() {
         particle.vel[0] /= particle.velDiv
         particle.vel[1] /= particle.velDiv
 
-        if(particle.duration <= 0 || particle.size <= 0) {
+        if(
+            particle.duration <= 0 || 
+            particle.size <= 0 ||
+            particle.pos[0] < 0 - particle.size ||
+            particle.pos[1] < 0 - particle.size ||
+            particle.pos[0] > player.stats.misc.areaSize + particle.size ||
+            particle.pos[1] > player.stats.misc.areaSize + particle.size
+        ) {
             particles.splice(i,1)
         }
     }

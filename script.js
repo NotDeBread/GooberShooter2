@@ -465,13 +465,13 @@ const weaponPresets = {
     },
     sniper: {
         name: 'Sniper',
-        desc: 'Long range weapon with increased damage.',
+        desc: 'Long range weapon with increased damage and ammunition that has a chance to apply bleeding to enemies.',
         ammoChar: '|',
         textureSize: [20,9],
         pros: [
             'Damage',
-            'Penetrating rounds',
             'Bullet speed',
+            'Sharp rounds'
         ],
         cons: [
             'Reload Speed',
@@ -482,10 +482,10 @@ const weaponPresets = {
         apply: () => {
             modifyStat(['bullet','damage'], '=25')
             modifyStat(['bullet','speed'], '=15')
+            modifyStat(['bullet','sharpChance'], '=15')
 
-            modifyStat(['ammo','max'], '=5')
+            modifyStat(['ammo','max'], '=3')
             modifyStat(['ammo','reloadSpeed'], '=80')
-            modifyStat(['ammo','penetratingRounds'], '=true')
             modifyStat(['bullet','shotCooldown'], '=15')
 
             updateUI()
@@ -891,12 +891,35 @@ const weaponPresets = {
             modifyStat(['ammo','autoFire'],'=true')
             modifyStat(['bullet','shotCooldown'],'=20')
         }
-    }
+    },
+    guitar: {
+        name: 'Guitar',
+        desc: '',
+        textureSize: [12,20],
+        ammoChar: '🎵',
+        bulletTexture: true,
+
+        pros: [
+        ],
+        cons: [
+        ],
+
+        apply: () => {
+            modifyStat(['player','maxWeaponDistance'],'=25')
+            modifyStat(['bullet','size'],'=14')
+            modifyStat(['bullet','lockRot'], '=true')
+            modifyStat(['bullet','silentShot'], '=true')
+
+            player.onShoot = proj => {
+                DeBread.playSound('audio/ahh.mp3',DeBread.randomNum(0.9,1.1,10), false)
+            }
+        }
+    },
 }
 
 const characters = {
     debread: {
-        name: 'DeBread',
+        name: 'Bread',
         desc: 'Some guy',
         taunts: 7,
         tag: 'Fox',
@@ -1025,7 +1048,7 @@ const characters = {
     },
     nyan: {
         name: 'Nyan',
-        desc: '',
+        desc: 'The world famous magic cat man',
         tag: 'Cat thing??',
         tagCol: 'rgb(230, 92, 92)',
         color: [219, 219, 219],
@@ -1184,10 +1207,11 @@ const characters = {
 
         pros: [
             'So a horse walks into a bar',
-            'The horse asks for a drink',
-            'The bartender said no bro youre a horse',
-            'The horse says idc',
-            'The horse gets a drink anyways'
+            'It asks the bartender, what can I have in Goober Shooter',
+            'The bartender says, Idk youre a horse',
+            'The horse says give me stat ups',
+            'The bartender says, I dont have any stat ups',
+            'The horse says, fuck you, I\'ll go to the next bar',
         ],
 
         applyStats: () => {
@@ -1239,7 +1263,7 @@ const characters = {
             {text: 'GS2',col: '#775db9'}
         ],
 
-        weapon: weaponPresets.gun
+        weapon: weaponPresets.guitar
     },
     walf: {
         name: 'Walf',
@@ -1559,6 +1583,8 @@ const characters = {
                 }
             }
             DeBread.round(player.stats.bullet.multishot)
+
+            modifyStat(['bullet','speedDiv'],'=1')
         },
 
         weapon: weaponPresets.gun
@@ -1637,8 +1663,29 @@ const characters = {
             {text: 'GS2',col: '#775db9'}
         ],
 
+        info: `
+            Starts with the \'Egg\' Power Item.<br>${powerItems[5].egg.desc}
+        `,
+
+        applyStats: () => {
+            player.powerItem = powerItems[5].egg
+        },
+
         weapon: weaponPresets.gun
     },
+    // belle: {
+    //     name: 'Belle',
+    //     desc: '',
+    //     tag: 'Porcupinefish',
+    //     tagCol: 'rgb(232, 213, 157)',
+    //     color: [232, 213, 157],
+
+    //     tagList: [
+    //         {text: 'GS2',col: '#775db9'}
+    //     ],
+
+    //     weapon: weaponPresets.gun
+    // },
     skywalkr: {
         name: 'Skywalkr',
         desc: 'this game is pissing me off',
@@ -2056,13 +2103,38 @@ const challenges = {
     greed: {
         name: 'Greed',
         desc: `
-            Hitting an enemy with a bullet has a <cg>25%</cg> chance to spawn 1 copper coin<br>
+            Hitting an enemy with a bullet has a <cg>25%</cg> chance to spawn 1 random coin<br>
             Waves no longer spawn money
         `,
         
         apply: () => {
             modifyStat(['bullet','coinChance'],'=25')
             modifyStat(['misc','waveMoneyMult'],'=0')
+        }
+    },
+    perfect: {
+        name: 'Go for a perfect!',
+        desc: `
+            <cs>5x</cs> Score multiplier<br>
+            After the player takes damage for the first time, the shop no longer appears.
+        `,
+
+        apply: () => {
+            player.scoreMult = 5
+        }
+    },
+    uncanny: {
+        name: 'Uncanny',
+        desc: `
+            <cs>2.5x</cs> Score multiplier<br>
+            An uncanny cat slowly follows the player.<br>
+            If the uncanny cat touches the player, they die instantly.<br>
+            <br>
+            <em style="color: grey;">Try out Uncanny Cat Golf!</em>
+            `,
+
+        apply: () => {
+            player.scoreMult = 2.5
         }
     },
     classic: {
@@ -2078,7 +2150,7 @@ const challenges = {
             player.scoreMult = 0.25
             modifyStat(['enemy','levelIncrease'],'=-Infinity')
         }
-    }
+    },
 }
 
 //Achievement Difficulties
@@ -2498,6 +2570,17 @@ const achievements = {
         name: 'Chip Perfection',
         desc: 'Reach wave 100 using Chip.',
         difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Drool',
+            src: 'graphics/upgrades/drool.png',
+            data: upgrades[4].drool
+        },
+
+        run: () => {
+            saveData.stats.unlocked.items.push('drool')
+        }
     },
     skywalkr_Perfection: {
         name: 'Skywalkr Perfection',
@@ -2734,9 +2817,7 @@ function createNotification(title, desc, img, timeout = 5000, onclick) {
         div.remove()
         clearTimeout(div.timeout)
 
-        if(onclick) {
-            onclick()
-        }
+        onclick?.()
     }
 }
 
