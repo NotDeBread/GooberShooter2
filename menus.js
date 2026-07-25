@@ -1581,6 +1581,7 @@ function renderCollectionItems(targetList, collectedList, texturePath) {
     let itemsUnlocked = 0
     let totalItems = 0
 
+    let itemNum = 0
     for(const rarity in targetList) {
         for(const key in targetList[rarity]) {
             const item = targetList[rarity][key]
@@ -1591,7 +1592,9 @@ function renderCollectionItems(targetList, collectedList, texturePath) {
                 justifyContent: 'center',
                 alignItems: 'center',
                 width: '50px',
-                height: '50px'
+                height: '50px',
+                scale: '0',
+                animation: `shopItemIn 500ms cubic-bezier(0,1,.5,1) 1 ${itemNum*15}ms forwards`
             })
 
             let textureExtension = 'png'
@@ -1657,6 +1660,8 @@ function renderCollectionItems(targetList, collectedList, texturePath) {
                 div.querySelector('img').src = 'graphics/icons/unknown.png'
                 div.querySelector('img').style.filter = 'brightness(50%)'
             }
+
+            itemNum++
         }
     }
 

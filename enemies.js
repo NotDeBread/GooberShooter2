@@ -1056,7 +1056,7 @@ const minibosses = {
                                 width: '340px',
                                 height: '74px',
                             }) 
-                        }, 100)) //Finish this
+                        }, 100))
                     }
                 }
             }

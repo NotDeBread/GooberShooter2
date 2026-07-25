@@ -999,6 +999,7 @@ function startGame() {
     doge('weaponTexture').src = `graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.toLowerCase().replaceAll(' ','_')}.png`
     doge('gameMoneyCount').innerText = `$${player.money}`
 
+    document.removeEventListener('keydown', interactFunction)
 
     //CHALLENGE STUFF
     if(saveData.selectedChallenge === 'abstract') {
@@ -1367,7 +1368,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
     proj.dateSpawned = e.gameUpdates
     proj.origin = origin
     proj.kills = 0
-    proj.lastDamageDate = 0
+    proj.lastDamageDate = e.gameUpdates
     
     proj.data = {...data}
     const pData = proj.data
@@ -3541,122 +3542,6 @@ function createPickup(pos, data) {
     doge('area').append(pickup)
 }
 
-// function createPickup(pos, size, speed, texture, col, action, value, requirement, data) {
-//     const pickup = pickupBase.cloneNode()
-//     pickup.color = col
-//     pickup.pos = [DeBread.randomNum(pos[0]-1,pos[0]+1,10),DeBread.randomNum(pos[1]-1,pos[1]+1,10)]
-//     pickup.speed = speed
-//     pickup.action = action
-//     pickup.value = value
-//     pickup.dateSpawned = e.gameUpdates
-//     pickup.scale = 1
-//     pickup.live = true
-//     pickup.dirVels = []
-//     pickup.ticksActive = 0
-//     pickup.requirement = requirement ?? function() {return true}
-
-//     pickup.angle = DeBread.randomNum(0,Math.PI*2,5)
-
-//     elems.pickups.push(pickup)
-
-//     pickup.classList.add('pickup')
-
-//     addStyles(pickup, {
-//         left: pickup.pos[0]+'px',
-//         top: pickup.pos[1]+'px',
-//         width: size[0]+'px',
-//         height: size[1]+'px'
-//     })
-//     pickup.src = `graphics/${texture}.gif`
-
-//     pickup.move = () => {
-//         pickup.pos[0] += Math.cos(pickup.angle) * pickup.speed
-//         pickup.pos[1] += Math.sin(pickup.angle) * pickup.speed
-
-//         if(pickup.pos[0] < 0) pickup.pos[0] = 0
-//         if(pickup.pos[1] < 0) pickup.pos[1] = 0
-//         if(pickup.pos[0] > doge('area').offsetWidth) pickup.pos[0] = doge('area').offsetWidth
-//         if(pickup.pos[1] > doge('area').offsetHeight) pickup.pos[1] = doge('area').offsetHeight
-
-
-//         addStyles(pickup, {
-//             left: pickup.pos[0]+'px',
-//             top: pickup.pos[1]+'px',
-//             scale: pickup.scale
-//         })
-
-//         pickup.speed /= 1.1
-
-//         for(let i = 0; i < pickup.dirVels.length; i++) {
-//             const dirVel = pickup.dirVels[i]
-//             pickup.pos[0] += Math.cos(dirVel.angle) * dirVel.speed
-//             pickup.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
-
-//             dirVel.speed /= dirVel.div
-//             if(dirVel.speed <= 0.1) {
-//                 pickup.dirVels.splice(i, 1)
-//             }
-//         }
-
-//         elems.pickups.forEach(other => {
-//             if (pickup === other) return
-
-//             const dx = other.pos[0] - pickup.pos[0]
-//             const dy = other.pos[1] - pickup.pos[1]
-
-//             const distance = Math.sqrt(
-//                 Math.pow(dx,2)+
-//                 Math.pow(dy,2)
-//             )
-
-//             const r1 = pickup.offsetWidth / 2
-//             const r2 = other.offsetWidth / 2
-
-//             const minDist = r1 + r2
-
-//             if(distance < minDist && distance > 0) {
-//                 const overlap = minDist - distance
-
-//                 const nx = dx / distance
-//                 const ny = dy / distance
-
-//                 const push = overlap / 2
-
-//                 pickup.pos[0] -= nx * push
-//                 pickup.pos[1] -= ny * push
-
-//                 other.pos[0] += nx * push
-//                 other.pos[1] += ny * push
-//             }
-//         })
-
-//         pickup.ticksActive++
-//     }
-
-//     pickup.destroy = () => {
-//         pickup.live = false
-//         pickup.style.animation = 'pickupOut 100ms ease-out 1 forwards'
-//         createParticles([...pickup.pos], 3, 8, [5,10], 250, 'ease-out', {backgroundColor: 'white'})
-//         setTimeout(() => {
-//             pickup.remove()
-//             elems.pickups.splice(pickups[elems.pickups.indexOf(pickup)], 1)
-//         }, 100);
-//     }
-
-//     doge('area').append(pickup)
-// }
-
-    // createPickup(
-    //     [100+DeBread.randomNum(-1,1,10),100+DeBread.randomNum(-1,1,10)],
-    //     {
-    //         size: [32,16],
-    //         texture: 'coin0',
-    //         onTouch: () => {
-    //             player.getMoney(999)
-    //         }
-    //     }
-    // )
-
 const coinValues = [1, 5, 10, 25, 100]
 const pickups = {
     coin: (type, pos, speed, amount) => {
@@ -3877,9 +3762,15 @@ function pauseGame(state) {
             pointerEvents: 'none'
         })
     
-        addStyles(doge('area'), {
-            scale: '1'
-        })
+        if(saveData.gameSettings.gamemode === 4) {
+            addStyles(doge('area'), {
+                scale: '1.5'
+            })
+        } else {
+            addStyles(doge('area'), {
+                scale: '1'
+            })
+        }
     
         addStyles(doge('gamePause'), {
             height: '0px',

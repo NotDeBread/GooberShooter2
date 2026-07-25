@@ -91,7 +91,7 @@
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
             <div style="line-height: 1;">
-                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest17</a></span><br>
+                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest18</a></span><br>
                 <a style="font-size: 0.75em; opacity: 0.5; cursor: pointer;" href="https://forms.gle/JDaQUZ1wR6GhAscZ8" target="_blank">Report a bug</a>
             </div>
         </div>
@@ -100,7 +100,7 @@
             <button onclick="openCollection()">COLLECTION</button>
             <button onclick="openMenu('achievements')">ACHIEVEMENTS</button>
             <button onclick="openSettings()">SETTINGS</button>
-            <button onclick="saveData.gameSettings.gamemode = 4; startGame(); openMenu('game')">CREDITS</button>
+            <button onclick="saveData.gameSettings.gamemode = 4; openMenu('game'); startGame();">CREDITS</button>
             <!-- <div id="smallMenuButtons">
                 <button onclick="openMenu('achievements')"><img src="graphics/icons/achievements.png"></button>
                 <button onclick="openSettings()"><img src="graphics/icons/settings.png"></button>
@@ -803,6 +803,7 @@
 
     <script src="DeBread.js"></script>
     <script src="upgrades.js"></script>
+    <script src="characters.js"></script>
     <script src="script.js"></script>
     <script src="menus.js"></script>
     <script src="game.js"></script>

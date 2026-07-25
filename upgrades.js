@@ -2128,6 +2128,91 @@ const powerItems = [
                 }
             }
         },
+        blue_sharpie: {
+            name: 'Blue Sharpie',
+            desc: `
+                Uses <cp>25</cp> POWER<br>
+                Throws a blue sharpie towards your cursor.<br>
+                The sharpie spawns several poison fields dealing <cg>100%</cg> of your damage for 10 ticks.
+            `,
+            charge: 25,
+
+            use: () => {
+                const bottle = document.createElement('div')
+                bottle.classList.add('entity')
+                bottle.pos = [...player.centerPos]
+                bottle.angle = Math.atan2(e.relCursorPos[1] - bottle.pos[1], e.relCursorPos[0] - bottle.pos[0])
+                bottle.speed = 10
+                bottle.grav = -5
+                bottle.rot = 0
+                addStyles(bottle, {
+                    position: 'absolute',
+                    left: bottle.pos[0]+'px',
+                    top: bottle.pos[1]+'px',
+                    width: '25px',
+                    height: '25px',
+                    translate: '-50% -50%',
+                    backgroundImage: 'url(graphics/bottle.png)',
+                    backgroundSize: '16px',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                })
+
+                bottle.tick = (enemies) => {
+                    bottle.rot += 10
+                    bottle.pos[0] += Math.cos(bottle.angle) * bottle.speed
+                    bottle.pos[1] += Math.sin(bottle.angle) * bottle.speed + bottle.grav
+                    
+                    bottle.grav += 0.5
+
+                    addStyles(bottle, {
+                        left: bottle.pos[0]+'px',
+                        top: bottle.pos[1]+'px',
+                        rotate: bottle.rot+'deg'
+                    })
+
+                    bottle.destroy = () => {
+                        createParticles([...bottle.pos], 5, 10, [25,50], 250, 'ease-out',{backgroundColor: 'white'})
+                        createPoisonField([...bottle.pos], 100, player.stats.bullet.damage, 10, 20, elems.enemies, [0,0,255])
+
+                        for(let i = 0; i < 10; i++) {
+                            const projData = {
+                                speedDiv: 1.1,
+                                speed: 10,
+                                damage: player.stats.bullet.damage,
+                                size: 0,
+                                range: 25,
+                                damageInterval: 250,
+
+                                poisonFieldSize: 50,
+                                poisonFieldTicks: 5,
+                                poisonFieldColor: [0,0,255],
+                                poisonFieldChance: 100,
+                                poisonFieldDmgPercent: 100,
+                            }
+                            createProjectile(1,[...bottle.pos],(Math.PI * 2 / 10) * i + DeBread.randomNum(-0.25,0.25,10), projData, elems.enemies, player.elem)
+                        }
+
+                        bottle.remove()
+                    }
+
+                    if(bottle.pos[1] > doge('area').offsetHeight ||
+                        bottle.pos[0] < 0 ||
+                        bottle.pos[0] > doge('area').offsetWidth
+                    ) {
+                        bottle.destroy()
+                    }
+
+                    enemies.forEach(enemy => {
+                        if(isColliding(bottle, enemy) && enemy.data.active) {
+                            bottle.destroy()
+                        }
+                    })
+                }
+
+                doge('area').append(bottle)
+            }
+        },
         // perfume: {
         //     name: 'Perfume',
         //     desc: `
@@ -2554,7 +2639,6 @@ const powerItems = [
                     popup.style.color = 'aqua'
                     doge('area').append(popup)
                 }
-                console.log(superMagnets.length)
 
                 DeBread.easeShake(doge('area'),10,5,0.2)
 
@@ -2641,7 +2725,7 @@ const powerItems = [
         tesla_coil: {
             name: 'Tesla Coil',
             desc: `
-                Uses <cp>80</cp> POWER<br>
+                Uses <cp>75</cp> POWER<br>
                 Spawns a Tesla Coil on your crosshair, dealing constant electricity damage to random enemies.
             `,
             charge: 75,

@@ -372,6 +372,19 @@ const dialogues = {
             text: 'But yeah that about it for my rant.',
             portrait: 'graphics/credits/portraits/fellaFocused.png',
         }
+    ],
+    dottr: [
+        {
+            name: 'DOTTR',
+            nameCol: [255,122,175],
+            portrait: 'graphics/credits/portraits/dottr.png',
+
+            text: '...'
+        },
+        {
+            text: '(They have nothing to say...)',
+            noName: true,
+        }
     ]
 }
 
@@ -383,15 +396,18 @@ function startDialogueSequence(data) {
     dialogueActive = true
 
     progressFunction = function progress() {
+        const dialogue = data[dialogueProgress]
+        console.log(dialogueProgress)
         if(dialogueProgress > data.length-1) {
             document.removeEventListener('keydown', keydown)
             doge('dialogueContainer').style.display = 'none'
+            data[dialogueProgress-1]?.onEnd?.()
             dialogueProgress = 0
             dialogueActive = false
-
+            
             return
         }
-        const dialogue = data[dialogueProgress]
+
         if(dialogue.options) {
             doge('dialogueBody').innerHTML = ''
 
@@ -449,6 +465,8 @@ function startDialogueSequence(data) {
         } else {
             doge('dialogue').style.height = '129px'
         }
+
+        dialogue.run?.()
         
         dialogueProgress++
     } 
@@ -523,7 +541,7 @@ const creditAreas = {
                     height: '64px',
                 },
 
-                interactRange: 100,
+                interactRange: 50,
                 interact: () => {
                     startDialogueSequence([
                         {
@@ -558,11 +576,11 @@ const creditAreas = {
                 pos: [256,200],
 
                 styles: {
-                    width: '32px',
-                    height: '32px',
+                    width: '64px',
+                    height: '64px',
                 },
 
-                interactRange: 100,
+                interactRange: 50,
                 interact: () => {
                     openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,375])
                 }
@@ -575,7 +593,7 @@ const creditAreas = {
                     height: '64px',
                 },
 
-                interactRange: 100,
+                interactRange: 50,
                 interact: () => {
                     startDialogueSequence([
                         {
@@ -634,11 +652,26 @@ const creditAreas = {
                 interact: () => {
                     startDialogueSequence(dialogues.fellaDrawing)
                 }
+            },
+            { //Dottr
+                texture: 'graphics/credits/dottr.png',
+                pos: [512-64,512-64],
+                styles: {
+                    width: '64px',
+                    height: '64px',
+                },
+
+                interactRange: 100,
+                interact: () => {
+                    startDialogueSequence(dialogues.dottr)
+                }
             }
         ]
     }
 }
 
+let currentInteractable
+let interactFunction
 function renderCreditArea(data) {
     cleanArea()
     for(const key in data.objects) {
@@ -703,13 +736,14 @@ function renderCreditArea(data) {
     
                 if(dis <= obj.interactRange && !dialogueActive) {
                     if(div.tooltip.style.display === 'none') {
-                        document.addEventListener('keydown', keyDown)
+                        interactFunction = keyDown
+                        document.addEventListener('keydown', interactFunction)
                     }
     
                     div.tooltip.style.display = 'unset'
                 } else {
                     if(div.tooltip.style.display === 'unset') {
-                        document.removeEventListener('keydown', keyDown)
+                        document.removeEventListener('keydown', interactFunction)
                     }
     
                     div.tooltip.style.display = 'none'
