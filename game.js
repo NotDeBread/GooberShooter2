@@ -157,6 +157,7 @@ function createPlayer() {
                 maxWeaponDistance: 50,
                 
                 fireTouch: false,
+                fireDamageMult: 1,
 
                 interestCap: 25,
                 couponBonus: 0,
@@ -201,6 +202,7 @@ function createPlayer() {
                 damageInterval: 0,
                 
                 explosionSize: 0, //The size (in pixels) of the explosion a bullet creates when being destroyed.
+                fireyAmmoChance: 0,
                 fireyAmmo: false,
 
                 heal: 0, //The amount of HP a bullet heals the player when hitting an enemy.
@@ -212,8 +214,6 @@ function createPlayer() {
                 
                 multishot: 1, //The amount of bullets shot at once when pressing left click.
                 
-                // tameChance: 0,
-                // tameCredits: 0,
                 sharpChance: 0,
 
                 poisonFieldChance: 0, //The chance of a bullet creating a poison field when destroyed. (1 = 1% chance)
@@ -357,7 +357,7 @@ function createPlayer() {
 
                     player.perfectSet = false
                     
-                    if(saveData.selectedChallenge === 'perfect' && doge('perfect') && player.timesHit === 0) {
+                    if(saveData.selectedChallenges.includes('perfect') && doge('perfect') && player.timesHit === 0) {
                         DeBread.playSound('audio/perfectFail.mp3')
                         DeBread.easeShake(doge('perfect'),10,10,0.25)
                     }
@@ -411,6 +411,7 @@ function createPlayer() {
         kill: () => {
             if(player.alive && saveData.gameSettings.gamemode < 2) {
                 player.elem.style.opacity = '0'
+                modifyStat(['player','size'],'=0')
                 doge('weapon').style.opacity = '0'
 
                 for(let i = 0; i < 10; i++) {
@@ -431,81 +432,122 @@ function createPlayer() {
 
                 DeBread.easeShake(doge('area'), 25, 2, 0.05)
         
-                for(let i = 0; i < 50; i++) {
-                    setTimeout(() => {
-                        e.gameUpdateInterval += 25
-                        doge('area').querySelectorAll('.enemy, .enemyProjectile').forEach(elem => {
-                            elem.style.transition = `left linear ${e.gameUpdateInterval}ms, top linear ${e.gameUpdateInterval}ms`
+                setTimeout(() => {
+                    for(item of player.itemsBought) {
+                        let alreadyBought = false
+                        doge('gameOverStuffContainer').querySelectorAll('div').forEach(img => {
+                            if(img.id === item.id) {
+                                img.querySelector('span').innerText++
+                                alreadyBought = true
+                            }
                         })
-        
-                        if(i === 49) {
-                            e.gameActive = false
-                            e.gameUpdateInterval = 20
+                        if(!alreadyBought) {
+                            const img = document.createElement('div')
+                            img.innerHTML = '<span>1</span>'
+                            img.id = item.id
+                            addStyles(img, {
+                                backgroundImage: `url(graphics/upgrades/${item.id}.png)`,
+                                backgroundSize: '32px 32px',
+                                width: '32px',
+                                height: '32px',
+                                position: 'relative'
+                            })
 
-                            player.gameOverStats.damageGiven = DeBread.round(player.gameOverStats.damageGiven)
-                            player.gameOverStats.damageTaken = DeBread.round(player.gameOverStats.damageTaken)
+                            addStyles(img.querySelector('span'), {
+                                fontWeight: '700',
+                                filter: 'drop-shadow(0px 0px 5px black)',
+                                textShadow: '-1px -1px 0px black, 0px -1px 0px black, 1px -1px 0px black, -1px 0px 0px black, 1px 0px 0px black, -1px 1px 0px black, 0px 1px 0px black, 1px 1px 0px black'
+                            })
 
-                            doge('gameOverContainer').style.display = 'flex'
-
-                            for(const key in player.gameOverStats) {
-                                doge(`go-${key}`).innerText = player.gameOverStats[key]
-                            }
-
-                            let displayedScore = 0
-                            let displayedWave = 0
-                            for(let i = 0; i < 100; i++) {
-                                setTimeout(() => {
-                                    const scoreDifference = player.score - displayedScore
-                                    displayedScore += scoreDifference * 0.1
-
-                                    doge('go-score').innerText = DeBread.round(displayedScore).toString().padStart(10,0)
-
-                                    const waveDifference = player.wave - 1 - displayedWave
-                                    displayedWave += waveDifference * 0.1
-
-                                    doge('go-wave').innerText = DeBread.round(displayedWave).toString()
-
-                                    if(i === 99) {
-                                        doge('go-score').innerText = DeBread.round(player.score).toString().padStart(10,0)
-                                        doge('go-wave').innerText = DeBread.round(player.wave - 1).toString()
-
-                                        if(saveData.stats.list.Times_Died === 1) {
-                                            openPrompt(
-                                                'Thanks for playtesting!',
-                                                'If you would like to stay up to date with Goober Shooter 2 news, join my Discord Server!<br>If you encountered any bugs, make sure to fill out the Bug Report form.',
-                                                [
-                                                    {
-                                                        text: 'Join Discord Server',
-                                                        onclick: () => {
-                                                            window.open('https://discord.gg/ecCBTRD2hN','_blank')
-                                                        }
-                                                    },
-                                                    {
-                                                        text: 'Report a bug',
-                                                        onclick: () => {
-                                                            window.open('https://forms.gle/JDaQUZ1wR6GhAscZ8','_blank')
-                                                        }
-                                                    },
-                                                    {
-                                                        text: 'Support me!',
-                                                        onclick: () => {
-                                                            window.open('https://buymeacoffee.com/debread','_blank')
-                                                        }
-                                                    },
-                                                    {
-                                                        text: 'Shut up',
-                                                        onclick: closePrompt
-                                                    }
-                                                ],
-                                                [450,225]
-                                            )
-                                        }
-                                    }
-                                }, 25 * i);
-                            }
+                            doge('innerGameOverStuffContainer').append(img)
                         }
-                    }, i * 100);
-                }
+                    }
+
+                    doge('go-score').innerText = DeBread.round(player.score).toString().padStart(10,0)
+                    doge('go-wave').innerText = player.wave
+
+                    doge('go-moneySpent').innerText = `$${DeBread.round(player.gameOverStats.moneySpent)}`
+                    doge('go-damageDelt').innerText = DeBread.round(formatNumber(player.gameOverStats.damageGiven))
+                    doge('go-enemiesKilled').innerText = DeBread.round(formatNumber(player.gameOverStats.enemiesKilled))
+
+                    doge('gameOverContainer').style.display = 'flex'
+                }, 1000);
+
+                // for(let i = 0; i < 50; i++) {
+                //     setTimeout(() => {
+                //         e.gameUpdateInterval += 25
+                //         doge('area').querySelectorAll('.enemy, .enemyProjectile').forEach(elem => {
+                //             elem.style.transition = `left linear ${e.gameUpdateInterval}ms, top linear ${e.gameUpdateInterval}ms`
+                //         })
+        
+                //         if(i === 49) {
+                //             e.gameActive = false
+                //             e.gameUpdateInterval = 20
+
+                //             player.gameOverStats.damageGiven = DeBread.round(player.gameOverStats.damageGiven)
+                //             player.gameOverStats.damageTaken = DeBread.round(player.gameOverStats.damageTaken)
+
+                //             doge('gameOverContainer').style.display = 'flex'
+
+                //             for(const key in player.gameOverStats) {
+                //                 doge(`go-${key}`).innerText = player.gameOverStats[key]
+                //             }
+
+                //             let displayedScore = 0
+                //             let displayedWave = 0
+                //             for(let i = 0; i < 100; i++) {
+                //                 setTimeout(() => {
+                //                     const scoreDifference = player.score - displayedScore
+                //                     displayedScore += scoreDifference * 0.1
+
+                //                     doge('go-score').innerText = DeBread.round(displayedScore).toString().padStart(10,0)
+
+                //                     const waveDifference = player.wave - displayedWave
+                //                     displayedWave += waveDifference * 0.1
+
+                //                     doge('go-wave').innerText = DeBread.round(displayedWave).toString()
+
+                //                     if(i === 99) {
+                //                         doge('go-score').innerText = DeBread.round(player.score).toString().padStart(10,0)
+                //                         doge('go-wave').innerText = DeBread.round(player.wave).toString()
+
+                //                         if(saveData.stats.list.Times_Died === 1) {
+                //                             openPrompt(
+                //                                 'Thanks for playtesting!',
+                //                                 'If you would like to stay up to date with Goober Shooter 2 news, join my Discord Server!<br>If you encountered any bugs, make sure to fill out the Bug Report form.',
+                //                                 [
+                //                                     {
+                //                                         text: 'Join Discord Server',
+                //                                         onclick: () => {
+                //                                             window.open('https://discord.gg/ecCBTRD2hN','_blank')
+                //                                         }
+                //                                     },
+                //                                     {
+                //                                         text: 'Report a bug',
+                //                                         onclick: () => {
+                //                                             window.open('https://forms.gle/JDaQUZ1wR6GhAscZ8','_blank')
+                //                                         }
+                //                                     },
+                //                                     {
+                //                                         text: 'Support me!',
+                //                                         onclick: () => {
+                //                                             window.open('https://buymeacoffee.com/debread','_blank')
+                //                                         }
+                //                                     },
+                //                                     {
+                //                                         text: 'Shut up',
+                //                                         onclick: closePrompt
+                //                                     }
+                //                                 ],
+                //                                 [450,225]
+                //                             )
+                //                         }
+                //                     }
+                //                 }, 25 * i);
+                //             }
+                //         }
+                //     }, i * 100);
+                // }
                 player.alive = false
                 saveData.stats.list.Times_Died++
             }
@@ -614,7 +656,7 @@ function createPlayer() {
                             updateTutorialGoal()
                         }
 
-                        if(saveData.selectedChallenge === 'skillsUSA') {
+                        if(saveData.selectedChallenges.includes('skillsUSA')) {
                             const compliments = [
                                 'Good job!',
                                 'Nice one!',
@@ -954,19 +996,23 @@ function startGame() {
         })
 
         doge('gameUIContainer').style.opacity = '0'
-        saveData.selectedChallenge = 'none'
+        saveData.selectedChallenges = []
     } else if(saveData.gameSettings.gamemode === 3) {
         modifyStat(['melee','size'], '=0')
         modifyStat(['melee','damage'],'=0')
         modifyStat(['ammo','garandReload'], '=true')
         doge('pageTitle').innerText = 'Goober Shooter 2 - Tutorial'
-        saveData.selectedChallenge = 'none'
+        saveData.selectedChallenges = []
     } else {
         characters[saveData.selectedCharacter].weapon.apply()
         if(characters[saveData.selectedCharacter].applyStats) {
             characters[saveData.selectedCharacter].applyStats()
         }
-        challenges[saveData.selectedChallenge].apply()
+        for(const challenge of saveData.selectedChallenges) {
+            if(challenges[challenge].apply) {
+                challenges[challenge].apply()
+            }
+        }
         doge('pageTitle').innerText = 'Goober Shooter 2 - Wave 0'
     }
 
@@ -999,14 +1045,16 @@ function startGame() {
     doge('weaponTexture').src = `graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.toLowerCase().replaceAll(' ','_')}.png`
     doge('gameMoneyCount').innerText = `$${player.money}`
 
+    updateTrack(false)
+
     document.removeEventListener('keydown', interactFunction)
 
     //CHALLENGE STUFF
-    if(saveData.selectedChallenge === 'abstract') {
+    if(saveData.selectedChallenges.includes('abstract')) {
         area.createNotice('Things are getting weird!')
     }
 
-    if(saveData.selectedChallenge === 'perfect') {
+    if(saveData.selectedChallenges.includes('perfect')) {
         const perfect = document.createElement('div')
         perfect.classList.add('entity')
         perfect.setAttribute('id','perfect')
@@ -1072,7 +1120,7 @@ function startGame() {
         doge('area').append(perfectText)
     }
 
-    if(saveData.selectedChallenge === 'uncanny') {
+    if(saveData.selectedChallenges.includes('uncanny')) {
         const uncanny = document.createElement('div')
         uncanny.classList.add('entity')
         uncanny.pos = [0,0]
@@ -1414,8 +1462,13 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
         proj.drillTicks++
     }
     
-    if(DeBread.randomNum(0,100,5) <= data.drillChance % 100) {
+    if(DeBread.randomNum(1,100,5) <= data.drillChance % 100) {
         proj.drillTicks++
+    }
+
+    //Added fireyAmmo using fireyAmmoChance
+    if(DeBread.randomNum(1,100) <= data.fireyAmmoChance || data.fireyAmmo) {
+        proj.firey = true
     }
     
     addStyles(proj, {
@@ -1463,7 +1516,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
         proj.append(overlay)
     }
 
-    if(data.fireyAmmo) {
+    if(proj.firey) {
         const overlay = overlayBase.cloneNode()
         overlay.src = 'graphics/fireLargeCentered.gif'
         addStyles(overlay, {
@@ -1496,6 +1549,10 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
             proj.style.backgroundImage = `url(graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.replaceAll(' ','_').toLowerCase()}_bullet.png)`
         } else if(characters[saveData.selectedCharacter].weapon.animatedBulletTexture) {
             proj.style.backgroundImage = `url(graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.replaceAll(' ','_').toLowerCase()}_bullet.gif)`
+        }
+
+        if(player.stats.bullet.drillTicks > 20) {
+            proj.style.opacity = '0.5'
         }
     } else if(style === 2) {
         proj.color = 'white'
@@ -1670,7 +1727,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
             }
     
             //Firey particles
-            if(data.fireyAmmo > 0 && e.gameUpdates % 3 === 0) {
+            if(proj.firey > 0 && e.gameUpdates % 3 === 0) {
                 createParticle(
                     0, 
                     [...proj.pos],
@@ -1798,7 +1855,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
                     }
 
                     //Apply fire
-                    if(data.fireyAmmo) {
+                    if(proj.firey) {
                         if(target === player.elem) {
                             for(const statusEffect of player.statusEffects) {
                                 if(statusEffect.class === 'fire') {
@@ -2020,6 +2077,10 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
         //Explosion
         if(proj.data.explosionSize > 0) {
             createExplosion(proj.pos, proj.data.explosionSize, proj.damage, (data.knockback ?? 2) * 10, false)
+
+            if(!player.alive) {
+                getAchievement('Whoops')
+            }
         }
     
         //Poison field
@@ -2197,7 +2258,7 @@ const canvasCtxs = [doge('areaCanvasTop').getContext('2d'),doge('areaCanvasBotto
 const updateInterval = DeBread.createInterval(() => {
     if(currentMenu === 'game') {
         //Player movement
-        if(e.gameActive && !dialogueActive) {
+        if(e.gameActive && !dialogueActive && player.alive) {
             if(e.keysDown.includes(saveData.keybinds.moveUp)) {
                 if(Math.abs(player.vel[1] - player.stats.player.speedStep) < player.stats.player.speed) {
                     player.vel[1] -= player.stats.player.speedStep
@@ -2456,6 +2517,35 @@ const updateInterval = DeBread.createInterval(() => {
                     }
                 }
             })
+
+            //Passive items
+            if(e.gameUpdates % Math.max(DeBread.round((100 / player.stats.player.passiveAbilityMult)), 1) === 0 && player.stats.player.socksDamage > 0 && elems.enemies.length > 0) {
+                const targetEnemy = elems.enemies[DeBread.randomNum(0,elems.enemies.length-1)]
+                if(targetEnemy.data.active) {
+                    createPoisonField([targetEnemy.data.centerPos[0], targetEnemy.data.centerPos[1]], 100, player.stats.bullet.damage * player.stats.player.socksDamage, 1, 10, elems.enemies, [0,100,255])
+                }
+            }
+
+            if(e.gameUpdates % Math.max(DeBread.round((50 / player.stats.player.passiveAbilityMult)), 1) === 0 && elems.enemies.length > 0) {
+                for(let i = 0; i < player.stats.player.thirdEye; i++) {
+                    let closestEnemy = {elem: undefined, dist: Infinity}
+            
+                    elems.enemies.forEach(enemy => {
+                        const enemyDist = Math.sqrt(Math.pow(player.centerPos[0] - enemy.data.centerPos[0],2) + Math.pow(player.centerPos[1] - enemy.data.centerPos[1],2))
+                        if(enemyDist < closestEnemy.dist) {
+                            closestEnemy.elem = enemy
+                            closestEnemy.dist = enemyDist
+                        }
+                    })
+                    const enemyAngle = Math.atan2(player.centerPos[1] - closestEnemy.elem.data.centerPos[1], player.centerPos[0] - closestEnemy.elem.data.centerPos[0])
+        
+                    const t = (i - (player.stats.player.thirdEye - 1) / 2)
+                    const offset = (t / player.stats.player.thirdEye) * Math.PI / 12
+                    const bulletPos = [...player.centerPos]
+        
+                    createProjectile(0, bulletPos, enemyAngle + offset, player.stats.bullet, elems.enemies, player)
+                }
+            }
         } //END OF PLAYER ALIVE TICKS
 
         //Timeouts
@@ -2605,7 +2695,7 @@ const updateInterval = DeBread.createInterval(() => {
         })
     
         if(player.onFire) {
-            player.damage(0.1, true)
+            player.damage(0.1*player.stats.player.fireDamageMult, true)
             createParticles(
                 [...player.centerPos],
                 2,
@@ -2732,35 +2822,6 @@ const updateInterval = DeBread.createInterval(() => {
             }
         })
     
-        //Passive items
-        if(e.gameUpdates % Math.max(DeBread.round((100 / player.stats.player.passiveAbilityMult)), 1) === 0 && player.stats.player.socksDamage > 0 && elems.enemies.length > 0) {
-            const targetEnemy = elems.enemies[DeBread.randomNum(0,elems.enemies.length-1)]
-            if(targetEnemy.data.active) {
-                createPoisonField([targetEnemy.data.centerPos[0], targetEnemy.data.centerPos[1]], 100, player.stats.bullet.damage * player.stats.player.socksDamage, 1, 10, elems.enemies, [0,100,255])
-            }
-        }
-        
-        if(e.gameUpdates % Math.max(DeBread.round((50 / player.stats.player.passiveAbilityMult)), 1) === 0 && elems.enemies.length > 0) {
-            for(let i = 0; i < player.stats.player.thirdEye; i++) {
-                let closestEnemy = {elem: undefined, dist: Infinity}
-        
-                elems.enemies.forEach(enemy => {
-                    const enemyDist = Math.sqrt(Math.pow(player.centerPos[0] - enemy.data.centerPos[0],2) + Math.pow(player.centerPos[1] - enemy.data.centerPos[1],2))
-                    if(enemyDist < closestEnemy.dist) {
-                        closestEnemy.elem = enemy
-                        closestEnemy.dist = enemyDist
-                    }
-                })
-                const enemyAngle = Math.atan2(player.centerPos[1] - closestEnemy.elem.data.centerPos[1], player.centerPos[0] - closestEnemy.elem.data.centerPos[0])
-    
-                const t = (i - (player.stats.player.thirdEye - 1) / 2)
-                const offset = (t / player.stats.player.thirdEye) * Math.PI / 12
-                const bulletPos = [...player.centerPos]
-    
-                createProjectile(0, bulletPos, enemyAngle + offset, player.stats.bullet, elems.enemies, player)
-            }
-        }
-    
         //Combo stuff
 
         const beforeCombo = Math.floor(player.combo / 100)
@@ -2807,28 +2868,11 @@ const updateInterval = DeBread.createInterval(() => {
                 elem.tick(elems.enemies)
             }
         })
-    
 
-        //Music stuff
-        if(player.alive) {
-            if(player.fightingBoss) {
-                changeTrack('gameBoss', true)
-            } else if(elems.enemies.length > 0) {
-                changeTrack('gameCombat', true)
-            }
-    
-            if(elems.enemies.length === 0 && currentTrack === 'gameCombat' && e.gameUpdates - player.lastKillDate > 25) {
-                changeTrack('gameClean', true)
-            }
-        } else if(currentTrack !== 'gameClean') {
-            changeTrack('gameClean', true)
-        }
-
-        // tracks.gameClean.playbackRate = 20 / e.gameUpdateInterval
-        // tracks.gameCombat.playbackRate = 20 / e.gameUpdateInterval
+        updateTrack(true)
 
         //Random stuff
-        if(e.gameUpdates % 500 === 0 && saveData.selectedChallenge === 'skillsUSA') {
+        if(e.gameUpdates % 500 === 0 && saveData.selectedChallenges.includes('skillsUSA')) {
             createNotification('Tip!','You can parry by pressing <strong>F</strong>! Give it a try!', undefined, 5000)
         }
     
@@ -2893,7 +2937,7 @@ const updateInterval = DeBread.createInterval(() => {
 document.addEventListener('mousedown', ev => {
     if(e.gameActive && !e.gamePaused) {
         const weapon = weapons[player.weapon]
-        if(weapon.leftClick && ev.button === 0 && !isHoveringOnSandbox) {
+        if(weapon.leftClick && ev.button === 0 && !isHoveringOnSandbox && player.alive) {
             if(sandBoxEnemy) {
                 if(e.keysDown.includes('control') && sandBoxEnemy.boss) {
                     const enemy = sandBoxEnemy
@@ -3733,6 +3777,8 @@ function getStyle(style) {
 }
 
 function pauseGame(state) {
+    if(!player.alive) return
+
     DeBread.pauseInterval(1)
     const isPaused = DeBread.getInterval(1).paused
     e.gamePaused = isPaused
@@ -3780,6 +3826,8 @@ function pauseGame(state) {
 
         openPauseMenu('blank')
     }
+
+    updateTrack()
 }
 
 function openPauseStats() {
@@ -4310,6 +4358,13 @@ function openSandboxMenu(menu) {
     if(menu === 'characters') {
         doge('sandboxMenu-characters').innerHTML = ''
         for(const key in characters) {
+            let characterUnlocked = true
+            if(characters[key].unlockable) {
+                if(!saveData.stats.unlocked.characters.includes(key)) {
+                    characterUnlocked = false
+                }
+            }
+
             const button = document.createElement('div')
             addStyles(button, {
                 display: 'flex',
@@ -4336,6 +4391,7 @@ function openSandboxMenu(menu) {
             `
 
             button.onclick = () => {
+                saveData.selectedSkin = -1
                 player = createPlayer()
                 player.elem.data = player
 
@@ -4367,7 +4423,9 @@ function openSandboxMenu(menu) {
                 save()
             }
 
-            doge('sandboxMenu-characters').append(button)
+            if(characterUnlocked) {
+                doge('sandboxMenu-characters').append(button)
+            }
         }
     }
 

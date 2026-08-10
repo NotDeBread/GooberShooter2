@@ -62,7 +62,7 @@
     display: flex;
 }
 
-#gameStatsItems {
+#gameStatsItems, #gameOverStuffContainer {
     border: 1px solid grey;
     padding: 5px;
     height: 150px;
@@ -72,7 +72,7 @@
     margin-top: 5px;
 }
 
-#innerGameStatsItems {
+#innerGameStatsItems, #innerGameOverStuffContainer {
     overflow: hidden;
     display: flex;
     flex-wrap: wrap;
@@ -357,6 +357,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 10px;
     z-index: 10;
 }
 
@@ -369,38 +370,40 @@
 .gameOverRow {
     display: flex;
     gap: 5px;
-    width: 400px;
-    margin-bottom: 5px;
+    margin-top: 5px;
 }
 
 .gameOverBox {
+    padding: 5px;
     border: 1px solid grey;
-    position: relative;
-    padding: 10px;
-    width: 100%;
     display: flex;
     justify-content: center;
+    align-items: center;
+    font-weight: 700;
+    position: relative;
+    min-height: 30px;
+    width: 100%;
 }
 
-.gameOverBoxTitle {
+.gameOverLabel {
     position: absolute;
-    top: -5px;
-    left: 5px;
-    background-color: black;
-    height: 10px;
+    top: 0px;
+    left: 1px;
     display: flex;
+    justify-content: center;
     align-items: center;
-    padding: 0px 5px;
+    line-height: 1;
     font-size: 0.75em;
-    font-weight: 900;
     color: grey;
-    white-space: nowrap;
 }
 
 #go-score {
-    font-family: 'Roboto Mono', monospace;
     font-size: 2em;
-    font-weight: 700;
+    font-family: 'Roboto Mono', monospace;
+}
+
+#go-wave {
+    font-size: 2em;
 }
 
 #gameRestartContainer {
@@ -1202,7 +1205,7 @@
     backdrop-filter: blur(10px);
     height: 0px;
     transition: height cubic-bezier(.1,0,0,1) 500ms;
-    background-image: url(graphics/bg.svg);
+    background-image: url(graphics/ui/bg.svg);
     background-position: center;
     background-size: 200px 200px;
     overflow: hidden;

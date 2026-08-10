@@ -22,6 +22,22 @@ const weaponPresets = {
 
         apply: () => {}
     },
+    odstPistol: {
+        name: 'ODST Pistol',
+        desc: 'halo',
+        ammoChar: '|',
+        textureSize: [12,8],
+        pros: [
+            'Max ammo',
+            'Accuracy'
+        ],
+        cons: [],
+
+        apply: () => {
+            modifyStat(['ammo','max'],'=12')
+            modifyStat(['bullet','accuracy'],'=2')
+        }
+    },
     shotgun: {
         name: 'Shotgun',
         desc: 'Shoots multiple short range bullets.',
@@ -308,11 +324,11 @@ const weaponPresets = {
 
         pros: [
             'Damage',
-            'Bullet Speed'
+            'Bullet speed'
         ],
 
         cons: [
-            'Max Ammo',
+            'Max ammo',
             'Recoil'
         ],
         
@@ -332,7 +348,7 @@ const weaponPresets = {
         bulletTexture: true,
 
         pros: [
-            'Charge projectiles',
+            'Charging rounds',
             'Damage'
         ],
         cons: ['Bullet speed'],
@@ -382,7 +398,7 @@ const weaponPresets = {
         bulletTexture: true,
 
         pros: [
-            'Drill Ticks',
+            'Drill ticks',
             'Damage',
             'Bullet size'
         ],
@@ -567,6 +583,37 @@ const weaponPresets = {
             }
         }
     },
+    crossbow: {
+        name: 'Crossbow',
+        desc: 'Long ranged weapon with charging capabilities.',
+        textureSize: [18,11],
+        ammoChar: '🏹',
+        bulletTexture: true,
+
+        pros: [
+            'Charging rounds',
+            'Damage',
+            'Bullet speed',
+            'Bullet size'
+        ],
+        cons: [
+            'Reload speed',
+            'Max ammo',
+        ],
+
+        apply: () => {
+            modifyStat(['bullet','damage'],'=15')
+            modifyStat(['bullet','speed'],'=12')
+            modifyStat(['bullet','shotCooldown'],'=10')
+            modifyStat(['bullet','size'],'=16')
+            modifyStat(['ammo','reloadSpeed'],'=125')
+            modifyStat(['ammo','max'],'=5')
+
+            modifyStat(['ammo','chargeShot'], '=true')
+            modifyStat(['ammo','chargeTime'], '=75')
+            modifyStat(['ammo','chargeMultCap'], '=5')
+        }
+    }
 }
 
 const characters = {
@@ -574,29 +621,28 @@ const characters = {
         name: 'Bread',
         desc: 'Some guy',
         taunts: 7,
-        tag: 'Fox',
-        tagCol: '#e0a24a',
         color: [244, 175, 84],
 
         tagList: [
-            {text: 'GS1',col: '#e0a24a'}
+            {text: 'Fox',col:'#e0a24a'},
+            {text: 'GS1',col:'#e0a24a'}
         ],
 
         weapon: weaponPresets.gun,
 
         skins: [
             {
-                name: 'Arctic DeBread',
+                name: 'Arctic Bread',
                 src: 'arctic_debread',
 
             },
             {
-                name: 'DeBread Old',
+                name: 'Legacy Bread',
                 src: 'debread_old',
                 taunts: 1,
             },
             {
-                name: 'Arctic DeBread Old',
+                name: 'Legacy Arctic Bread',
                 src: 'arctic_debread_old',
                 taunts: 4,
             }
@@ -607,11 +653,10 @@ const characters = {
         desc: 'Some guy but real',
         taunts: 1,
         info: `Starts with the \'Poker Chip\' Power Item.<br>${powerItems[1].poker_chip.desc}`,
-        tag: 'Raccoon',
-        tagCol: '#775db9',
         color: [84, 84, 84],
 
         tagList: [
+            {text: 'Raccoon',col:'#775db9'},
             {text: 'GS2',col: '#775db9'}
         ],
 
@@ -619,38 +664,47 @@ const characters = {
 
         applyStats: () => {
             player.powerItem = powerItems[1].poker_chip
-        }
+        },
+
+        skins: [
+            {
+                name: 'Legacy Fella',
+                src: 'fella_old',
+                taunts: 1,
+            },
+        ]
     },
     plonk: {
         name: 'Plonk',
         desc: 'Some other guy',
         taunts: 9,
-        tag: 'Cat',
-        tagCol: 'rgb(72, 72, 72)',
         color: [127, 127, 127],
 
         tagList: [
-            {text: 'GS1',col: '#e0a24a'},
+            {text:'Cat',col:'#484848'},
+            {text:'GS1',col:'#e0a24a'},
         ],
 
         weapon: weaponPresets.piss,
 
-
-        applyStats: () => {
-            // player.consumables = ['heroin']
-        }
+        skins: [
+            {
+                name: 'Legacy Plonk',
+                src: 'plonk_old',
+                taunts: 9,
+            },
+        ]
     },
     ashton: {
         name: 'Ashton',
         desc: 'bro thinks hes james sunderland',
-        tag: 'Arctic Fox',
-        tagCol: 'rgb(89, 150, 168)',
         color: [105, 51, 78],
         taunts: 1,
 
         tagList: [
-            {text: 'GS2',col: '#775db9'},
-            {text: 'Plinkel Pack', col: '#386942'},
+            {text:'Arctic Fox',col:'#5996a8'},
+            {text:'GS2',col:'#775db9'},
+            {text:'Plinkel Pack',col:'#386942'},
         ],
 
         weapon: weaponPresets.shotgun
@@ -658,11 +712,10 @@ const characters = {
     tammy: {
         name: 'Tammy',
         desc: 'Some other other guy',
-        tag: 'Dire Wolf',
-        tagCol: 'rgb(147, 151, 182)',
         color: [76, 81, 128],
 
         tagList: [
+            {text:'Dire Wolf',col:'#9397b6'},
             {text: 'GS2',col: '#775db9'},
             {text: 'Plinkel Pack', col: '#386942'},
         ],
@@ -672,14 +725,13 @@ const characters = {
     lorna: {
         name: 'Lorna Walker',
         desc: 'ACAB? Even her?',
-        tag: 'Black Wolf',
-        tagCol: '#592c23',
         color: [45, 27, 30],
         taunts: 1,
 
         tagList: [
-            {text: 'GS2',col: '#775db9'},
-            {text: 'Plinkel Pack', col: '#386942'},
+            {text:'Black Wolf',col:'#592c23'},
+            {text:'GS2',col:'#775db9'},
+            {text:'Plinkel Pack',col:'#386942'},
         ],
 
         weapon: weaponPresets.riot_shotgun
@@ -687,11 +739,10 @@ const characters = {
     tana: {
         name: 'Tana',
         desc: '',
-        tag: 'Dhole',
-        tagCol: 'rgb(92, 189, 230)',
         color: [255,255,255],
 
         tagList: [
+            {text:'Dhole',col:'#5cbde6'},
             {text: 'GS2',col: '#775db9'},
             {text: 'Plinkel Pack', col: '#386942'},
         ],
@@ -701,11 +752,10 @@ const characters = {
     nyan: {
         name: 'Nyan',
         desc: 'The world famous magic cat man',
-        tag: 'Cat thing??',
-        tagCol: 'rgb(230, 92, 92)',
         color: [219, 219, 219],
 
         tagList: [
+            {text:'Cat thing??',col:'#e65c5c'},
             {text: 'GS1',col: '#e0a24a'}
         ],
         
@@ -715,8 +765,6 @@ const characters = {
         name: 'Jaden',
         desc: 'my wife left me',
         taunts: 2,
-        tag: 'Vampire',
-        tagCol: 'rgb(100,0,10)',
         color: [248, 226, 213],
 
         pros: [
@@ -729,6 +777,7 @@ const characters = {
         ],
 
         tagList: [
+            {text:'Vampire',col:'#64000a'},
             {text: 'GS1',col: '#e0a24a'}
         ],
 
@@ -744,14 +793,14 @@ const characters = {
         name: 'Peep',
         desc: '',
         taunts: 2,
-        tag: 'Fox',
-        tagCol: '#6072ad',
         color: [255, 255, 255],
+        unlockable: true,
 
         info: `Starts with the 'Demon Core' Power Item <br>${powerItems[3].demon_core.desc}`,
 
         tagList: [
-            {text: 'GS1',col: '#e0a24a'}
+            {text:'Arctic Fox',col:'#6072ad'},
+            {text:'GS1',col:'#e0a24a'}
         ],
 
         weapon: weaponPresets.cannon,
@@ -763,15 +812,14 @@ const characters = {
     slip: {
         name: 'Slip',
         desc: '',
-        tag: 'Raccoon',
-        tagCol: '#514d47',
         color: [128, 127, 123],
 
         tagList: [
-            {text: 'GS2',col: '#775db9'}
+            {text:'Raccoon',col:'#514d47'},
+            {text:'GS2',col:'#775db9'}
         ],
 
-        weapon: weaponPresets.gun //odst pistol
+        weapon: weaponPresets.odstPistol //odst pistol
     },
     // poppy: {
     //     name: 'Poppy',
@@ -796,16 +844,15 @@ const characters = {
     sasha: {
         name: 'Sasha',
         desc: 'the chomnpner',
-        taunts: 1,
-        tag: 'German, Shepherd',
-        tagCol: '#53463a',
         color: [98, 82, 63],
+        unlockable: true,
 
         info: `Starts with the 'Tennis Ball' Power Item <br>${powerItems[1].tennis_ball.desc}`,
 
         pros: ['Speed'],
 
         tagList: [
+            {text:'German, Shepherd',col:'#53463a'},
             {text: 'GS1',col: '#e0a24a'}
         ],
 
@@ -845,14 +892,13 @@ const characters = {
     the_horse: {
         name: 'The Horse',
         desc: 'run',
-        taunts: 1,
-        tag: 'The Horse',
-        tagCol: '#6b563c',
         color: [153, 110, 75],
+        unlockable: true,
 
         tagList: [
-            {text: 'GS2',col: '#775db9'},
-            {text: '🏇🐴🐴🐎🐎🏇🐴🐎🐴🐴',col: '#282422'}
+            {text:'The Horse',col:'#6b563c'},
+            {text:'GS2',col:'#775db9'},
+            {text:'🏇🐴🐴🐎🐎🏇🐴🐎🐴🐴',col:'#282422'}
         ],
 
         weapon: weaponPresets.horse_weapon,
@@ -879,8 +925,9 @@ const characters = {
         color: [129, 113, 106],
 
         tagList: [
-            {text: 'GS1',col: '#e0a24a'},
-            {text: 'Garn47',col: '#57473d'}
+            {text:'Car',col:'#403b39'},
+            {text:'GS1',col:'#e0a24a'},
+            {text:'Garn47',col:'#57473d'}
         ],
 
         weapon: weaponPresets.gun,
@@ -888,12 +935,12 @@ const characters = {
     isaac: {
         name: 'Isaac',
         desc: '',
-        tag: 'The Binding of Isaac',
-        tagCol: '#a9c3ce',
         color: [129, 113, 106],
+        unlockable: true,
 
         tagList: [
-            {text: 'GS2',col: '#775db9'},
+            {text:'The Binding of Isaac',col:'#a9c3ce'},
+            {text:'GS2',col:'#775db9'},
         ],
 
         info: `Starts with \'The D6\' Power Item.<br>${powerItems[3].the_d6.desc}`,
@@ -907,12 +954,11 @@ const characters = {
     erix: {
         name: 'erix',
         desc: 'use this one if you wanna be really swag',
-        tag: 'Cat',
-        tagCol: 'hotpink',
         color: [95, 86, 85],
 
         tagList: [
-            {text: 'GS2',col: '#775db9'}
+            {text:'Cat',col:'#ff69b4'},
+            {text:'GS2',col:'#775db9'}
         ],
 
         weapon: weaponPresets.guitar
@@ -920,13 +966,11 @@ const characters = {
     walf: {
         name: 'Walf',
         desc: '',
-        taunts: 1,
-        tag: 'Walf',
-        tagCol: 'gray',
         color: [158, 158, 158],
 
         tagList: [
-            {text: 'GS2',col: '#775db9'}
+            {text:'Walf',col:'#9e9e9e'},
+            {text:'GS2',col:'#775db9'}
         ],
 
         pros: ['POWER regen'],
@@ -952,13 +996,11 @@ const characters = {
     jake: {
         name: 'Jake',
         desc: 'good morning wag wag',
-        taunts: 2,
         info: `Starts with the \'Pepper\' Power Item.<br>${powerItems[1].pepper.desc}`,
-        tag: 'Dog',
-        tagCol: '#ab886d',
         color: [231, 219, 205],
 
         tagList: [
+            {text:'Dog',col:'#ab886d'},
             {text: 'GS2',col: '#775db9'},
             {text: '<img src="graphics/homosexual.gif" height=20>', col: 'linear-gradient(to right,rgb(255,100,100) 17%,rgb(255, 200, 100) 34%,rgb(255, 255, 100) 51%,rgb(100, 255, 100) 68%,rgb(100, 100, 255) 84%,rgb(255, 100, 255) 100%)'}
         ],
@@ -979,11 +1021,10 @@ const characters = {
     crow: {
         name: 'Crow',
         desc: '',
-        tag: 'Crow',
-        tagCol: '#0c0026',
         color: [41, 41, 41],
 
         tagList: [
+            {text:'Crow',col:'#0c0026'},
             {text: 'GS2',col: '#775db9'}
         ],
 
@@ -992,12 +1033,10 @@ const characters = {
     krazy: {
         name: 'Krazy',
         desc: 'I know how orange cats are crazy',
-        taunts: 1,
-        tag: 'Cat',
-        tagCol: '#a57f4b',
         color: [176, 126, 64],
 
         tagList: [
+            {text:'Cat',col:'#a57f4b'},
             {text: 'GS2',col: '#775db9'}
         ],
 
@@ -1006,12 +1045,11 @@ const characters = {
     bean: {
         name: 'Bean',
         desc: '',
-        tag: 'Bean',
-        tagCol: 'rgb(113, 82, 45)',
         color: [178, 101, 29],
 
         tagList: [
-            {text: 'GS2',col: '#775db9'}
+            {text:'Bean',col:'#71522d'},
+            {text:'GS2',col:'#775db9'}
         ],
 
         skins: [
@@ -1072,9 +1110,6 @@ const characters = {
     phoenix: {
         name: 'Phoenix',
         desc: '',
-        taunts: 1,
-        tag: 'Fox🔥',
-        tagCol: '#FF5500',
         color: [248, 135, 0],
 
         info: `
@@ -1083,7 +1118,8 @@ const characters = {
         `,
 
         tagList: [
-            {text: 'GS2',col: '#775db9'}
+            {text:'Fox🔥',col:'#FF5500'},
+            {text:'GS2',col:'#775db9'}
         ],
 
         pros: [
@@ -1111,15 +1147,13 @@ const characters = {
     allx: {
         name: 'Quantum',
         desc: '',
-        taunts: 1,
-        tag: 'Protogen',
-        tagCol: '#f67c20',
         color: [40, 32, 12],
 
         info: `Starts with the \'Tesla Coil\' Power Item.<br>${powerItems[4].tesla_coil.desc}`,
 
         tagList: [
-            {text: 'GS2',col: '#775db9'}
+            {text:'Protogen',col:'#f67c20'},
+            {text:'GS2',col:'#775db9'}
         ],
 
         weapon: weaponPresets.gun,
@@ -1138,14 +1172,12 @@ const characters = {
     dottr: {
         name: 'Dottr',
         desc: 'taco bel 🤤',
-        taunts: 1,
-        tag: 'Raccoon',
-        tagCol: '#a16e97',
         color: [167, 166, 167],
         info: `Starts with the \'Blunt\' Power Item.<br>${powerItems[0].blunt.desc}`,
 
         tagList: [
-            {text: 'GS2',col: '#775db9'}
+            {text:'Raccoon',col:'#a16e97'},
+            {text:'GS2',col:'#775db9'}
         ],
 
         skins: [
@@ -1177,16 +1209,14 @@ const characters = {
     skunk: {
         name: 'John',
         desc: 'yucky',
-        taunts: 1,
-        tag: 'Skunk',
-        tagCol: 'rgb(50,50,50)',
         color: [79, 79, 79],
 
         info: `Starts with the \'Beer Bottle\' Power Item.<br>${powerItems[2].beer_bottle.desc}`,
         pros: ['Poisonous parries'],
 
         tagList: [
-            {text: 'GS2',col: '#775db9'}
+            {text:'Skunk',col:'#323232'},
+            {text:'GS2',col:'#775db9'}
         ],
 
         applyStats: () => {
@@ -1215,13 +1245,11 @@ const characters = {
     udev: {
         name: 'udev',
         desc: '',
-        taunts: 1,
         info: 'All stats are randomly multiplied between 0.1x and 10x at run start.',
-        tag: 'Guy',
-        tagCol: 'rgb(0,150,0)',
         color: [0, 255, 0],
 
         tagList: [
+            {text:'Guy',col:'#009600'},
             {text: 'GS1',col: '#e0a24a'}
         ],
 
@@ -1244,15 +1272,13 @@ const characters = {
     snorp: {
         name: 'Douglas',
         desc: '',
-        taunts: 5,
-        tag: 'Cat ?',
-        tagCol: '#5268da',
         color: [237, 237, 237],
 
         info: `
             Starts with the \'Diet Pepsi\' Power Item.<br>${powerItems[5].diet_pepsi.desc}
         `,
         tagList: [
+            {text:'Cat ?',col:'#5268da'},
             {text: 'GS1',col: '#e0a24a'}
         ],
 
@@ -1277,7 +1303,8 @@ const characters = {
         color: [240, 142, 66],
 
         tagList: [
-            {text: 'GS2',col: '#775db9'}
+            {text:'Fox',col:'#9c4321'},
+            {text:'GS2',col:'#775db9'}
         ],
 
         weapon: weaponPresets.staff
@@ -1293,13 +1320,12 @@ const characters = {
     wolff: {
         name: 'Wolff',
         desc: 'BRITISH PEOPLE 🤮🤮🤮🤮',
-        tag: 'Wolf',
-        tagCol: '#420d28',
         color: [112, 86, 78],
 
         tagList: [
-            {text: 'GS1',col: '#e0a24a'},
-            {text: 'GS2',col: '#775db9'}
+            {text:'Wolf',col:'#420d28'},
+            {text:'GS1',col:'#e0a24a'},
+            {text:'GS2',col:'#775db9'}
         ],
 
         weapon: weaponPresets.gun
@@ -1307,12 +1333,11 @@ const characters = {
     chip: {
         name: 'Chip',
         desc: 'AUSTRALIAN PEOPLE 🤮🤮🤮🤮',
-        tag: 'Australian Shepherd',
-        tagCol: 'rgb(247, 146, 148)',
         color: [247, 230, 217],
 
         tagList: [
-            {text: 'GS2',col: '#775db9'}
+            {text:'Australian Shepherd',col:'#f79294'},
+            {text:'GS2',col:'#775db9'}
         ],
 
         info: `
@@ -1325,6 +1350,48 @@ const characters = {
 
         weapon: weaponPresets.gun
     },
+    // hana: {
+    //     name: 'Hana',
+    //     desc: '',
+    //     color: [206,144,73],
+
+    //     tagList: [
+    //         {text:'Kitsune',col:'#ce9049'},
+    //         {text:'GS2',col:'#775db9'}
+    //     ],
+
+    //     pros: [],
+    //     cons: [
+    //         'Deadly fire damage'
+    //     ],
+
+    //     applyStats: () => {
+    //         modifyStat(['player','fireDamageMult'],'=5')
+    //     },
+
+    //     weapon: weaponPresets.gun
+    // },
+    // bMoney: {
+    //     name: 'B-Money',
+    //     desc: 'Squire? I hardly know her!',
+    //     color: [46, 107, 73],
+
+    //     tagList: [
+    //         {text: 'Composer',col: 'rgb(46, 107, 73)'},
+    //         {text: 'GS2',col: '#775db9'}
+    //     ],
+
+    //     pros: [],
+    //     cons: [
+    //         'Melee damage'
+    //     ],
+
+    //     applyStats: () => {
+    //         modifyStat(['melee','damage'],'=10')
+    //     },
+
+    //     weapon: weaponPresets.crossbow
+    // },
     // belle: {
     //     name: 'Belle',
     //     desc: '',
@@ -1341,11 +1408,10 @@ const characters = {
     skywalkr: {
         name: 'Skywalkr',
         desc: 'this game is pissing me off',
-        tag: 'the&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsporiginal',
-        tagCol: 'rgb(107, 106, 52)',
         color: [247, 230, 217],
 
         tagList: [
+            {text:'the&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsporiginal',col:'#65376a'},
             {text: 'GS2',col: '#775db9'}
         ],
 
@@ -1354,13 +1420,11 @@ const characters = {
     meringue: {
         name: 'Meringue',
         desc: '',
-        taunts: 1,
-        tag: 'Lynx',
-        tagCol: '#3f3c4e',
         color: [175, 184, 204],
 
         tagList: [
-            {text: 'GS2',col: '#775db9'}
+            {text:'Lynx',col:'#3f3c4e'},
+            {text:'GS2',col:'#775db9'}
         ],
 
         weapon: weaponPresets.gun
@@ -1395,12 +1459,10 @@ const characters = {
     glorp: {
         name: 'Glorp',
         desc: '',
-        taunts: 1,
-        tag: 'Alien',
-        tagCol: '#185225',
         color: [43, 255, 68],
 
         tagList: [
+            {tag:'Alien',col:'#185225'},
             {text: 'GS2',col: '#775db9'},
             {text: 'Wizlians',col:'#185225'},
             {text: 'SUSA 2026', col: '#59a7ff'}
@@ -1411,12 +1473,10 @@ const characters = {
     tico: {
         name: 'Tico',
         desc: '',
-        taunts: 1,
-        tag: 'Dragon',
-        tagCol: '#7c2f96',
         color: [141, 58, 183],
 
         tagList: [
+            {text:'Dragon',col:'#7c2f96'},
             {text: 'GS2',col: '#775db9'},
             {text: 'Hot Springs',col:'#7c2f96'},
             {text: 'SUSA 2026', col: '#59a7ff'}
@@ -1424,16 +1484,39 @@ const characters = {
 
         weapon: weaponPresets.gun
     },
+    friend: {
+        name: 'FRIEND',
+        desc: '',
+        color: [255,255,255],
+        unlockable: true,
+
+        tagList: [
+            {text:'???',col:'linear-gradient(to right, #fef200, #feaec9)'},
+            {text: 'GS2',col:'#775db9'},
+            {text: 'DELTARUNE',col:'#ee1c26'},
+        ],
+
+        pros: [
+            'Poison field trail',
+            'Melee damage'
+        ],
+
+        applyStats: () => {
+            modifyStat(['player','droolSize'],'=25')
+            modifyStat(['melee','damage'],'=50')
+        },
+
+        weapon: weaponPresets.none
+    },
     tutorialist: {
         name: 'The Tutorialist',
         desc: '',
-        taunts: 1,
-        tag: '???',
-        tagCol: '#050634',
         color: [255,255,255],
+        unlockable: true,
 
         tagList: [
-            {text: 'GS2',col: '#775db9'}
+            {text:'???',col:'#050634'},
+            {text:'GS2',col:'#775db9'}
         ],
 
         weapon: weaponPresets.omnirifle

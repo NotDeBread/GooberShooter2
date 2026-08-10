@@ -109,6 +109,10 @@ const dialogues = {
                             {
                                 text: 'I don\'t really care enought to fix it.',
                                 portrait: 'graphics/credits/portraits/fellaBothered.png',
+
+                                onEnd: () => {
+                                    getAchievement('Useless_Knowledge_IV')
+                                }
                             }
                         ])
                     }
@@ -186,6 +190,9 @@ const dialogues = {
         {
             text: 'I\'m just a chud who sits on the puter all day',
             portrait: 'graphics/credits/portraits/fellaBotheredTalk.png',
+            onEnd: () => {
+                getAchievement('Useless_Knowledge_I')
+            }
         },
     ],
     fellaGooberShooter: [
@@ -235,6 +242,9 @@ const dialogues = {
         {
             text: 'Someday I might make Breab\'s Purgatory if I learn a actual game engine.',
             portrait: 'graphics/credits/portraits/fellaFocused.png',
+            onEnd: () => {
+                getAchievement('Useless_Knowledge_II')
+            }
         }
     ],
     fellaSkills: [
@@ -371,6 +381,9 @@ const dialogues = {
         {
             text: 'But yeah that about it for my rant.',
             portrait: 'graphics/credits/portraits/fellaFocused.png',
+            onEnd: () => {
+                getAchievement('Useless_Knowledge_III')
+            }
         }
     ],
     dottr: [
@@ -385,7 +398,57 @@ const dialogues = {
             text: '(They have nothing to say...)',
             noName: true,
         }
-    ]
+    ],
+    plinkel: [
+        {
+            name: 'PLINKEL',
+            nameCol: [76, 119, 128],
+            portrait: 'graphics/credits/portraits/plinkel.png',
+
+            text: 'augh',
+        }
+    ],
+    egg: [
+        {
+            noName: true,
+            noPortrait: true,
+            text: 'Well, there is a man here.'
+        },
+        {
+            noName: true,
+            noPortrait: true,
+            text: 'You glance up at him. The leaves of the tree are covering his face.'
+        },
+        {
+            noName: true,
+            noPortrait: true,
+            text: 'The man gently grabs your wrist and places something in your palm.'
+        },
+        {
+            noName: true,
+            noPortrait: true,
+            text: 'You look down towards your hand.'
+        },
+        {
+            noName: true,
+            noPortrait: true,
+            text: 'It\'s an egg.'
+        },
+        {
+            noName: true,
+            noPortrait: true,
+            text: 'You look back up at the man.'
+        },
+        {
+            noName: true,
+            noPortrait: true,
+            text: 'But there was nobody there.',
+            onEnd: () => {
+                saveData.stats.list.egg++
+                getAchievement('The_Egg')
+            }
+        },
+    ],
 }
 
 let progressFunction
@@ -397,7 +460,6 @@ function startDialogueSequence(data) {
 
     progressFunction = function progress() {
         const dialogue = data[dialogueProgress]
-        console.log(dialogueProgress)
         if(dialogueProgress > data.length-1) {
             document.removeEventListener('keydown', keydown)
             doge('dialogueContainer').style.display = 'none'
@@ -500,8 +562,38 @@ const creditAreas = {
                 },
 
                 onCollide: () => {
-                    player.pos = [256 - player.elem.offsetWidth / 2,512 - player.elem.offsetHeight - 1]
-                    renderCreditArea(creditAreas.artRoom)
+                    if(DeBread.randomNum(1,5) === 1 && saveData.stats.list.egg === 0) {
+                        player.pos = [256 - player.elem.offsetWidth / 2,512 - player.elem.offsetHeight*2]
+                        renderCreditArea(creditAreas.egg)
+                        player.inEggRoom = true
+                    } else {
+                        player.pos = [256 - player.elem.offsetWidth / 2,512 - player.elem.offsetHeight]
+                        renderCreditArea(creditAreas.artRoom)
+                    }
+                }
+            },
+            { //Door bottom
+                texture: 'graphics/credits/musickDoor.png',
+                pos: [256,512],
+
+                styles: {
+                    width: '192px',
+                    height: '64px',
+                },
+            },
+            { //Door bottom collider
+                pos: [256,512],
+
+                styles: {
+                    width: '32px',
+                    height: '2px',
+                },
+
+                onCollide: () => {
+                    renderCreditArea(creditAreas.musickRoom)
+                    player.pos = [256 - player.elem.offsetWidth / 2,0]
+                    player.inMusicRoom = true
+                    player.shitmusic = 0
                 }
             },
             { //Plant
@@ -667,6 +759,171 @@ const creditAreas = {
                 }
             }
         ]
+    },
+    musickRoom: {
+        objects: [
+            { //Door top
+                texture: 'graphics/credits/doorTop.png',
+                pos: [256,0],
+
+                styles: {
+                    width: '192px',
+                    height: '64px',
+                },
+            },
+            { //Door top collider
+                pos: [256,0],
+
+                styles: {
+                    width: '32px',
+                    height: '2px',
+                },
+
+                onCollide: () => {
+                    player.pos = [256 - player.elem.offsetWidth / 2,512 - player.elem.offsetHeight]
+                    renderCreditArea(creditAreas.main)
+                    player.inMusicRoom = false
+                }
+            },
+            { //Big ass button
+                texture: 'graphics/credits/bigassbutton.png',
+                pos: [256,256],
+
+                styles: {
+                    width: '160px',
+                    height: '128px',
+                },
+
+                interactRange: 100,
+                interactLabel: '[E] to <div style="scale: 1 2;">TURN THIS SHIT OFF</div>',
+                interact: () => {
+                    player.musicButtonPressed = (player.musicButtonPressed ?? 1) + 1
+
+                    player.shitmusic++
+                    if(player.shitmusic > 2) {
+                        player.shitmusic = 0
+                    }
+
+                    const character = characters[saveData.selectedCharacter]
+                    if(player.musicButtonPressed === 3) {
+                        startDialogueSequence([{
+                            name: character.name.toUpperCase(),
+                            nameCol: character.color,
+                            portrait: `graphics/characters/${saveData.selectedCharacter}PortraitLarge.png`,
+
+                            text: 'fuck'
+                        }])
+                    }
+                }
+            }
+        ]
+    },
+    egg: {
+        noFloorTexture: true,
+        objects: [
+            { //Door bottom collider
+                pos: [256,512],
+
+                styles: {
+                    width: '32px',
+                    height: '2px',
+                },
+
+                onCollide: () => {
+                    player.pos = [256 - player.elem.offsetWidth / 2,1]
+                    player.inEggRoom = false
+                    renderCreditArea(creditAreas.main)
+                }
+            },
+            { //Tree0
+                pos: [256, 150],
+                texture: 'graphics/credits/treeSheet.png',
+                styles: {
+                    width: '256px',
+                    height: '256px',
+                },
+
+                tick: (obj) => {
+                    if(player.pos[1] < 228) {
+                        obj.style.zIndex = '4'
+                    } else {
+                        obj.style.zIndex = '1'
+                    }
+                },
+            },
+            { //Tree1
+                pos: [256, 150],
+                texture: 'graphics/credits/treeSheet.png',
+                styles: {
+                    width: '256px',
+                    height: '256px',
+                    zIndex: '5',
+                    animation: 'tree 8s ease-in-out -8s infinite forwards',
+                    backgroundPosition: '-256px 0px'
+                },
+            },
+            { //Tree2
+                pos: [256, 150],
+                texture: 'graphics/credits/treeSheet.png',
+                styles: {
+                    width: '256px',
+                    height: '256px',
+                    zIndex: '5',
+                    animation: 'tree 5s ease-in-out -2s infinite forwards',
+                    backgroundPosition: '-512px 0px'
+                },
+            },
+            { //Tree3
+                pos: [256, 150],
+                texture: 'graphics/credits/treeSheet.png',
+                styles: {
+                    width: '256px',
+                    height: '256px',
+                    zIndex: '5',
+                    animation: 'tree 7s ease-in-out -6s infinite forwards',
+                    backgroundPosition: '-768px 0px'
+                },
+            },
+            { //Tree4
+                pos: [256, 150],
+                texture: 'graphics/credits/treeSheet.png',
+                styles: {
+                    width: '256px',
+                    height: '256px',
+                    zIndex: '5',
+                    animation: 'tree 9s ease-in-out -4s infinite forwards',
+                    backgroundPosition: '-1024px 0px'
+                },
+            },
+            { //Dialogue Collider
+                pos: [256, 225],
+
+                interactRange: 25,
+
+                interact: () => {
+                    if(saveData.stats.list.egg === 0) {
+                        startDialogueSequence(dialogues.egg)
+                    } else {
+                        startDialogueSequence([
+                            {
+                                noName: true,
+                                noPortrait: true,
+                                text: 'It\'s a tree.'
+                            },
+                        ])
+                    }
+                }
+            },
+            { //Egg door
+                texture: 'graphics/credits/doorEgg.png',
+                pos: [256,512],
+
+                styles: {
+                    width: '128px',
+                    height: '64px',
+                },
+            },
+        ]
     }
 }
 
@@ -674,6 +931,12 @@ let currentInteractable
 let interactFunction
 function renderCreditArea(data) {
     cleanArea()
+
+    let floorTexture = 'graphics/credits/floorTile.png'
+    if(data.floorTexture) floorTexture = data.floorTexture
+    if(data.noFloorTexture) floorTexture = ""
+    doge('area').style.backgroundImage = `url(${floorTexture})`
+
     for(const key in data.objects) {
         const obj = data.objects[key]
         
@@ -698,9 +961,9 @@ function renderCreditArea(data) {
 
         doge('area').append(div)
 
-        if(obj.interact) {
+        if(obj.interact && !obj.hasInteracted) {
             div.tooltip = document.createElement('div')
-            div.tooltip.innerHTML = '[E] to interact'
+            div.tooltip.innerHTML = obj.interactLabel ?? '[E] to interact'
             div.tooltip.classList.add('entity')
 
             addStyles(div.tooltip, {
@@ -711,6 +974,7 @@ function renderCreditArea(data) {
                 top: div.pos[1] - 50+'px',
                 display: 'none',
                 whiteSpace: 'nowrap',
+                zIndex: '10',
                 animation: 'dialogueIn 250ms var(--bouncy) 1 forwards'
             })
 
@@ -723,8 +987,12 @@ function renderCreditArea(data) {
 
         function keyDown(ev) {
             if(ev.key.toLowerCase() === 'e') {
+                if(obj.singleInteract) {
+                    obj.hasInteracted = true
+                }
                 obj.interact()
             }
+
         }
 
         div.tick = () => {
@@ -734,7 +1002,7 @@ function renderCreditArea(data) {
                     Math.pow(div.pos[1] - player.centerPos[1], 2)
                 )
     
-                if(dis <= obj.interactRange && !dialogueActive) {
+                if(dis <= obj.interactRange && !dialogueActive && !obj.hasInteracted) {
                     if(div.tooltip.style.display === 'none') {
                         interactFunction = keyDown
                         document.addEventListener('keydown', interactFunction)
@@ -751,7 +1019,7 @@ function renderCreditArea(data) {
             }
 
             if(obj.tick) {
-                obj.tick()
+                obj.tick(div)
             }
 
             if(obj.onCollide && isColliding(div, player.elem)) {

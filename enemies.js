@@ -155,8 +155,9 @@ const enemies = {
         color: [255,0,0],
         size: 40,
         health: 10,
-        speed: 6,
+        speed: 5.5,
         credits: 10,
+        regen: -0.1,
 
         explosive: {
             size: 100,
@@ -885,6 +886,8 @@ const enemies = {
         onDeath: enemy => {
             enemy.implosion?.remove()
             enemy.beamContainer?.remove()
+
+            getAchievement('The_End')
         }
     }
 }
@@ -2329,9 +2332,12 @@ const minibosses = {
                 }
             },
             { //Bird (chud)
-                duration: 75,
+                duration: 150,
                 do: boss => {
                     spawnEnemy([...boss.data.pos],enemies.bird,0,0)
+                },
+                requirement: boss => {
+                    return elems.enemies.length < 3
                 }
             },
             { //Fire
@@ -2794,7 +2800,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
     }
 
     let sizeMult = [1,1]
-    if(saveData.selectedChallenge === 'abstract') {
+    if(saveData.selectedChallenges.includes('abstract')) {
         sizeMult = [Math.pow(10,DeBread.randomNum(-1,1,5)),Math.pow(10,DeBread.randomNum(-1,1,5))]
     }
 
@@ -2895,7 +2901,6 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
             borderRadius: '0px'
         })
     }
-
 
     if(!saveData.settings.enemyEasing) {
         enemy.style.transition = 'background-color ease-in-out 1s'
@@ -3221,7 +3226,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
 
         healthBar.style.width = '100%'
 
-        if(saveData.selectedChallenge === 'hidden') {
+        if(saveData.selectedChallenges.includes('hidden')) {
             enemy.style.backgroundColor = 'transparent'
         }
 
@@ -3522,6 +3527,17 @@ function spawnWave(wave, poor) {
 
     player.perfectWave = true
 
+    if(saveData.selectedChallenges.includes('boss_rush')) {
+        const bossKey = DeBread.randomNum(0, Object.keys(minibosses).length - 1)
+        const boss = minibosses[Object.keys(minibosses)[bossKey]]
+
+        boss.health *= (wave / 10)
+
+        spawnEnemy([doge('area').offsetWidth / 2, doge('area').offsetHeight / 2], boss, wave, 100)
+
+        return
+    }
+
     let tries = 0
     while(credits > 0) {
         let enemyLevel = Math.floor(wave / 10)
@@ -3614,9 +3630,9 @@ function spawnWave(wave, poor) {
     if(saveData.gameSettings.gamemode !== 3) {
         doge('pageTitle').innerText = `Goober Shooter 2 - Wave ${player.wave}`
 
-        if(wave === 200) {
+        if(wave >= 200) {
             getAchievement('Champion')
-        } else if(wave === 101) {
+        } else if(wave >= 100) {
             getAchievement(`${saveData.selectedCharacter}_Perfection`)
             getAchievement('Conqueror')
         } else if(wave === 50) {
@@ -3666,13 +3682,17 @@ function progressWave(portal) {
                         }
                     )
                     createTimeout(() => {
-                        spawnEnemy([doge('area').offsetWidth / 2, doge('area').offsetHeight / 2], boss, 1, 100)
+                        let bossLevel = Math.floor(player.wave / 10)
+                        if(DeBread.randomNum(player.wave % 10, 10) === 10) {
+                            bossLevel++
+                        }
+                        spawnEnemy([doge('area').offsetWidth / 2, doge('area').offsetHeight / 2], boss, bossLevel, 100)
                     }, 100)
 
                     player.health = player.stats.player.maxHealth
                     updateUI()
                 } else {
-                    if(saveData.selectedChallenge === 'perfect' && player.timesHit > 0) {
+                    if(saveData.selectedChallenges.includes('perfect') && player.timesHit > 0) {
                         player.autoWavesPaused = false
                         progressWave(true)
                     } else {

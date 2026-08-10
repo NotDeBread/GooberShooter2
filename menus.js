@@ -11,7 +11,7 @@ const startSequence = [
     {
         text: [
             'With music by',
-            'B Dawgs'
+            'B-Money'
         ],
     },
     {
@@ -421,8 +421,6 @@ function openMenu(menu) {
 
     if(menu === 'game') {
         topper()
-
-        changeTrack('gameClean')
     }
 
     if(menu === 'achievements') {
@@ -448,41 +446,47 @@ function openMenu(menu) {
     }
 }
 
-function renderCharacterSelect() {
+function renderCharacterSelect(page = 1) {
     function updateSelectedCharacter() {
-        doge('selectedCharacterName').innerText = characters[saveData.selectedCharacter].name
-        doge('selectedCharacterDesc').innerText = characters[saveData.selectedCharacter].desc
+        const character = characters[saveData.selectedCharacter]
+        doge('selectedCharacterName').innerText = character.name
+        doge('selectedCharacterDesc').innerText = character.desc
         doge('selectedCharacterImg').src = `graphics/characters/${saveData.selectedCharacter}PortraitLarge.png`
         doge('selectedCharacterImgSmall').src = `graphics/characters/${saveData.selectedCharacter}Portrait.png`
 
         doge('selectedCharacterTags').innerHTML = ''
 
-        const tag2 = document.createElement('div')
-        tag2.classList.add('selectedCharacterTag')
-        tag2.innerHTML = characters[saveData.selectedCharacter].tag
-        tag2.style.backgroundColor = characters[saveData.selectedCharacter].tagCol
-        doge('selectedCharacterTags').append(tag2)
-
-        for(const key in characters[saveData.selectedCharacter].tagList) {
+        for(const key in character.tagList) {
             const tag = document.createElement('div')
             tag.classList.add('selectedCharacterTag')
-            tag.innerHTML = characters[saveData.selectedCharacter].tagList[key].text
-            tag.style.background = characters[saveData.selectedCharacter].tagList[key].col
+            tag.innerHTML = character.tagList[key].text
+            tag.style.background = character.tagList[key].col
+            tag.style.color = character.tagList[key].textCol ?? 'white'
 
             doge('selectedCharacterTags').append(tag)
         }
 
-        // const tag = document.createElement('div')
-        // tag.classList.add('selectedCharacterTag')
-        // tag.innerHTML = `${characters[saveData.selectedCharacter].taunts ?? '???'} taunts`
-        // doge('selectedCharacterTags').append(tag)
+        if(character.skins) {
+            doge('characterSelectSkinsButton').style.display = 'unset'
+        } else {
+            doge('characterSelectSkinsButton').style.display = 'none'
+        }
 
         save()
     } updateSelectedCharacter()
-    
+
+    const pageSize = Number(doge('characterSelectContainer').getAttribute('pageSize'))
 
     doge('characterSelectContainer').innerHTML = ''
+    let index = 1
     for(const key in characters) {
+        let characterUnlocked = true
+        if(characters[key].unlockable) {
+            if(!saveData.stats.unlocked.characters.includes(key)) {
+                characterUnlocked = false
+            }
+        }
+
         const character = characters[key]
         const box = document.createElement('div')
         box.classList.add('characterSelectCharacterBox')
@@ -512,13 +516,80 @@ function renderCharacterSelect() {
             box.style.outline = '2px solid white'
 
             updateSelectedCharacter(box.character)
-            updateCharacterCustomization()
         }
 
-        doge('characterSelectContainer').append(box)
+        if(characterUnlocked) {
+            if(index > pageSize * (page-1) && index <= pageSize * page) {
+                doge('characterSelectContainer').append(box)
+            }
+            index++
+        }
+
     }
 
-    updateCharacterCustomization()
+    let charactersUnlocked = 0
+    for(const key in characters) {
+        charactersUnlocked++
+        if(characters[key].unlockable) {
+            if(!saveData.stats.unlocked.characters.includes(key)) {
+                charactersUnlocked--
+            }
+        }
+    }
+    doge('characterSelectPageNum').innerText = `Page ${page}/${Math.ceil(charactersUnlocked / pageSize)}`
+
+    doge('characterSelectContainer').setAttribute('page',page ?? 1)
+}
+
+function openCharacterSkins() {
+    const character = characters[saveData.selectedCharacter]
+    const promptBody = document.createElement('div')
+    addStyles(promptBody, {
+        display: 'flex',
+        justifyContent: 'center',
+        gap: '5px',
+    })
+
+    const skinArray = [...[{name: 'Default',src:saveData.selectedCharacter,taunts:character.taunts}], ...character.skins]
+    console.log(skinArray)
+    for(const key in skinArray) {
+        const skin = skinArray[key]
+        const button = document.createElement('div')
+        button.classList.add('characterSelectSkin')
+        button.innerHTML = `<img src="graphics/characters/${skin.src}Portrait.png" style="width: 54px; height: 54px">`
+
+        addStyles(button, {
+            width: '75px',
+            height: '75px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+        })
+
+        button.onclick = () => {
+            closePrompt()
+            saveData.selectedSkin = key-1
+
+            if(saveData.selectedSkin === -1) {
+                doge('selectedCharacterImgSmall').src = `graphics/characters/${saveData.selectedCharacter}Portrait.png`
+            } else {
+                doge('selectedCharacterImgSmall').src = `graphics/characters/${characters[saveData.selectedCharacter].skins[saveData.selectedSkin].src}Portrait.png`
+            }
+        }
+
+        button.onmouseenter = () => {
+            const buttonRect = button.getBoundingClientRect()
+            tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], skin.name, [{text: 'SKIN', col: '#973a3a'}], '')
+        }
+
+        button.onmouseleave = () => {
+            doge('tooltip').style.opacity = '0'
+        }
+
+        promptBody.append(button)
+    }
+
+    openPrompt(`${character.name}'s skins`, promptBody,[{text:'Close',onclick:closePrompt}])
 }
 
 let currentCosmeticLayer = 0
@@ -657,6 +728,32 @@ function updateCharacterCustomizationCharacter() {
     doge('ccCharacter').src = `graphics/characters/${playerSrc}Portrait.png`
 }
 
+function changeCSPage(mod) {
+    const pageSize = Number(doge('characterSelectContainer').getAttribute('pageSize'))
+    let page = Number(doge('characterSelectContainer').getAttribute('page'))
+    page += mod
+    
+    let charactersUnlocked = 0
+    for(const key in characters) {
+        charactersUnlocked++
+        if(characters[key].unlockable) {
+            if(!saveData.stats.unlocked.characters.includes(key)) {
+                charactersUnlocked--
+            }
+        }
+    }
+    
+    if(page > Math.ceil(charactersUnlocked / pageSize)) {
+        page = 1
+    }
+    
+    if(page < 1) {
+        page = Math.ceil(charactersUnlocked / pageSize)
+    }
+    
+    renderCharacterSelect(page)
+}
+
 function renderAchievementList() {
     doge('innerAchList').innerHTML = ''
     let achievementStatus = [0,0]
@@ -666,12 +763,24 @@ function renderAchievementList() {
         const div = document.createElement('div')
         div.classList.add('ach')
         div.innerHTML = `
-        <img src="graphics/achievements/${key}.png">
-        <div class="achText">
-            <strong>${achievement.name}</strong>
-            <span>${achievement.desc}</span>
-        </div>
+            <img src="graphics/achievements/${key}.png">
+            <div class="achText">
+                <strong>${achievement.name}</strong>
+                <span>${achievement.desc}</span>
+            </div>
         `
+
+        if(achievement.unlock) {
+            const lock = document.createElement('div')
+            lock.innerText = '🔓'
+            addStyles(lock, {
+                position: 'absolute',
+                top: '5px',
+                right: '5px',
+            })
+
+            div.append(lock)
+        }
 
         let unlocked = false
         if(!saveData.achievements.includes(key)) {
@@ -783,12 +892,12 @@ function openGameSettingsMenu(id) {
         doge('gameSettingsSelectedWeapon').innerText = characters[saveData.selectedCharacter].weapon.name
         doge('gameSettingsSelectedCharacterImg').src = `graphics/characters/${saveData.selectedCharacter}Portrait.png`
 
-        doge('gameSettingsSelectedChallenge').innerText = challenges[saveData.selectedChallenge].name
+        // doge('gameSettingsSelectedChallenge').innerText = challenges[saveData.selectedChallenge].name
 
-        doge('gameSettingsSelectedChallenge').onmouseenter = () => {
-            const buttonRect = doge('gameSettingsSelectedChallenge').getBoundingClientRect()
-            tooltip([buttonRect.left + doge('gameSettingsSelectedChallenge').offsetWidth / 2, buttonRect.top + doge('gameSettingsSelectedChallenge').offsetHeight + 12], challenges[saveData.selectedChallenge].name, [{text: 'CHALLENGE', col: '#661b2f'}], challenges[saveData.selectedChallenge].desc, undefined)
-        }
+        // doge('gameSettingsSelectedChallenge').onmouseenter = () => {
+        //     const buttonRect = doge('gameSettingsSelectedChallenge').getBoundingClientRect()
+        //     tooltip([buttonRect.left + doge('gameSettingsSelectedChallenge').offsetWidth / 2, buttonRect.top + doge('gameSettingsSelectedChallenge').offsetHeight + 12], challenges[saveData.selectedChallenge].name, [{text: 'CHALLENGE', col: '#661b2f'}], challenges[saveData.selectedChallenge].desc, undefined)
+        // }
 
         doge('gameSettingsSelectedChallenge').onmouseleave = () => {
             doge('tooltip').style.opacity = '0'
@@ -802,7 +911,7 @@ function openGameSettingsMenu(id) {
         }
 
         doge('gameSettingsCharacterContainer').onmouseenter = () => {
-            tooltip([rect.left + doge('gameSettingsCharacterContainer').offsetWidth / 2,rect.bottom + 25],characters[saveData.selectedCharacter].name, [{text: characters[saveData.selectedCharacter].tag, col: characters[saveData.selectedCharacter].tagCol}], 
+            tooltip([rect.left + doge('gameSettingsCharacterContainer').offsetWidth / 2,rect.bottom + 25],characters[saveData.selectedCharacter].name, [{text: characters[saveData.selectedCharacter].tagList[0].text, col: characters[saveData.selectedCharacter].tagList[0].col}], 
                 `
                 <div style="width: ${tooltipWidth}; margin-top: 5px;">
                     ${characters[saveData.selectedCharacter].desc}
@@ -848,7 +957,7 @@ function openGameSettingsMenu(id) {
                     stat.classList.add('characterStatsStat')
                     stat.style.animation = `statIn 500ms ease-out ${statAnimDelay}ms 1 forwards`
                     stat.innerHTML = `
-                    <img src="graphics/arrowup.png">
+                    <img src="graphics/ui/arrowup.png">
                     <span>${character.pros[i]}</span>
                     `
                     
@@ -864,7 +973,7 @@ function openGameSettingsMenu(id) {
                     stat.classList.add('characterStatsStat')
                     stat.style.animation = `statIn 500ms ease-out ${statAnimDelay}ms 1 forwards`
                     stat.innerHTML = `
-                    <img src="graphics/arrowdown.png">
+                    <img src="graphics/ui/arrowdown.png">
                     <span>${character.cons[i]}</span>
                     `
                     
@@ -886,7 +995,7 @@ function openGameSettingsMenu(id) {
             stat.classList.add('characterStatsStat')
             stat.style.animation = `statIn 500ms ease-out ${statAnimDelay}ms 1 forwards`
             stat.innerHTML = `
-                <img src="graphics/arrowup.png">
+                <img src="graphics/ui/arrowup.png">
                 <span>${character.weapon.pros[i]}</span>
             `
 
@@ -899,7 +1008,7 @@ function openGameSettingsMenu(id) {
             stat.classList.add('characterStatsStat')
             stat.style.animation = `statIn 500ms ease-out ${statAnimDelay}ms 1 forwards`
             stat.innerHTML = `
-                <img src="graphics/arrowdown.png">
+                <img src="graphics/ui/arrowdown.png">
                 <span>${character.weapon.cons[i]}</span>
             `
 
@@ -935,19 +1044,23 @@ function renderChallenges() {
 
     for(const key in challenges) {
         const button = document.createElement('div')
-        button.innerHTML = `<img src="graphics/challenges/${key}.png">`
+        button.innerHTML = `
+            <img src="graphics/challenges/${key}.png">
+            <span class="challengeNum" style="scale: ${Number(saveData.selectedChallenges.includes(key))}">${saveData.selectedChallenges.indexOf(key)+1}</span>
+        `
         button.classList.add('gameSettingsChallenge')
+        button.challengeKey = key
 
         doge('gameSettingsChallenges').append(button)
 
-        if(saveData.selectedChallenge === key) {
+        if(saveData.selectedChallenges.includes(key)) {
             button.style.backgroundColor = 'white'
             button.querySelector('img').style.filter = 'invert()'
         }
 
         button.onmouseenter = () => {
             const buttonRect = button.getBoundingClientRect()
-            tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], challenges[key].name, [{text: 'CHALLENGE', col: '#661b2f'}], challenges[key].desc, undefined)
+            tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], challenges[key].name, [{text: 'MOD', col: '#1b6656'}], challenges[key].desc, undefined)
         }
 
         button.onmouseleave = () => {
@@ -960,15 +1073,22 @@ function renderChallenges() {
             } else if(saveData.settings.presentationMode) {
                 createNotification('Whoops!','Challenges are not availble in presentation mode!')
             } else {
-                saveData.selectedChallenge = key
+                if(saveData.selectedChallenges.includes(key)) {
+                    saveData.selectedChallenges.splice(saveData.selectedChallenges.indexOf(key),1)
+                } else {
+                    saveData.selectedChallenges.push(key) 
+                }
     
                 doge('gameSettingsChallenges').querySelectorAll('div').forEach(div => {
-                    if(div === button) {
+                    if(saveData.selectedChallenges.includes(div.challengeKey)) {
                         div.style.backgroundColor = 'white'
                         div.querySelector('img').style.filter = 'invert()'
+                        div.querySelector('span').innerText = saveData.selectedChallenges.indexOf(div.challengeKey)+1
+                        div.querySelector('span').style.scale = '1'
                     } else {
                         div.style.backgroundColor = 'transparent'
                         div.querySelector('img').style.filter = 'unset'
+                        div.querySelector('span').style.scale = '0'
                     }
                 })
             }
@@ -980,17 +1100,17 @@ function renderChallenges() {
 
 const creditsHTML = `
     <div style="display: flex; align-items: center; flex-direction: column;">
-        <img src="graphics/logo.png" width=175>
+        <img src="graphics/ui/logo.png" width=175>
         <span>By <a href="https://debread.space/" target="_blank">DeBread</a></span>
     </div>
+    <span>Music Composer: <a href="https://guns.lol/bmoney.squire" target="_blank">B-Money</a></span><br>
     <span>Background Shader: From <a href="https://www.playbalatro.com/" target="_blank">Balatro</a>, rewritten by <a href="https://xemantic.github.io/shader-web-background/" target="_blank">xemantic</a></span><br>
     <span>Addditional Textures: <a href="https://plinkel.neocities.org/" target="_blank">Plinkel</a></span><br>
     <span>Additional SFX: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
-    <span>Playtesters: Nova, TrueSkywalkr, Dottr, <a href="https://plinkel.neocities.org/" target="_blank">Plinkel</a></span><br>
+    <span>Playtesters: Nova, TrueSkywalkr, Dottr, <a href="https://plinkel.neocities.org/" target="_blank">Plinkel</a></span>, ExistingSelf<br>
     <span>Save filler: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
     <span>Special thanks: </span><a href="https://yeen.town/@Chalkllate" target="_blank">Jake</a><br>
-    <br>
-    <span>Supporters 💖: xX_DeBread_H8ER_Xx</span><br>
+    <span>💖 Supporters: xX_DeBread_H8ER_Xx</span><br>
     <button onclick="openPrompt('Character Credits', getCharacterCreditsHTML(), [{text: 'Back', onclick: () => {openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,375])}}], [400,500])">Characters</button>
 `
 
@@ -1246,8 +1366,6 @@ function getCharacterCreditsHTML() {
 }
 
 function openCharacterCredit(author) {
-    console.log(author)
-
     const outerBody = document.createElement('div')
     const body = document.createElement('div')
 
@@ -1368,21 +1486,6 @@ const settingsHTML = `
             </div>
         </div>
         <div class="settingsSection" id="settingsSection-sound">
-            <span>Music tracks (Requires restart):</span>
-            <select id="sdd-musicTracks">
-                <option>
-                    <span>Goober Shooter 2</span>
-                </option>
-                <option>
-                    <span>TBOI Mausoleum</span>
-                </option>
-                <option>
-                    <span>TBOI Chest</span>
-                </option>
-                <option>
-                    <span>ULTRAKILL TWLR</span>
-                </option>
-            </select>
             <div class="settingsRangeContainer" id="musicVolumeRangeContainer">
                 <div>
                     <span style="font-weight: 700;">Music volume: </span>
@@ -1602,7 +1705,7 @@ function renderCollectionItems(targetList, collectedList, texturePath) {
             div.innerHTML = `<img src="graphics/${texturePath}/${key}.${textureExtension}" style="width: 32px;">`
 
             if(rarity === '4') {
-                div.style.animation += 'mythicBorder 5s linear infinite forwards'
+                div.style.animation = `mythicBorder 5s linear infinite forwards, shopItemIn 500ms cubic-bezier(0,1,.5,1) 1 ${itemNum*15}ms forwards`
                 div.querySelector('img').style.animation = 'mythicGlow 5s linear infinite forwards'
             } else {
                 div.style.boxShadow = `inset 0px 0px 0px 3px ${rarities[rarity].color}`

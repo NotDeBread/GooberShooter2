@@ -20,11 +20,12 @@
 - Scale bosses heath with wave
 - Hide enemy health bars in the hidden challenge
 - Optimize startGame function, gamemode management and challenge management
+- Remake coin textures
 
 ## Before next release
 Done!
 
-# Required Songs (For people to want to make a soundtrack (nobody))
+# Required Songs (For people to want to make a soundtrack)
 ## Every track must be loopable (Besides the boss finish riff of course)
 ## For ideas of what i'd like the music to sound like, listen to the soundtracks of Donut County, Balatro, and MINDWAVE
 - Main Menu
@@ -38,13 +39,12 @@ Done!
 - Death Screen (Not implemented yet)
 
 # Needed SFX
-- Glass breaking (For Beer Bottle and Molotov power items)
 - Lightning strike (For Lightning Rod power item)
 - Electicity (For electric stuff)
 - Fire poof (For Wisp power item)
 - Coin flick (For Coin and Lucky Penny power item)
 - Egg cracking (For Egg power item)
 - Throw (Like the minecraft throw sound) (For power items that throw things)
-- Dice roll (For D6 and D100)
 - Charge sound (Similar to TBOIs active item charge sound) (For power items)
 - Player death sound
+- Notification sound

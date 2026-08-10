@@ -31,7 +31,7 @@ body {
     font-family: "Poppins", sans-serif;
     image-rendering: pixelated;
     overflow: hidden;
-    background-image: url(graphics/bg.png);
+    background-image: url(graphics/ui/bg.png);
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
@@ -446,4 +446,16 @@ a:hover {
     height: 100%;
     display: flex;
     align-items: end;
+}
+
+@keyframes tree {
+    from {
+        transform: translate(-5px, 0px);
+    }
+    50% {
+        transform: translate(5px, 0px);
+    }
+    to {
+        transform: translate(-5px, 0px);
+    }
 }

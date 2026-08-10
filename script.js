@@ -16,7 +16,7 @@ const defaultSaveData = {
     firstLogin: false,
     tutorialBeat: true,
 
-    selectedChallenge: 'none',
+    selectedChallenges: [],
 
     settings: {
         weaponEasing: true,
@@ -33,7 +33,6 @@ const defaultSaveData = {
         autoReload: false,
         particleLimit: 5000,
 
-        musicTracks: 'Goober Shooter 2',
         musicVolume: 0,
         sfxVolume: 0.1,
         enemyVoiceLines: 'none'
@@ -92,6 +91,8 @@ const defaultSaveData = {
         list: {
             Enemies_Killed: 0,
             Times_Died: 0,
+            Times_Rerolled: 0,
+            egg: 0,
         },
         collection: {
             items: [],
@@ -101,7 +102,8 @@ const defaultSaveData = {
         unlocked: {
             items: [],
             powerItems: [],
-            elixirs: []
+            elixirs: [],
+            characters: []
         }
     },
     achievements: [],
@@ -144,7 +146,7 @@ document.addEventListener('keydown', ev => {
     if(key === 'escape') {
         if(doge('promptContainer').style.display === 'flex') {
             closePrompt()
-        } else {
+        } else if(e.gameActive) {
             pauseGame()
         }
     }
@@ -311,7 +313,12 @@ function tooltip(pos, title, tags, desc, price) {
 function openPrompt(title, body, buttons, size) {
     doge('promptContainer').style.display = 'flex'
     doge('promptTitle').innerText = title
-    doge('promptBody').innerHTML = body
+    if(typeof body === 'string') {
+        doge('promptBody').innerHTML = body
+    } else {
+        doge('promptBody').innerHTML = ''
+        doge('promptBody').append(body)
+    }
     doge('promptButtons').innerHTML = ''
 
     if(size) {
@@ -354,7 +361,7 @@ function updateCharacterSelectStats(character, box) {
         tooltipWidth = '500px'
     }
 
-    tooltip([rect.left + box.offsetWidth / 2,rect.bottom + 25],character.name, [{text: character.tag, col: character.tagCol}], 
+    tooltip([rect.left + box.offsetWidth / 2,rect.bottom + 25],character.name, [{text: character.tagList[0].text, col: character.tagList[0].col}], 
         `
         <div style="width: ${tooltipWidth}; margin-top: 5px;">
             ${character.desc}
@@ -400,7 +407,7 @@ function updateCharacterSelectStats(character, box) {
                 stat.classList.add('characterStatsStat')
                 stat.style.animation = `statIn 500ms ease-out ${statAnimDelay}ms 1 forwards`
                 stat.innerHTML = `
-                <img src="graphics/arrowup.png">
+                <img src="graphics/ui/arrowup.png">
                 <span>${character.pros[i]}</span>
                 `
                 
@@ -416,7 +423,7 @@ function updateCharacterSelectStats(character, box) {
                 stat.classList.add('characterStatsStat')
                 stat.style.animation = `statIn 500ms ease-out ${statAnimDelay}ms 1 forwards`
                 stat.innerHTML = `
-                <img src="graphics/arrowdown.png">
+                <img src="graphics/ui/arrowdown.png">
                 <span>${character.cons[i]}</span>
                 `
                 
@@ -438,7 +445,7 @@ function updateCharacterSelectStats(character, box) {
         stat.classList.add('characterStatsStat')
         stat.style.animation = `statIn 500ms ease-out ${statAnimDelay}ms 1 forwards`
         stat.innerHTML = `
-            <img src="graphics/arrowup.png">
+            <img src="graphics/ui/arrowup.png">
             <span>${character.weapon.pros[i]}</span>
         `
 
@@ -451,7 +458,7 @@ function updateCharacterSelectStats(character, box) {
         stat.classList.add('characterStatsStat')
         stat.style.animation = `statIn 500ms ease-out ${statAnimDelay}ms 1 forwards`
         stat.innerHTML = `
-            <img src="graphics/arrowdown.png">
+            <img src="graphics/ui/arrowdown.png">
             <span>${character.weapon.cons[i]}</span>
         `
 
@@ -467,12 +474,6 @@ for(const key in characters) {
 }
 
 const challenges = {
-    none: {
-        name: 'None',
-        desc: '',
-
-        apply: () => {}
-    },
     high_stakes: {
         name: 'High Stakes',
         desc: `
@@ -677,6 +678,12 @@ const challenges = {
             player.scoreMult = 2.5
         }
     },
+    boss_rush: {
+        name: 'Boss Rush',
+        desc: `
+            A boss spawns every wave instead of enemies.
+        `,
+    },
     classic: {
         name: 'Classic',
         desc: `
@@ -794,6 +801,22 @@ const achievements = {
             saveData.stats.unlocked.items.push('golden_ammo')
         }
     },
+    Speed_Demon: {
+        name: 'Speed Demon',
+        desc: 'Reach maximum speed.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Character',
+            name: 'Sasha',
+            src: 'graphics/characters/sashaPortrait.png',
+            data: characters.sasha
+        },
+
+        run: () => {
+            saveData.stats.unlocked.characters.push('sasha')
+        }
+    },
     Knuckle_Sandwich: {
         name: 'Knuckle Sandwich',
         desc: 'Kill an enemy with a melee.',
@@ -801,7 +824,7 @@ const achievements = {
 
         unlock: {
             type: 'Item',
-            name: 'Boxing Glovess',
+            name: 'Boxing Gloves',
             src: 'graphics/upgrades/boxing_gloves.png',
             data: upgrades[1].boxing_gloves
         },
@@ -814,11 +837,103 @@ const achievements = {
         name: 'Item Abuse',
         desc: 'Reroll a mythic item using The D6.',
         difficulty: 0,
+
+        unlock: {
+            type: 'Power Item',
+            name: 'The D100',
+            src: 'graphics/powerItems/The_D100.png',
+            data: powerItems[3].the_d100
+        },
+
+        run: () => {
+            saveData.stats.unlocked.powerItems.push('the_d100')
+        }
+    },
+    Whoops: {
+        name: 'Whoops',
+        desc: 'Kill yourself using an explosion.',
+
+        unlock: {
+            type: 'Character',
+            name: 'Peep',
+            src: 'graphics/characters/peepPortrait.png',
+            data: characters.tutorialist
+        },
+
+        run: () => {
+            saveData.stats.unlocked.characters.push('peep')
+        }
+    },
+    Optimization: {
+        name: 'Optimization at it\'s finest',
+        desc: 'Have less than 10FPS',
+
+        unlock: {
+            type: 'Character',
+            name: 'The Horse',
+            src: 'graphics/characters/the_horsePortrait.png',
+            data: characters.the_horse
+        },
+
+        run: () => {
+            saveData.stats.unlocked.characters.push('the_horse')
+        }
+    },
+    Reroll_Addict: {
+        name: 'Reroll Addict',
+        desc: 'Reroll the shop 500 times.',
+
+        unlock: {
+            type: 'Character',
+            name: 'Isaac',
+            src: 'graphics/characters/isaacPortrait.png',
+            data: characters.isaac
+        },
+
+        run: () => {
+            saveData.stats.unlocked.characters.push('isaac')
+        }
     },
     Knowledgeable: {
         name: 'Knowledgeable',
         desc: 'Complete the tutorial quickly.',
         difficulty: 0,
+    },
+    Useless_Knowledge_I: {
+        name: 'Useless Knowledge I',
+        desc: 'Talk to Fella about himself.',
+        difficulty: 0,
+    },
+    Useless_Knowledge_II: {
+        name: 'Useless Knowledge II',
+        desc: 'Talk to Fella about Goober Shooter 2.',
+        difficulty: 0,
+    },
+    Useless_Knowledge_III: {
+        name: 'Useless Knowledge III',
+        desc: 'Talk to Fella about SkillsUSA.',
+        difficulty: 0,
+    },
+    Useless_Knowledge_IV: {
+        name: 'Useless Knowledge IV',
+        desc: 'Talk to Fella about the rug.',
+        difficulty: 0,
+    },
+    The_Egg: {
+        name: 'The Egg',
+        desc: 'Obtain the egg from the man behind the tree.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Character',
+            name: 'FRIEND',
+            src: 'graphics/characters/friendPortrait.png',
+            data: characters.friend
+        },
+
+        run: () => {
+            saveData.stats.unlocked.characters.push('friend')
+        }
     },
     Survivor: {
         name: 'Survivor',
@@ -839,6 +954,22 @@ const achievements = {
         name: 'Champion',
         desc: 'Reach wave 200.',
         difficulty: 0,
+    },
+    The_End: {
+        name: 'The End',
+        desc: 'Defeat the Tutorialist.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Character',
+            name: 'The Tutorialist',
+            src: 'graphics/characters/tutorialistPortrait.png',
+            data: characters.tutorialist
+        },
+
+        run: () => {
+            saveData.stats.unlocked.characters.push('tutorialist')
+        }
     },
     debread_Perfection: {
         name: 'DeBread Perfection',
@@ -917,11 +1048,24 @@ const achievements = {
         name: 'Jaden Perfection',
         desc: 'Reach wave 100 using Jaden.',
         difficulty: 0,
+        unlockable: true,
+
+        unlock: {
+            type: 'Item',
+            name: 'Dagger',
+            src: 'graphics/upgrades/dagger.png',
+            data: upgrades[1].dagger
+        },
+
+        run: () => {
+            saveData.stats.unlocked.items.push('dagger')
+        }
     },
     peep_Perfection: {
         name: 'Peep Perfection',
         desc: 'Reach wave 100 using Peep.',
         difficulty: 0,
+        unlockable: true,
 
         unlock: {
             type: 'Item',
@@ -1156,14 +1300,18 @@ const achievements = {
 
 function getAchievement(key) {
     const achievement = achievements[key]
-    if(!saveData.achievements.includes(key) && Object.keys(achievements).includes(key) && (![2,3].includes(saveData.gameSettings.gamemode) || achievement.ignoreGamemode) && saveData.selectedChallenge === 'none') {
+    if(!saveData.achievements.includes(key) && Object.keys(achievements).includes(key) && (![2,3].includes(saveData.gameSettings.gamemode) || achievement.ignoreGamemode) && saveData.selectedChallenges.length === 0) {
         saveData.achievements.push(key)
 
         createAchNoti(achievement, key)
 
         if(achievement.unlock) {
             mainMenuEventQueue.push(() => {
-                createNotification(`${achievement.unlock.type} Unlocked!`,`<strong>${achievement.unlock.name}</strong> can now appear in the shop.`,achievement.unlock.src)
+                let unlockString = `<strong>${achievement.unlock.name}</strong> can now appear in the shop.`
+                if(achievement.unlock.type === 'Character') {
+                    unlockString = `You can now play as <strong>${achievement.unlock.name}</strong>`
+                }
+                createNotification(`${achievement.unlock.type} Unlocked!`,unlockString,achievement.unlock.src)
             })
         }
 
@@ -1252,11 +1400,29 @@ function createAchNoti(ach, key) {
 //Music stuff
 
 const tracks = {
-    menu: new Audio(`audio/music/${saveData.settings.musicTracks.replaceAll(' ','_')}/menu.mp3`),
-    gameClean: new Audio(`audio/music/${saveData.settings.musicTracks.replaceAll(' ','_')}/gameClean.mp3`),
-    gameCombat: new Audio(`audio/music/${saveData.settings.musicTracks.replaceAll(' ','_')}/gameCombat.mp3`),
-    gameBoss: new Audio(`audio/music/${saveData.settings.musicTracks.replaceAll(' ','_')}/gameBoss.mp3`)
-} 
+    menu: new Audio(`audio/music/menu.mp3`),
+    gameClean: new Audio(`audio/music/gameClean.mp3`),
+    gameCleanPaused: new Audio(`audio/music/gameCleanPaused.mp3`),
+    gameCombat: new Audio(`audio/music/gameCombat.mp3`),
+    gameCombatPaused: new Audio(`audio/music/gameCombatPaused.mp3`),
+    gameBoss: new Audio(`audio/music/gameBoss.mp3`),
+    gameBossPaused: new Audio(`audio/music/gameBossPaused.mp3`),
+
+    sandbox: new Audio(`audio/music/sandbox.mp3`),
+    sandboxPaused: new Audio(`audio/music/sandboxPaused.mp3`),
+
+    tutorialist: new Audio(`audio/music/tutorialist.mp3`),
+    tutorialistPaused: new Audio(`audio/music/tutorialistPaused.mp3`),
+    tutorialistDeath: new Audio(`audio/music/tutorialistDeath.mp3`),
+
+    gameover: new Audio(`audio/music/gameover.mp3`),
+
+    unknown: new Audio(`audio/music/unknown.mp3`),
+    poopshit: new Audio(`audio/music/poopshitBeat.mp3`),
+    charlie: new Audio(`audio/music/charlie.mp3`),
+    bigmouth: new Audio(`audio/music/bigmouth.mp3`),
+}
+
 const totalTracks = Object.keys(tracks).length
 let loadedTracks = 0
 let currentTrack = ''
@@ -1266,10 +1432,10 @@ for(const key in tracks) {
     track.loop = true
     track.play()
     track.preservesPitch = false
+    track.volume = 0
     track.onloadeddata = () => {
         loadedTracks++
         console.log(`${loadedTracks}/${totalTracks} Tracks loaded!`)
-        track.volume = 0
 
         if(loadedTracks === totalTracks) {
             startScreenTimeouts.push(setTimeout(() => {
@@ -1324,6 +1490,67 @@ function changeTrack(trackKey, carryTime) {
 
     }
     currentTrack = trackKey
+}
+
+function updateTrack(fade = true) {
+    //PAUED MUSIC
+    let gamePauseString = ''
+    if(e.gamePaused) {
+        gamePauseString = 'Paused'
+    }
+
+    if(!e.gameActive) {
+        changeTrack('menu')
+        return
+    }
+
+    let tutorialist = false
+    let tutorialistDeath = false
+    elems.enemies.forEach(enemy => {
+        if(enemy.data.data.name === 'THE TUTORIALIST') {
+            tutorialist = true
+        }
+
+        if(enemy.data.data.name === 'Tutorialist Death') {
+            tutorialistDeath = true
+            player.lastTutorialistDeathTick = e.gameUpdates
+        }
+    })
+
+    console.log(e.gameUpdates - player.lastTutorialistDeathTick < 100,player.lastTutorialistDeathTick)
+    
+    if(tutorialistDeath || e.gameUpdates - player.lastTutorialistDeathTick < 150) {
+        changeTrack(`tutorialistDeath`,false)
+        return
+    } else if(tutorialist) {
+        changeTrack(`tutorialist${gamePauseString}`,false)
+        return
+    }
+
+
+    //SANDBOX AND TUTORIAL
+    if(player.inMusicRoom && !player.shitTurnedOff) {
+        changeTrack([`poopshit`,`charlie`,`bigmouth`][player.shitmusic],false)
+    } else if(player.inEggRoom) {
+        changeTrack(`unknown`,false)
+    } else if([2,3,4].includes(saveData.gameSettings.gamemode)) {
+        changeTrack(`sandbox${gamePauseString}`, fade)
+    } else {
+        if(player.alive) {
+            if(player.fightingBoss) {
+                changeTrack(`gameBoss${gamePauseString}`, fade)
+            } else if(elems.enemies.length > 0) {
+                changeTrack(`gameCombat${gamePauseString}`, fade)
+            }
+    
+            if(elems.enemies.length === 0 && e.gameUpdates - player.lastKillDate > 25) {
+                changeTrack(`gameClean${gamePauseString}`, fade)
+            }
+        } else if(currentTrack !== 'gameClean') {
+            changeTrack(`gameover`, fade)
+        }
+    }
+
 }
 
 function createNotification(title, desc, img, timeout = 5000, onclick) {

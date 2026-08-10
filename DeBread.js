@@ -93,12 +93,12 @@ const DeBread = {
     * @param speed The speed to play the sound at.
     */
     playSound(sound, speed = 1, preservePitch = false) {
-        // function updateCounter() {
-        //     doge('dbAUD').innerText = `${audios}AUD`
-        //     doge('dbAUD').style.color = `hsl(0deg, 100%, ${100 - (audios / audioLimit * 50)}%)`
-        // }
+        function updateCounter() {
+            doge('dbAUD').innerText = `${audios}AUD`
+            doge('dbAUD').style.color = `hsl(0deg, 100%, ${100 - (audios / audioLimit * 50)}%)`
+        }
 
-        if(audios < audioLimit) {
+        if(audios < audioLimit && saveData.settings.sfxVolume > 0) {
             if (!soundPool[sound]) {
                 soundPool[sound] = new Audio(sound)
             }
@@ -113,11 +113,11 @@ const DeBread = {
                     console.error('Error playing audio:', error)
                 });
                 audios++
-                // updateCounter()
+                updateCounter()
 
                 setTimeout(() => {
                     audios--
-                    // updateCounter()
+                    updateCounter()
                 }, audio.duration * 1000);
             } else {
                 const audioClone = audio.cloneNode();
@@ -128,12 +128,12 @@ const DeBread = {
                     console.error('Error playing audio clone:', error)
                 })
                 audios++
-                // updateCounter()
+                updateCounter()
 
 
                 setTimeout(() => {
                     audios--
-                    // updateCounter()
+                    updateCounter()
                 }, audio.duration * 1000);
             }
         }
@@ -246,6 +246,10 @@ function frameUpdate() {
         lastUpdateDate = performance.now()
         doge('dbFPS').innerText = `${frameCount}FPS`
         doge('dbFPS').style.color = `hsl(0deg, 100%, ${50 + frameCount}%)`
+
+        if(frameCount <= 10) {
+            getAchievement('Optimization')
+        }
         frameCount = 0
     }
     requestAnimationFrame(frameUpdate)
