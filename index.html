@@ -92,14 +92,14 @@
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
             <div style="line-height: 1;">
-                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest19</a></span><br>
+                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest20</a></span><br>
                 <a style="font-size: 0.75em; opacity: 0.5; cursor: pointer;" href="https://forms.gle/JDaQUZ1wR6GhAscZ8" target="_blank">Report a bug</a>
             </div>
         </div>
         <div id="menuButtons">
             <button onclick="tryPlay()" style="height: 50px;">PLAY</button>
             <button onclick="openCollection()">COLLECTION</button>
-            <button onclick="openMenu('achievements')">ACHIEVEMENTS</button>
+            <button onclick="openAchievements()">ACHIEVEMENTS</button>
             <button onclick="openSettings()">SETTINGS</button>
             <button onclick="saveData.gameSettings.gamemode = 4; openMenu('game'); startGame();">CREDITS</button>
             <!-- <div id="smallMenuButtons">
@@ -175,9 +175,7 @@
                 </div>
             </div>
             <div id="gameSettingsFooter">
-                <div>
-                    <button onclick="openMenu('game'); startGame()">Play with previous settings</button>
-                </div>
+                <div></div>
                 <div>
                     <button onclick="openGameSettingsMenu(currentGameSettingsMenu-1)" id="gameSettingsBack">Back</button>
                     <button onclick="openGameSettingsMenu(currentGameSettingsMenu+1)" id="gameSettingsNext" style="transition: width ease-in-out 500ms;">Next</button>
@@ -295,54 +293,6 @@
                     <div id="ccSkins" class="ccScrollableContainer"></div>
                 </section>
             </div> -->
-        </div>
-    </div>
-    <div id="menu-achievements" class="menu">
-        <div>
-            <div class="submenuTitle">ACHIEVEMENTS</div>
-        </div>
-
-        <div id="achListContainer">
-            <div style="padding: 5px; border-bottom: 2px solid grey;">
-                <div id="achBarContainer">
-                    <div id="achBarTextContainer">
-                        <span id="achBarText">0/- (0%)</span>
-                    </div>
-                    <div id="innerAchBar"></div>
-                </div>
-            </div>
-            <div id="achList">
-                <div id="innerAchList">
-                    <div class="ach">
-                        <img src="graphics/placeholder.png">
-                        <div class="achText">
-                            <strong>Some achievement name</strong>
-                            <span>Some achievement description</span>
-                        </div>
-                    </div>
-                    <div class="ach">
-                        <img src="graphics/placeholder.png">
-                        <div class="achText">
-                            <strong>Some achievement name</strong>
-                            <span>Some achievement description</span>
-                        </div>
-                    </div>
-                    <div class="ach">
-                        <img src="graphics/placeholder.png">
-                        <div class="achText">
-                            <strong>Some achievement name</strong>
-                            <span>Some achievement description</span>
-                        </div>
-                    </div>
-                    <div class="ach">
-                        <img src="graphics/placeholder.png">
-                        <div class="achText">
-                            <strong>Intentional Game Design</strong>
-                            <span>Parry a player projectile<br><em style="color: grey; font-size: 0.75em;">may be an ULTRAKILL reference...</em></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
     <div id="menu-game" class="menu" style="user-select: none;">
@@ -527,6 +477,10 @@
                             <input type="number" id="sandboxDamageInput" placeholder="Amount" style="width: 75px;">
                             <input type="number" id="sandboxHardDamageInput" placeholder="HD" style="width: 50px;">
                         </div>
+                        <div class="numInput">
+                            <button onclick="elems.enemies.forEach(enemy => {enemy.data.damage(parseInt(doge('sandboxDamageAllInput').value))})">Damage all</button>
+                            <input type="number" id="sandboxDamageAllInput" placeholder="Amount">
+                        </div>
                         <div style="display: flex; justify-content: space-between; width: 100%;">
                             <div>
                                 <span>Tick speed: </span>
@@ -547,13 +501,17 @@
             <div id="gameOver">
                 <span>You dead :(</span>
                 <div class="gameOverRow">
-                    <div class="gameOverBox" style="width: 250px;">
+                    <div class="gameOverBox" style="width: 100%;">
                         <div class="gameOverLabel">SCORE</div>
                         <span id="go-score">0000000000</span>
                     </div>
-                    <div class="gameOverBox" style="width: 75px;">
+                    <div class="gameOverBox" style="width: 100px;">
                         <div class="gameOverLabel">WAVE</div>
                         <span id="go-wave">10</span>
+                    </div>
+                    <div class="gameOverBox" style="width: 100px;">
+                        <div class="gameOverLabel">CHAR</div>
+                        <img src="graphics/characters/fellaPortrait.png" width="36" id="go-character">
                     </div>
                 </div>
                 <div class="gameOverRow">
@@ -568,6 +526,14 @@
                     <div class="gameOverBox">
                         <div class="gameOverLabel">ENEMIES KILLED</div>
                         <span id="go-enemiesKilled">10</span>
+                    </div>
+                </div>
+                <span>Selected mods:</span>
+                <div class="gameOverRow">
+                    <div class="gameOverBox">
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap; justify-content: center;" id="go-mods">
+
+                        </div>
                     </div>
                 </div>
                 <span>My stuff:</span>
@@ -726,17 +692,18 @@
                 </div>
             </div>
             <div id="gameRunInfo">
-                <div style="display: flex; align-items: end; margin: 4px 0px; gap: 10px;">
-                    <div style="width: 100px; display: flex; justify-content: space-between; align-items: end;">
-                        <span>Wave</span>
-                        <div id="gameWaveCounter">0</div>
+                <div id="gameModDisplay"></div>
+                <div>
+                    <div style="display: flex; align-items: end; margin: 4px 0px; gap: 10px;">
+                        <div style="width: 100px; display: flex; justify-content: space-between; align-items: end;">
+                            <span>Wave</span>
+                            <div id="gameWaveCounter">0</div>
+                        </div>
                     </div>
-                    <!-- <span>/∞</span> -->
+                    <div id="gameWaveBar">
+                        <div id="gameInnerWaveBar"></div>
+                    </div>
                 </div>
-                <div id="gameWaveBar">
-                    <div id="gameInnerWaveBar"></div>
-                </div>
-                <!-- <span id="gameWaveShopCounter">0 waves until shop</span> -->
             </div>
         </div>
 

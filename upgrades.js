@@ -1088,12 +1088,12 @@ const upgrades = [
         sharp_ammo: {
             name: 'Sharp Ammo',
             desc: `
-                Player projectiles gain a <cg>+2</cg>% chance to apply bleeding to enemies and deal <cg>1.5x</cg> damage.
+                Player projectiles gain a <cg>+5</cg>% chance to apply bleeding to enemies and deal <cg>1.5x</cg> damage.
             `,
             priceMult: 2,
     
             apply: () => {
-                modifyStat(['bullet','sharpChance'], '+=2')
+                modifyStat(['bullet','sharpChance'], '+=5')
             }
         },
         multishot: {
@@ -1144,12 +1144,12 @@ const upgrades = [
         car_battery: {
             name: 'Car Battery',
             desc: `
-                Power items have a <cg>+1%</cg> chance to repeat its ability. 
+                Power items have a <cg>+2%</cg> chance to repeat its ability. 
             `,
             priceMult: 2,
     
             apply: () => {
-                modifyStat(['player','powerItemRepeatChance'], '+=1')
+                modifyStat(['player','powerItemRepeatChance'], '+=2')
             }
         },
         cannon_ball: {
@@ -1180,6 +1180,17 @@ const upgrades = [
     
             apply: () => {
                 modifyStat(['shop','rerollPrice'], '*=0.25')
+            }
+        },
+        lucky_charm: {
+            name: 'Lucky Charm',
+            desc: `
+                <div class="tooltipTag" style="background-color: rgb(75,75,75); display: inline;">COMMON</div> items appear <cg>+10%</cg> less
+            `,
+            priceMult: 1.5,
+    
+            apply: () => {
+                player.shopWeightMults[0] *= 0.9
             }
         },
     },
@@ -1297,11 +1308,23 @@ const upgrades = [
                 modifyStat(['player','armor'], '+=1')
             }
         },
+        the_oracle: {
+            name: 'The Oracle',
+            desc: `
+                <div class="tooltipTag" style="background: linear-gradient(to left, rgba(64, 155, 158, 1), rgba(134, 68, 172, 1)); display: inline;">MYTHIC</div> items appear <cg>+10%</cg> more
+            `,
+            priceMult: 2,
+    
+            apply: () => {
+                player.shopWeightMults[4] *= 1.1
+            }
+        },
         raccoon_tail: {
             name: 'Raccoon Tail',
             desc: `
                 Hitting an enemy with a projectile has a <cg>+25%</cg> chance to apply bleeding and deal 1.5x damage<br>
                 <cg>+7</cg> Damage<br>
+                <cg>+0.5</cg> Damage multiplier<br>
                 <cg>+1</cg> Bullet speed<br>
                 <cg>+2</cg> Luck
             `,
@@ -1310,6 +1333,7 @@ const upgrades = [
             apply: () => {
                 modifyStat(['bullet','sharpChance'], '=25')
                 modifyStat(['bullet','damage'], '+=7')
+                modifyStat(['bullet','damageMult'], '+=0.5')
                 modifyStat(['bullet','speed'], '+=1')
                 modifyStat(['shop','luck'], '+=2')
             }
@@ -2154,11 +2178,11 @@ const powerItems = [
         blue_sharpie: {
             name: 'Blue Sharpie',
             desc: `
-                Uses <cp>25</cp> POWER<br>
+                Uses <cp>20</cp> POWER<br>
                 Throws a blue sharpie towards your cursor.<br>
                 The sharpie spawns several poison fields dealing <cg>100%</cg> of your damage for 10 ticks.
             `,
-            charge: 25,
+            charge: 20,
 
             use: () => {
                 const bottle = document.createElement('div')
@@ -2591,11 +2615,11 @@ const powerItems = [
                 for(let i = 0; i < playerBefore.itemsBought.length; i++) {
                     createTimeout(() => {
                         let rarity = getWeightedChance([
-                            55 + playerBefore.stats.shop.luck,
-                            27 + 1.25*playerBefore.stats.shop.luck,
-                            16 + 1.25*playerBefore.stats.shop.luck,
-                            1.95 + 1.25*playerBefore.stats.shop.luck,
-                            0.01 + 0.05*playerBefore.stats.shop.luck
+                            (55 + playerBefore.stats.shop.luck) * player.shopWeightMults[0],
+                            (27 + 1.25*playerBefore.stats.shop.luck) * player.shopWeightMults[1],
+                            (16 + 1.25*playerBefore.stats.shop.luck) * player.shopWeightMults[2],
+                            (1.95 + 1.25*playerBefore.stats.shop.luck) * player.shopWeightMults[3],
+                            (0.01 + 0.05*playerBefore.stats.shop.luck) * player.shopWeightMults[4]
                         ])
                         const itemList = upgrades[rarity]
                         const randomKey = Object.keys(itemList)[DeBread.randomNum(0,Object.keys(itemList).length-1)]
@@ -2637,7 +2661,7 @@ const powerItems = [
             name: 'Lightning Rod',
             desc: `
                 Uses <cp>40</cp> POWER<br>
-                Deals <cg>2500%</cg> of the players damage to a random enemy.<br>
+                Deals <cg>2,500%</cg> of the players damage to a random enemy.<br>
                 <cp>!</cp> If there are no enemies on screen, the player is targeted instead.
             `,
             charge: 40,
@@ -2748,7 +2772,7 @@ const powerItems = [
                                 speed: 0,
                                 size: 32,
                             }
-                            const proj = createProjectile(0,cursorPos,0,projData,elems.enemies,player.elem)
+                            const proj = createProjectile(0,cursorPos,0,projData,[...elems.enemies, ...[player.elem]],player.elem)
                             proj.style.opacity = '0'
                             createExplosion([...cursorPos],250,0,25,true,[[0,0],[0,0],[0,0],0])
 
@@ -3066,9 +3090,161 @@ const powerItems = [
                 createNotification('Stat up!',`${randomStat[0]}.${randomStat[1]}`)
             }
         },
-        // zenith: {
+        zenith: {
+            name: 'Zenith',
+            desc: `
+                Uses <cp>50</cp> POWER<br>
+                Spawns a sword the homes towards enemies, dealing <cg>100%</cg> of your damage every 5 ticks and applies random effects.<br>
+                After 750 ticks, the sword explodes, shooting several projectiles outwards.
+            `,
+            charge: 50,
 
-        // },
+            use: () => {
+                const sword = document.createElement('div')
+                sword.classList.add('entity')
+                sword.classList.add('zenith')
+                sword.pos = [player.centerPos[0]+DeBread.randomNum(-0.95,1.05,10),player.centerPos[1]+DeBread.randomNum(-0.95,1.05,10)]
+                sword.ticksActive = 0
+                sword.dirVels = []
+                addStyles(sword, {
+                    position: 'absolute',
+                    width: '64px',
+                    height: '64px',
+                    translate: '-50% -50%',
+                    backgroundImage: 'url(graphics/zenith.png)',
+                    backgroundSize: 'cover'
+                })
+
+                sword.tick = () => {
+                    for(let i = 0; i < sword.dirVels.length; i++) {
+                        const dirVel = sword.dirVels[i]
+                        sword.pos[0] += Math.cos(dirVel.angle) * dirVel.speed
+                        sword.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
+            
+                        dirVel.speed /= dirVel.div
+                        if(Math.abs(dirVel.speed) <= 0.1) {
+                            sword.dirVels.splice(i, 1)
+                        }
+                    }
+
+                    const enemy = getClosest(sword, '.enemy')
+                    if(enemy.elem) {
+                        const dx = enemy.elem.data.centerPos[0] - sword.pos[0]
+                        const dy = enemy.elem.data.centerPos[1] - sword.pos[1]
+    
+                        const angle = Math.atan2(dy, dx)
+    
+                        sword.dirVels.push({
+                            speed: 0.8,
+                            angle: angle,
+                            div: 1.01
+                        })
+                    }
+
+                    elems.enemies.forEach(enemy => {
+                        if(isColliding(enemy, sword) && sword.ticksActive % 5 === 0 && enemy.data.active) {
+                            const projData = {
+                                size: 0,
+                                range: 5,
+                                damage: player.stats.bullet.damage,
+                                speed: 0,
+                            }
+
+                            let projEffects = [
+                                {
+                                    critChance: 25,
+                                },
+                                {
+                                    fireyAmmoChance: 25,
+                                },
+                                {
+                                    heal: 1,
+                                },
+                                {
+                                    sharpChance: 25,
+                                },
+                                {
+                                    randDmgMult: 2,
+                                },
+                                {
+                                    coinChance: 25,
+                                },
+                                {
+                                    electricChainLength: 5,
+                                    electricChainReach: 250,
+                                },
+                            ]
+
+                            createProjectile(
+                                0,
+                                [...enemy.data.centerPos],
+                                0,
+                                {
+                                    ...projData,
+                                    ...projEffects[DeBread.randomNum(0,projEffects.length-1)]
+                                },
+                                elems.enemies,
+                                player,
+                            )
+
+                            sword.lastHitDate = e.gameUpdates
+                        }
+                    })
+
+                    doge('area').querySelectorAll('.zenith').forEach(otherSword => {
+                        const angle = Math.atan2(otherSword.pos[1] - sword.pos[1], otherSword.pos[0] - sword.pos[0])
+                        if (isColliding(sword, otherSword) && sword !== otherSword) {
+                            const distance = Math.sqrt(
+                                Math.pow(sword.pos[0] - otherSword.pos[0],2) + 
+                                Math.pow(sword.pos[1] - otherSword.pos[1],2)
+                            )
+                            
+                            const overlap = (64 - distance) / 10
+                            sword.pos[0] -= Math.cos(angle) * overlap
+                            sword.pos[1] -= Math.sin(angle) * overlap                    
+                        }
+                    })
+
+                    addStyles(sword, {
+                        left: sword.pos[0]+'px',
+                        top: sword.pos[1]+'px',
+                        rotate: sword.ticksActive*5+'deg'
+                    })
+
+                    sword.ticksActive++
+
+                    if(sword.ticksActive >= 750) {
+                        sword.destroy()
+                    }
+                }
+                
+                sword.destroy = () => {
+                    createExplosion([...sword.pos],100,50,50,false,[[255,255],[255,255],[255,255]])
+                    for(let i = 0; i < 10; i++) {
+                        const projData = {
+                            damage: player.stats.bullet.damage,
+                            size: 10,
+                            speed: 10,
+                            critChance: 25,
+                            fireyAmmoChance: 25,
+                            heal: 1,
+                            sharpChance: 25,
+                            randDmgMult: 2,
+                            coinChance: 25,
+                            electricChainLength: 5,
+                            electricChainReach: 250,
+                            drillTicks: 2,
+                            magnetStrength: 2,
+                        }
+                        createProjectile(1,[...sword.pos],(Math.PI * 2 / 10) * i, projData, elems.enemies, player)
+                        
+                        sword.remove()
+                    }
+                }
+
+                doge('area').append(sword)
+            }
+        },
     },
     {
         empty: {
@@ -3185,7 +3361,7 @@ const powerItems = [
             name: 'Egg',
             desc: `
                 Uses <cp>25</cp> POWER<br>
-                Spawns a Chud Chip that attacks enemies dealing <cg>100%</cg> of your damage every 25 ticks<br>
+                Spawns a Chud Chip that attacks enemies dealing <cg>100%</cg> of your damage every 10 ticks<br>
                 After 500 ticks, it explodes dealing <cg>500%</cg> of your damage
             `,
             charge: 25,
@@ -3240,7 +3416,7 @@ const powerItems = [
                             div: 1.05
                         })
 
-                        if(isColliding(enemy.elem, bird) && e.gameUpdates - bird.lastHitDate > 25 && enemy.elem.data.active) {
+                        if(isColliding(enemy.elem, bird) && e.gameUpdates - bird.lastHitDate > 10 && enemy.elem.data.active) {
                             const damage = enemy.elem.data.damage(player.stats.bullet.damage)
                             bird.lastHitDate = e.gameUpdates
 
@@ -3558,11 +3734,11 @@ function createShopItems(items) {
             const luck = player.stats.shop.luck
             if(itemType < 2) {
                 rarity = getWeightedChance([
-                    55 + luck,
-                    27 + 1.25*luck,
-                    16 + 1.25*luck,
-                    1.95 + 1.25*luck,
-                    0.01 + 0.05*luck
+                    (55 + player.stats.shop.luck) * player.shopWeightMults[0],
+                    (27 + 1.25*player.stats.shop.luck) * player.shopWeightMults[1],
+                    (16 + 1.25*player.stats.shop.luck) * player.shopWeightMults[2],
+                    (1.95 + 1.25*player.stats.shop.luck) * player.shopWeightMults[3],
+                    (0.01 + 0.05*player.stats.shop.luck) * player.shopWeightMults[4]
                 ])
             }
             

@@ -168,6 +168,7 @@ const enemies = {
     explosive: {
         name: 'Explosive',
         desc: 'Creates an explosion when damaged.',
+        texture: 'explosive.png',
         color: [100,0,0],
         size: 40,
         health: 1,
@@ -712,6 +713,133 @@ const enemies = {
             enemy.data.ticksActive++
         }
     },
+    tanaDeath: {
+        name: 'Tana Death',
+        desc: '<em style="color: grey;">Sandbox only</em>',
+        texture: 'tanaPortrait.png',
+        size: 36,
+        health: 1e300,
+        weight: Infinity,
+        credits: Infinity,
+        color: [66, 191, 232],
+        finishBossWave: true,
+        noKillBonus: true,
+        noDeathParticles: true,
+
+        onSpawn: enemy => {
+            enemy.ticksActive = 0
+            enemy.visibility = 1
+        },
+
+        tick: enemy => {
+            if(enemy.ticksActive === 0) {
+                const shine = document.createElement('div')
+                shine.classList.add('entity')
+                shine.ticksActive = 0
+                addStyles(shine, {
+                    position: 'absolute',
+                    width: '192px',
+                    height: '192px',
+                    translate: '-50% -50%',
+                    backgroundImage: 'url(graphics/lisaShine.png)',
+                    backgroundSize: '2112px 192px',
+                    zIndex: '7',
+                    left: enemy.data.centerPos[0]+'px',
+                    top: enemy.data.centerPos[1]+'px'
+                })
+    
+                doge('area').append(shine)
+    
+                DeBread.playSound('audio/lisa-Gotta Die Sometime.wav')
+                DeBread.playSound('audio/lisa-Skill1.ogg')
+
+                shine.tick = () => {
+                    shine.style.backgroundPosition = `-${192*Math.floor(shine.ticksActive)}px, 0`
+    
+                    if(shine.ticksActive === 9) {
+                        DeBread.playSound('audio/lisa-Flash2.ogg',1.5)
+                    }
+
+                    if(shine.ticksActive > 10) {
+                        shine.remove()
+                    }
+    
+                    shine.ticksActive = DeBread.round(shine.ticksActive + 0.25, 2)
+                }
+            }
+
+            if(enemy.ticksActive === 67) {
+                const explosion = document.createElement('div')
+                explosion.classList.add('entity')
+                explosion.ticksActive = 0
+                addStyles(explosion, {
+                    position: 'absolute',
+                    width: '96px',
+                    height: '96px',
+                    translate: '-50% -50%',
+                    backgroundImage: 'url(graphics/lisaExplode.png)',
+                    backgroundSize: '288px 96px',
+                    zIndex: '7',
+                    left: enemy.data.centerPos[0]+'px',
+                    top: enemy.data.centerPos[1]-40+'px'
+                })
+    
+                doge('area').append(explosion)
+
+                DeBread.easeShake(enemy, 20, 5, 0.5)
+                DeBread.playSound('audio/lisa-Fire9.ogg')
+                DeBread.playSound('audio/lisa-woosh2.ogg')
+    
+    
+                explosion.tick = () => {
+                    explosion.style.backgroundPosition = `-${96*Math.floor(explosion.ticksActive / 4)}px, 0`
+    
+                    if(explosion.ticksActive > 11) {
+                        explosion.remove()
+                    }
+    
+                    explosion.ticksActive++
+                }
+            }
+
+            if(enemy.ticksActive > 75) {
+                enemy.visibility -= 0.05
+            }
+
+            enemy.style.opacity = enemy.visibility
+
+            if(enemy.visibility <= -0.25) {
+                enemy.data.kill()
+            }
+
+            enemy.ticksActive++
+        }
+    },
+    ashtonDeath: {
+        name: 'Ashton Death',
+        desc: '<em style="color: grey;">Sandbox only</em>',
+        texture: 'ashtonPortrait.png',
+        size: 36,
+        health: 1e300,
+        weight: Infinity,
+        credits: Infinity,
+        color: [76, 119, 128],
+        finishBossWave: true,
+        noKillBonus: true,
+
+        onSpawn: enemy => {
+            createNotification('Fuck i forgot to finish this','shit')
+            enemy.ticksActive = 0
+        },
+
+        tick: enemy => {
+            if(enemy.ticksActive > 100) {
+                enemy.data.kill()
+            }
+
+            enemy.ticksActive++
+        }
+    },
     explodingTutorialistServant: {
         name: 'Tutorialist Servant (exploding)',
         desc: '<em style="color: grey;">Sandbox only</em>',
@@ -721,6 +849,7 @@ const enemies = {
         regen: -100000,
         weight: 0.25,
         credits: Infinity,
+        hideLevel: true,
         color: [255,255,255],
 
         onDeath: enemy => {
@@ -747,6 +876,7 @@ const enemies = {
         health: 2147483647,
         mounted: true,
         credits: Infinity,
+        hideLevel: true,
         color: [255,255,255],
         finishBossWave: true,
         noKillBonus: true,
@@ -872,7 +1002,7 @@ const enemies = {
             }
             
             if(enemy.ticksActive >= 500) {
-                enemy.data.damage(10e67)
+                enemy.data.kill()
                 createExplosion([...enemy.data.centerPos], 250, 0, 100, false, [[255,255],[255,255],[255,255],255])
 
                 getStyle({
@@ -1010,7 +1140,7 @@ const minibosses = {
 
             if(!boss.isAnimating) {
                 boss.data.dirVels.push({
-                    speed: 0.75 * player.stats.enemy.speedMult,
+                    speed: 0.75 * player.stats.enemy.speedMult * boss.data.speedMult,
                     angle: angle,
                     div: 1.05
                 })
@@ -1022,7 +1152,7 @@ const minibosses = {
                     [...boss.data.centerPos],
                     10,
                     1.25,
-                    DeBread.randomNum(0,Math.PI*2),
+                    DeBread.randomNum(0,Math.PI*2,10),
                     5,
                     1.25,
                     50,
@@ -1052,6 +1182,7 @@ const minibosses = {
                         })
 
                         boss.data.timeouts.push(createTimeout(() => {
+                            createExplosion([...boss.data.centerPos], 250, 0, 100, false, [[0,255],[0,0],[0,0],0.25])
                             boss.isAnimating = false
 
                             texture.src = 'graphics/enemies/sasha.png'
@@ -1063,7 +1194,6 @@ const minibosses = {
                     }
                 }
             }
-            
         },
 
         moves: [
@@ -1077,7 +1207,7 @@ const minibosses = {
                         )
     
                         boss.data.dirVels.push({
-                            speed: 25 * player.stats.enemy.speedMult,
+                            speed: 25 * player.stats.enemy.speedMult * boss.data.speedMult,
                             angle: playerAngle,
                             div: 1.1
                         })
@@ -1095,7 +1225,7 @@ const minibosses = {
                         const projData = {
                             damage: 50,
                             size: 25,
-                            speed: 10 * player.stats.enemy.speedMult,
+                            speed: 10 * player.stats.enemy.speedMult * boss.data.speedMult,
                         }
     
                         createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
@@ -1107,7 +1237,7 @@ const minibosses = {
                         const projData = {
                             damage: 50,
                             size: 20,
-                            speed: 8 * player.stats.enemy.speedMult,
+                            speed: 8 * player.stats.enemy.speedMult * boss.data.speedMult,
                         }
     
                         createExplosion([...boss.data.centerPos], 250, 0, 100, false, [[0,0],[0,0],[0,0],0])
@@ -1129,7 +1259,7 @@ const minibosses = {
                                 )
             
                                 boss.data.dirVels.push({
-                                    speed: 25 * player.stats.enemy.speedMult,
+                                    speed: 25 * player.stats.enemy.speedMult * boss.data.speedMult,
                                     angle: playerAngle,
                                     div: 1.1
                                 })
@@ -1146,7 +1276,7 @@ const minibosses = {
                         )
     
                         boss.data.dirVels.push({
-                            speed: 50 * player.stats.enemy.speedMult,
+                            speed: 50 * player.stats.enemy.speedMult * boss.data.speedMult,
                             angle: playerAngle + Math.PI,
                             div: 1.1
                         })
@@ -1158,7 +1288,7 @@ const minibosses = {
                                     const projData = {
                                         damage: 50,
                                         size: 20,
-                                        speed: 4 * player.stats.enemy.speedMult,
+                                        speed: 4 * player.stats.enemy.speedMult * boss.data.speedMult,
                                     }
     
                                     for(let i = 0; i < 10; i++) {
@@ -1172,77 +1302,6 @@ const minibosses = {
             ]
         ]
     },
-    // skywalkr: {
-    //     name: 'SKYWALKR',
-    //     desc: 'Run.',
-    //     health: 1000,
-    //     size: 36,
-    //     color: [221, 136, 240],
-    //     boss: true,
-    //     miniboss: true,
-    //     weight: 999,
-    //     speed: 0,
-    //     texture: 'skywalkrPortrait.png',
-    //     textureSheet: 'skywalkr.png',
-
-    //     tick: boss => {
-    //         const frames = {
-    //             "-3": 0,
-    //             "-2": 1,
-    //             "-1": 2,
-    //             "0": 5,
-    //             "1": 8,
-    //             "2": 7,
-    //             "3": 6,
-    //             "4": 3,
-    //             "-4": 3
-    //         }
-
-    //         const dx = player.centerPos[0] - boss.data.centerPos[0]
-    //         const dy = player.centerPos[1] - boss.data.centerPos[1]
-
-    //         const angle = Math.atan2(dy, dx)
-
-    //         const dir = Math.round(angle / (Math.PI / 4))
-    //         boss.querySelector('.enemyTextureContainer').querySelector('img').style.translate = `-${(frames[dir] * 36) + 2 * frames[dir]}px 0px`
-
-    //         const projPos = [boss.data.pos[0] + (boss.data.size)/2, boss.data.pos[1] + (boss.data.size)/2]
-    //         const projAngle = Math.atan2(
-    //             projPos[1] - DeBread.randomNum(boss.data.target.pos[1], boss.data.target.pos[1] + boss.data.target.elem.offsetHeight),
-    //             projPos[0] - DeBread.randomNum(boss.data.target.pos[0], boss.data.target.pos[0] + boss.data.target.elem.offsetWidth),
-    //         )
-
-    //         const projData = {
-    //             damage: 50,
-    //             size: 25,
-    //             speed: 10,
-    //         }
-
-    //         createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
-
-    //         for(let i = 0; i < 10; i++) {
-    //             createProjectile(1,[...boss.data.centerPos],(Math.PI * 2 / 10) * i + DeBread.randomNum(0,Math.PI*2,100), projData, [player.elem], boss.data)
-    //         }
-    //     },
-
-    //     moves: [
-    //         { //Burst
-    //             duration: 125,
-    //             do: boss => {
-    //                 const projData = {
-    //                     damage: 50,
-    //                     size: 20,
-    //                     speed: 10,
-    //                 }
-
-    //                 createExplosion([...boss.data.centerPos], 250, 0, 100, false, [[0,0],[0,0],[0,0],0])
-    //                 for(let i = 0; i < 10; i++) {
-    //                     createProjectile(1,[...boss.data.centerPos],(Math.PI * 2 / 10) * i, projData, [player.elem], boss.data)
-    //                 }
-    //             }
-    //         }
-    //     ]
-    // },
     jake: {
         name: 'JAKE',
         desc: 'Lover of peppers.',
@@ -1287,7 +1346,7 @@ const minibosses = {
                     )
 
                     boss.data.dirVels.push({
-                        speed: 25 * player.stats.enemy.speedMult,
+                        speed: 25 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: playerAngle,
                         div: 1.1
                     })
@@ -1305,7 +1364,7 @@ const minibosses = {
                     const projData = {
                         damage: 50,
                         size: 25,
-                        speed: 10 * player.stats.enemy.speedMult,
+                        speed: 10 * player.stats.enemy.speedMult * boss.data.speedMult,
                         poisonFieldChance: 100,
                         poisonFieldSize: 100,
                         poisonFieldTicks: 5,
@@ -1322,7 +1381,7 @@ const minibosses = {
                     const projData = {
                         damage: 50,
                         size: 20,
-                        speed: 10 * player.stats.enemy.speedMult,
+                        speed: 10 * player.stats.enemy.speedMult * boss.data.speedMult,
                         speedDiv: 1.01,
                         range: 50,
                         poisonFieldChance: 100,
@@ -1387,7 +1446,7 @@ const minibosses = {
             boss.querySelector('.enemyTextureContainer').querySelector('img').style.translate = `-${(frames[dir] * 36) + 2 * frames[dir]}px 0px`
 
             boss.data.dirVels.push({
-                speed: 0.25 * player.stats.enemy.speedMult,
+                speed: 0.25 * player.stats.enemy.speedMult * boss.data.speedMult,
                 angle: angle,
                 div: 1.05
             })
@@ -1403,7 +1462,7 @@ const minibosses = {
                     )
 
                     boss.data.dirVels.push({
-                        speed: 15 * player.stats.enemy.speedMult,
+                        speed: 15 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: playerAngle + (Math.PI * [-1,1][DeBread.randomNum(0,1)]) / 2,
                         div: 1.1
                     })
@@ -1423,7 +1482,7 @@ const minibosses = {
                             const projData = {
                                 damage: 10,
                                 size: 10,
-                                speed: 7 * player.stats.enemy.speedMult,
+                                speed: 7 * player.stats.enemy.speedMult * boss.data.speedMult,
                                 poisonFieldChance: 100,
                                 poisonFieldSize: 25,
                                 poisonFieldTicks: 3,
@@ -1448,13 +1507,13 @@ const minibosses = {
                     const projData = {
                         damage: 75,
                         size: 50,
-                        speed: 5 * player.stats.enemy.speedMult,
+                        speed: 5 * player.stats.enemy.speedMult * boss.data.speedMult,
                     }
 
                     createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
 
                     boss.data.dirVels.push({
-                        speed: 25 * player.stats.enemy.speedMult,
+                        speed: 25 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: projAngle,
                         div: 1.1
                     })
@@ -1520,7 +1579,7 @@ const minibosses = {
                 )
 
                 boss.data.dirVels.push({
-                    speed: 1 * player.stats.enemy.speedMult,
+                    speed: 1 * player.stats.enemy.speedMult * boss.data.speedMult,
                     angle: angle,
                     div: 1.1
                 })
@@ -1533,20 +1592,20 @@ const minibosses = {
                     const randomAngle = DeBread.randomNum(0,Math.PI*2,10)
 
                     player.dirVels.push({
-                        speed: 25 * player.stats.enemy.speedMult,
+                        speed: 25 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: randomAngle,
                         div: 1.1
                     })
 
                     boss.data.dirVels.push({
-                        speed: 25 * player.stats.enemy.speedMult,
+                        speed: 25 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: randomAngle + Math.PI,
                         div: 1.1
                     })
                 }
             } else {
                 boss.data.dirVels.push({
-                    speed: 0.5 * player.stats.enemy.speedMult,
+                    speed: 0.5 * player.stats.enemy.speedMult * boss.data.speedMult,
                     angle: angle,
                     div: 1.05
                 })
@@ -1571,7 +1630,7 @@ const minibosses = {
                     )
 
                     boss.data.dirVels.push({
-                        speed: 25 * player.stats.enemy.speedMult,
+                        speed: 25 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: playerAngle,
                         div: 1.1
                     })
@@ -1587,7 +1646,7 @@ const minibosses = {
                     const projData = {
                         damage: 20,
                         size: 10,
-                        speed: 15 * player.stats.enemy.speedMult,
+                        speed: 15 * player.stats.enemy.speedMult * boss.data.speedMult,
                         range: 15,
                         grow: -10,
                     }
@@ -1640,13 +1699,13 @@ const minibosses = {
 
             if(Math.sqrt(dx*dx+dy*dy) > 250) {
                 boss.data.dirVels.push({
-                    speed: 0.5 * player.stats.enemy.speedMult,
+                    speed: 0.5 * player.stats.enemy.speedMult * boss.data.speedMult,
                     angle: angle,
                     div: 1.10
                 })
             } else {
                 boss.data.dirVels.push({
-                    speed: 0.5 * player.stats.enemy.speedMult,
+                    speed: 0.5 * player.stats.enemy.speedMult * boss.data.speedMult,
                     angle: angle+((Math.PI/2)*boss.data.movementDir),
                     div: 1.10
                 })
@@ -1677,7 +1736,7 @@ const minibosses = {
             //         )
 
             //         boss.data.dirVels.push({
-            //             speed: 15 * player.stats.enemy.speedMult,
+            //             speed: 15 * player.stats.enemy.speedMult * boss.data.speedMult,
             //             angle: playerAngle + (Math.PI * [-1,1][DeBread.randomNum(0,1)]) / 2,
             //             div: 1.1
             //         })
@@ -1695,13 +1754,13 @@ const minibosses = {
                     const projData = {
                         damage: 15,
                         size: 10,
-                        speed: 10 * player.stats.enemy.speedMult,
+                        speed: 10 * player.stats.enemy.speedMult * boss.data.speedMult,
                     }
 
                     createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
 
                     boss.data.dirVels.push({
-                        speed: 5 * player.stats.enemy.speedMult,
+                        speed: 5 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: projAngle,
                         div: 1.1
                     })
@@ -1721,13 +1780,13 @@ const minibosses = {
                             const projData = {
                                 damage: 15,
                                 size: 10,
-                                speed: 10 * player.stats.enemy.speedMult,
+                                speed: 10 * player.stats.enemy.speedMult * boss.data.speedMult,
                             }
         
                             createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
         
                             boss.data.dirVels.push({
-                                speed: 5 * player.stats.enemy.speedMult,
+                                speed: 5 * player.stats.enemy.speedMult * boss.data.speedMult,
                                 angle: projAngle,
                                 div: 1.1
                             })
@@ -1749,6 +1808,12 @@ const minibosses = {
         weight: 0.5,
         texture: 'tanaPortrait.png',
         textureSheet: 'tana.png',
+        noDeathParticles: true,
+        dontFinishBossWave: true,
+
+        onDeath: boss => {
+            spawnEnemy([...boss.data.pos],enemies.tanaDeath,0,0)
+        },
 
         tick: boss => {
             const frames = {
@@ -1778,7 +1843,7 @@ const minibosses = {
                 )
 
                 boss.data.dirVels.push({
-                    speed: 1 * player.stats.enemy.speedMult,
+                    speed: 1 * player.stats.enemy.speedMult * boss.data.speedMult,
                     angle: kiteAngle,
                     div: 1.25
                 })
@@ -1803,13 +1868,13 @@ const minibosses = {
             } else {
                 if(Math.sqrt(dx*dx+dy*dy) > 250) {
                     boss.data.dirVels.push({
-                        speed: 0.5 * player.stats.enemy.speedMult,
+                        speed: 0.5 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: angle,
                         div: 1.10
                     })
                 } else {
                     boss.data.dirVels.push({
-                        speed: 0.5 * player.stats.enemy.speedMult,
+                        speed: 0.5 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: angle+((Math.PI/2)*boss.data.movementDir),
                         div: 1.10
                     })
@@ -1840,7 +1905,7 @@ const minibosses = {
                     )
 
                     boss.data.dirVels.push({
-                        speed: 25 * player.stats.enemy.speedMult,
+                        speed: 25 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: playerAngle,
                         div: 1.1
                     })
@@ -1871,7 +1936,7 @@ const minibosses = {
                     )
 
                     boss.data.dirVels.push({
-                        speed: 15 * player.stats.enemy.speedMult,
+                        speed: 15 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: playerAngle + (Math.PI * [-1,1][DeBread.randomNum(0,1)]) / 2,
                         div: 1.1
                     })
@@ -1893,14 +1958,14 @@ const minibosses = {
                     const projData = {
                         damage: 15,
                         size: 10,
-                        speed: 10 * player.stats.enemy.speedMult,
+                        speed: 10 * player.stats.enemy.speedMult * boss.data.speedMult,
                     }
 
                     createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
 
                     if(!boss.data.isKiting) {
                         boss.data.dirVels.push({
-                            speed: 5 * player.stats.enemy.speedMult,
+                            speed: 5 * player.stats.enemy.speedMult * boss.data.speedMult,
                             angle: projAngle,
                             div: 1.1
                         })
@@ -1921,14 +1986,14 @@ const minibosses = {
                             const projData = {
                                 damage: 15,
                                 size: 10,
-                                speed: 10 * player.stats.enemy.speedMult,
+                                speed: 10 * player.stats.enemy.speedMult * boss.data.speedMult,
                             }
         
                             createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
         
                             if(!boss.data.isKiting) {
                                 boss.data.dirVels.push({
-                                    speed: 5 * player.stats.enemy.speedMult,
+                                    speed: 5 * player.stats.enemy.speedMult * boss.data.speedMult,
                                     angle: projAngle,
                                     div: 1.1
                                 })
@@ -1974,7 +2039,7 @@ const minibosses = {
             boss.querySelector('.enemyTextureContainer').querySelector('img').style.translate = `-${(frames[dir] * 36) + 2 * frames[dir]}px 0px`
 
             boss.data.dirVels.push({
-                speed: 0.25 * player.stats.enemy.speedMult,
+                speed: 0.25 * player.stats.enemy.speedMult * boss.data.speedMult,
                 angle: angle+((Math.PI/2)*boss.data.movementDir),
                 div: 1.05
             })
@@ -1984,7 +2049,7 @@ const minibosses = {
                     const projData = {
                         damage: 50,
                         size: 20,
-                        speed: 10 * player.stats.enemy.speedMult,
+                        speed: 10 * player.stats.enemy.speedMult * boss.data.speedMult,
                     }
 
                     for(let i = 0; i < 10; i++) {
@@ -2029,7 +2094,7 @@ const minibosses = {
                     const projData = {
                         damage: 50,
                         size: 25,
-                        speed: 10 * player.stats.enemy.speedMult,
+                        speed: 10 * player.stats.enemy.speedMult * boss.data.speedMult,
                     }
 
                     createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
@@ -2044,7 +2109,7 @@ const minibosses = {
                     )
 
                     boss.data.dirVels.push({
-                        speed: 25 * player.stats.enemy.speedMult,
+                        speed: 25 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: playerAngle,
                         div: 1.1
                     })
@@ -2064,7 +2129,7 @@ const minibosses = {
                     lego.ticksActive = 0
                     lego.pos = [...boss.data.centerPos]
                     lego.dirVels = [{
-                        speed: 25 * player.stats.enemy.speedMult,
+                        speed: 25 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: playerAngle,
                         div: 1.1
                     }]
@@ -2158,7 +2223,7 @@ const minibosses = {
             boss.querySelector('.enemyTextureContainer').querySelector('img').style.translate = `-${(frames[dir] * 36) + 2 * frames[dir]}px 0px`
 
             boss.data.dirVels.push({
-                speed: 0.25 * player.stats.enemy.speedMult,
+                speed: 0.25 * player.stats.enemy.speedMult * boss.data.speedMult,
                 angle: angle+((Math.PI/2)*boss.data.movementDir),
                 div: 1.05
             })
@@ -2184,7 +2249,7 @@ const minibosses = {
                     )
 
                     boss.data.dirVels.push({
-                        speed: 15 * player.stats.enemy.speedMult,
+                        speed: 15 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: playerAngle + (Math.PI * [-1,1][DeBread.randomNum(0,1)]) / 2,
                         div: 1.1
                     })
@@ -2199,7 +2264,7 @@ const minibosses = {
                     )
 
                     boss.data.dirVels.push({
-                        speed: 25 * player.stats.enemy.speedMult,
+                        speed: 25 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: playerAngle,
                         div: 1.1
                     })
@@ -2218,7 +2283,7 @@ const minibosses = {
 
                             const fire = createFire([...boss.data.centerPos], 100, false)
                             fire.dirVels.push({
-                                speed: DeBread.randomNum(10,25,10) * player.stats.enemy.speedMult,
+                                speed: DeBread.randomNum(10,25,10) * player.stats.enemy.speedMult * boss.data.speedMult,
                                 angle: projAngle + DeBread.randomNum(-0.25,0.25,10),
                                 div: 1.1
                             })
@@ -2241,7 +2306,7 @@ const minibosses = {
                                 cooldown: 10,
                                 damage: 25,
                                 explosionSize: 100,
-                                speed: DeBread.randomNum(5,20,10) * player.stats.enemy.speedMult,
+                                speed: DeBread.randomNum(5,20,10) * player.stats.enemy.speedMult * boss.data.speedMult,
                                 size: 10,
                                 speedDiv: 1.05,
                                 range: 250,
@@ -2299,7 +2364,7 @@ const minibosses = {
             boss.querySelector('.enemyTextureContainer').querySelector('img').style.translate = `-${(frames[dir] * 36) + 2 * frames[dir]}px 0px`
 
             boss.data.dirVels.push({
-                speed: 0.25 * player.stats.enemy.speedMult,
+                speed: 0.25 * player.stats.enemy.speedMult * boss.data.speedMult,
                 angle: angle+((Math.PI/2)*boss.data.movementDir),
                 div: 1.05
             })
@@ -2325,7 +2390,7 @@ const minibosses = {
                     )
 
                     boss.data.dirVels.push({
-                        speed: 10 * player.stats.enemy.speedMult,
+                        speed: 10 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: playerAngle,
                         div: 1.1
                     })
@@ -2352,7 +2417,7 @@ const minibosses = {
                     const projData = {
                         cooldown: 10,
                         damage: 25,
-                        speed: DeBread.randomNum(10,20,10) * player.stats.enemy.speedMult,
+                        speed: DeBread.randomNum(10,20,10) * player.stats.enemy.speedMult * boss.data.speedMult,
                         size: 20,
                         speedDiv: 1.1,
                         range: 30,
@@ -2408,7 +2473,7 @@ const minibosses = {
 
             if(boss.data.followingPlayer) {
                 boss.data.dirVels.push({
-                    speed: 0.5 * player.stats.enemy.speedMult,
+                    speed: 0.5 * player.stats.enemy.speedMult * boss.data.speedMult,
                     angle: angle,
                     div: 1.05
                 })
@@ -2428,7 +2493,7 @@ const minibosses = {
                 )
             } else {
                 boss.data.dirVels.push({
-                    speed: 0.25 * player.stats.enemy.speedMult,
+                    speed: 0.25 * player.stats.enemy.speedMult * boss.data.speedMult,
                     angle: angle+((Math.PI/2)*boss.data.movementDir),
                     div: 1.05
                 })
@@ -2478,7 +2543,7 @@ const minibosses = {
                     )
 
                     boss.data.dirVels.push({
-                        speed: 15 * player.stats.enemy.speedMult,
+                        speed: 15 * player.stats.enemy.speedMult * boss.data.speedMult,
                         angle: playerAngle,
                         div: 1.05
                     })
@@ -2496,7 +2561,7 @@ const minibosses = {
                     const projData = {
                         damage: 50,
                         size: 25,
-                        speed: 10 * player.stats.enemy.speedMult,
+                        speed: 10 * player.stats.enemy.speedMult * boss.data.speedMult,
                         heal: 25
                     }
 
@@ -2521,6 +2586,15 @@ const bosses = {
         bossBarTexture: 'tutorialist/tutorialistBar.gif',
         noDeathParticles: true,
         dontFinishBossWave: true,
+        phases: 2,
+
+        generalMoveRequirement: boss => {
+            return !boss.isAnimating
+        },
+
+        onSpawn: boss => {
+            boss.isAnimating = false
+        },
 
         tick: boss => {
             //Looking directions
@@ -2546,11 +2620,24 @@ const bosses = {
             boss.querySelector('.enemyTextureContainer').querySelector('img').style.translate = `-${(frames[dir] * 36) + 2 * frames[dir]}px 0px`
 
             //Movement
-            boss.data.dirVels.push({
-                speed: 0.25 * player.stats.enemy.speedMult,
-                angle: angle,
-                div: 1.05
-            })
+            if(!boss.isAnimating) {
+                if(boss.data.phase === 1) {
+                    boss.data.dirVels.push({
+                        speed: 0.25 * player.stats.enemy.speedMult * boss.data.speedMult,
+                        angle: angle,
+                        div: 1.05
+                    })
+                } else {
+                    boss.data.dirVels.push({
+                        speed: 0.25 * player.stats.enemy.speedMult * boss.data.speedMult,
+                        angle: Math.atan2(
+                            100 - boss.data.centerPos[1],
+                            doge('area').offsetWidth / 2 - boss.data.centerPos[0]
+                        ),
+                        div: 1.05
+                    })
+                }
+            }
 
             //Shadow
             const shadow = document.createElement('div')
@@ -2574,176 +2661,376 @@ const bosses = {
             }, 1000);
         },
 
-        moves: [
-            { //Horizontal Dash
-                duration: 25,
-                do: boss => {
-                    const playerAngle = Math.atan2(
-                        player.centerPos[1] - boss.data.centerPos[1],
-                        player.centerPos[0] - boss.data.centerPos[0]
-                    )
+        onDamage: (boss, silent) => {
+            if(boss.data.health > 0) {
+                const beforePhase = boss.data.phase
+                let currentPhase = 2 - Math.floor(2 * (boss.data.health / boss.data.maxHealth))
+                boss.data.phase = currentPhase
 
-                    boss.data.dirVels.push({
-                        speed: 15 * player.stats.enemy.speedMult,
-                        angle: playerAngle + (Math.PI * [-1,1][DeBread.randomNum(0,1)]) / 2,
-                        div: 1.1
-                    })
-                }
-            },
-            { //Dash
-                duration: 50,
-                do: boss => {
-                    const playerAngle = Math.atan2(
-                        player.centerPos[1] - boss.data.centerPos[1],
-                        player.centerPos[0] - boss.data.centerPos[0]
-                    )
+                if(beforePhase !== currentPhase) {
+                    if(currentPhase === 2) {
+                        const texture = boss.querySelector('.enemyTextureContainer').querySelector('img')
+                        // texture.src = 'graphics/enemies/sashaPrepare.png'
 
-                    boss.data.dirVels.push({
-                        speed: 25 * player.stats.enemy.speedMult,
-                        angle: playerAngle,
-                        div: 1.1
-                    })
-                }
-            },
-            { //Fire
-                duration: 25,
-                do: boss => {
-                    const projPos = [boss.data.pos[0] + (boss.data.size)/2, boss.data.pos[1] + (boss.data.size)/2]
-                    const projAngle = Math.atan2(
-                        projPos[1] - DeBread.randomNum(boss.data.target.pos[1], boss.data.target.pos[1] + boss.data.target.elem.offsetHeight),
-                        projPos[0] - DeBread.randomNum(boss.data.target.pos[0], boss.data.target.pos[0] + boss.data.target.elem.offsetWidth),
-                    )
-
-                    const projData = {
-                        damage: 50,
-                        size: 25,
-                        speed: 7 * player.stats.enemy.speedMult,
-                    }
-
-                    createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
-
-                    const playerAngle = Math.atan2(
-                        player.centerPos[1] - boss.data.centerPos[1],
-                        player.centerPos[0] - boss.data.centerPos[0]
-                    )
-
-                    boss.data.dirVels.push({
-                        speed: 10 * player.stats.enemy.speedMult,
-                        angle: playerAngle + Math.PI,
-                        div: 1.1
-                    })
-                }
-            },
-            { //Spray
-                duration: 50,
-                do: boss => {
-                    for(let i = 0; i < 5; i++) {
                         boss.data.timeouts.push(createTimeout(() => {
-                            const projPos = [boss.data.pos[0] + (boss.data.size)/2, boss.data.pos[1] + (boss.data.size)/2]
-                            const projAngle = Math.atan2(
-                                projPos[1] - DeBread.randomNum(boss.data.target.pos[1], boss.data.target.pos[1] + boss.data.target.elem.offsetHeight),
-                                projPos[0] - DeBread.randomNum(boss.data.target.pos[0], boss.data.target.pos[0] + boss.data.target.elem.offsetWidth),
-                            )
+                            createExplosion([...boss.data.centerPos], 250, 0, 100, false, [[0,0],[0,0],[0,0],0])
 
-                            const projData = {
-                                damage: 10,
-                                size: 10,
-                                speed: 7 * player.stats.enemy.speedMult,
-                                radiationSize: 50,
-                                poisonFieldChance: 100,
-                                poisonFieldSize: 25,
-                                poisonFieldTicks: 3,
-                                poisonFieldDmgPercent: 25,
-                                poisonFieldColor: [255,255,255],
-                            }
-
-                            createProjectile(1, [...projPos], projAngle + DeBread.randomNum(-0.25,0.25,10), projData, [player.elem], boss.data)
-                        }, i*5))
+                            // texture.src = 'graphics/enemies/sasha.png'
+                        }, 100))
                     }
                 }
-            },
-            { //Servant
-                duration: 100,
-                do: boss => {
-                    let servants = 1
-                    let randomServant = DeBread.randomNum(0,1)
+            }
+        },
 
-                    const servantData = enemies.tutorialistServant
-                    servantData.textureSheet = `tutorialist/tutorialistServant${randomServant}.png`
-
-                    const servant = spawnEnemy([...boss.data.pos],enemies.tutorialistServant,0,0)
-                    servant.data.servantType = randomServant
-                }
-            },
-            { //Star shot
-                duration: 150,
-                do: boss => {
-                    const playerAngle = Math.atan2(
-                        player.centerPos[1] - boss.data.centerPos[1],
-                        player.centerPos[0] - boss.data.centerPos[0]
-                    )
-
-                    boss.data.dirVels.push({
-                        speed: 25 * player.stats.enemy.speedMult,
-                        angle: playerAngle + Math.PI,
-                        div: 1.1
-                    })
-
-                    boss.data.timeouts.push(createTimeout(() => {
+        moves: [
+            [ //Phase 1
+                { //Horizontal Dash
+                    duration: 25,
+                    do: boss => {
+                        const playerAngle = Math.atan2(
+                            player.centerPos[1] - boss.data.centerPos[1],
+                            player.centerPos[0] - boss.data.centerPos[0]
+                        )
+    
+                        boss.data.dirVels.push({
+                            speed: 15 * player.stats.enemy.speedMult * boss.data.speedMult,
+                            angle: playerAngle + (Math.PI * [-1,1][DeBread.randomNum(0,1)]) / 2,
+                            div: 1.1
+                        })
+                    }
+                },
+                { //Dash
+                    duration: 50,
+                    do: boss => {
+                        const playerAngle = Math.atan2(
+                            player.centerPos[1] - boss.data.centerPos[1],
+                            player.centerPos[0] - boss.data.centerPos[0]
+                        )
+    
+                        boss.data.dirVels.push({
+                            speed: 25 * player.stats.enemy.speedMult * boss.data.speedMult,
+                            angle: playerAngle,
+                            div: 1.1
+                        })
+                    }
+                },
+                { //Fire
+                    duration: 25,
+                    do: boss => {
+                        const projPos = [boss.data.pos[0] + (boss.data.size)/2, boss.data.pos[1] + (boss.data.size)/2]
+                        const projAngle = Math.atan2(
+                            projPos[1] - DeBread.randomNum(boss.data.target.pos[1], boss.data.target.pos[1] + boss.data.target.elem.offsetHeight),
+                            projPos[0] - DeBread.randomNum(boss.data.target.pos[0], boss.data.target.pos[0] + boss.data.target.elem.offsetWidth),
+                        )
+    
+                        const projData = {
+                            damage: 50,
+                            size: 25,
+                            speed: 7 * player.stats.enemy.speedMult * boss.data.speedMult,
+                        }
+    
+                        createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
+    
+                        const playerAngle = Math.atan2(
+                            player.centerPos[1] - boss.data.centerPos[1],
+                            player.centerPos[0] - boss.data.centerPos[0]
+                        )
+    
+                        boss.data.dirVels.push({
+                            speed: 10 * player.stats.enemy.speedMult * boss.data.speedMult,
+                            angle: playerAngle + Math.PI,
+                            div: 1.1
+                        })
+                    }
+                },
+                { //Spray
+                    duration: 50,
+                    do: boss => {
                         for(let i = 0; i < 5; i++) {
                             boss.data.timeouts.push(createTimeout(() => {
+                                const projPos = [boss.data.pos[0] + (boss.data.size)/2, boss.data.pos[1] + (boss.data.size)/2]
+                                const projAngle = Math.atan2(
+                                    projPos[1] - DeBread.randomNum(boss.data.target.pos[1], boss.data.target.pos[1] + boss.data.target.elem.offsetHeight),
+                                    projPos[0] - DeBread.randomNum(boss.data.target.pos[0], boss.data.target.pos[0] + boss.data.target.elem.offsetWidth),
+                                )
+    
                                 const projData = {
                                     damage: 10,
-                                    size: 20,
-                                    speed: 7 * player.stats.enemy.speedMult,
-                                    bounces: 1,
-                                    range: 100,
+                                    size: 10,
+                                    speed: 7 * player.stats.enemy.speedMult * boss.data.speedMult,
+                                    radiationSize: 50,
+                                    poisonFieldChance: 100,
+                                    poisonFieldSize: 25,
+                                    poisonFieldTicks: 3,
+                                    poisonFieldDmgPercent: 25,
+                                    poisonFieldColor: [255,255,255],
                                 }
-                                for(let x = 0; x < 10; x++) {
-                                    createProjectile(1,[...boss.data.centerPos],(Math.PI * 2 / 10) * x, projData, [player.elem], boss.data)
-                                }
-                            }, 5 * i))
+    
+                                createProjectile(1, [...projPos], projAngle + DeBread.randomNum(-0.25,0.25,10), projData, [player.elem], boss.data)
+                            }, i*5))
                         }
-                    }, 25))
-                }
-            },
-            { //Fire homing
-                duration: 100,
-                do: boss => {
-                    const projPos = [boss.data.pos[0] + (boss.data.size)/2, boss.data.pos[1] + (boss.data.size)/2]
-                    const projAngle = Math.atan2(
-                        projPos[1] - DeBread.randomNum(boss.data.target.pos[1], boss.data.target.pos[1] + boss.data.target.elem.offsetHeight),
-                        projPos[0] - DeBread.randomNum(boss.data.target.pos[0], boss.data.target.pos[0] + boss.data.target.elem.offsetWidth),
-                    )
-
-                    const projData = {
-                        damage: 50,
-                        size: 25,
-                        speed: 3 * player.stats.enemy.speedMult,
-                        range: 500,
-                        radiationSize: 50,
-                        magnetStrength: 0.25,
                     }
-
-                    const proj = createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
-                    proj.classList.add('tutorialistHomingProj')
-
-                    const playerAngle = Math.atan2(
-                        player.centerPos[1] - boss.data.centerPos[1],
-                        player.centerPos[0] - boss.data.centerPos[0]
-                    )
-
-                    boss.data.dirVels.push({
-                        speed: 10 * player.stats.enemy.speedMult,
-                        angle: playerAngle + Math.PI,
-                        div: 1.1
-                    })
                 },
+                { //Servant
+                    duration: 100,
+                    do: boss => {
+                        let servants = 1
+                        let randomServant = DeBread.randomNum(0,1)
+    
+                        const servantData = enemies.tutorialistServant
+                        servantData.textureSheet = `tutorialist/tutorialistServant${randomServant}.png`
+    
+                        const servant = spawnEnemy([...boss.data.pos],enemies.tutorialistServant,player.wave/10,0)
+                        servant.data.servantType = randomServant
+                    }
+                },
+                { //Star shot
+                    duration: 150,
+                    do: boss => {
+                        const playerAngle = Math.atan2(
+                            player.centerPos[1] - boss.data.centerPos[1],
+                            player.centerPos[0] - boss.data.centerPos[0]
+                        )
+    
+                        boss.data.dirVels.push({
+                            speed: 25 * player.stats.enemy.speedMult * boss.data.speedMult,
+                            angle: playerAngle + Math.PI,
+                            div: 1.1
+                        })
+    
+                        boss.data.timeouts.push(createTimeout(() => {
+                            for(let i = 0; i < 5; i++) {
+                                boss.data.timeouts.push(createTimeout(() => {
+                                    const projData = {
+                                        damage: 10,
+                                        size: 20,
+                                        speed: 7 * player.stats.enemy.speedMult * boss.data.speedMult,
+                                        bounces: 1,
+                                        range: 100,
+                                    }
+                                    for(let x = 0; x < 10; x++) {
+                                        createProjectile(1,[...boss.data.centerPos],(Math.PI * 2 / 10) * x, projData, [player.elem], boss.data)
+                                    }
+                                }, 5 * i))
+                            }
+                        }, 25))
+                    }
+                },
+                { //Fire homing
+                    duration: 100,
+                    do: boss => {
+                        const projPos = [boss.data.pos[0] + (boss.data.size)/2, boss.data.pos[1] + (boss.data.size)/2]
+                        const projAngle = Math.atan2(
+                            projPos[1] - DeBread.randomNum(boss.data.target.pos[1], boss.data.target.pos[1] + boss.data.target.elem.offsetHeight),
+                            projPos[0] - DeBread.randomNum(boss.data.target.pos[0], boss.data.target.pos[0] + boss.data.target.elem.offsetWidth),
+                        )
+    
+                        const projData = {
+                            damage: 50,
+                            size: 25,
+                            speed: 3 * player.stats.enemy.speedMult * boss.data.speedMult,
+                            range: 500,
+                            radiationSize: 50,
+                            magnetStrength: 0.25,
+                        }
+    
+                        const proj = createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
+                        proj.classList.add('tutorialistHomingProj')
+    
+                        const playerAngle = Math.atan2(
+                            player.centerPos[1] - boss.data.centerPos[1],
+                            player.centerPos[0] - boss.data.centerPos[0]
+                        )
+    
+                        boss.data.dirVels.push({
+                            speed: 10 * player.stats.enemy.speedMult * boss.data.speedMult,
+                            angle: playerAngle + Math.PI,
+                            div: 1.1
+                        })
+                    },
+    
+                    requirement: boss => {
+                        return doge('area').querySelectorAll('.tutorialistHomingProj').length === 0
+                    }
+                },
+            ],
+            [ //Phase two (2)
+                { //Hush
+                    duration: 125,
+                    do: boss => {
+                        let projectilesPos = []
 
-                requirement: boss => {
-                    return doge('area').querySelectorAll('.tutorialistHomingProj').length === 0
-                }
-            },
+                        for(let x = 0; x < Math.round(doge('area').offsetWidth / 100); x++) {
+                            for(let y = 0; y < Math.round(doge('area').offsetHeight / 100); y++) {
+                                const indicator = document.createElement('div')
+                                indicator.classList.add('entity')
+                                indicator.visibility = 1
+                                indicator.pos = [x*100+50,y*100+50]
+                                addStyles(indicator, {
+                                    position: 'absolute',
+                                    left: indicator.pos[0] + 'px',
+                                    top: indicator.pos[1] + 'px',
+                                    width: '15px',
+                                    height: '15px',
+                                    translate: '-50% -50%',
+                                    borderRadius: '50%',
+                                    backgroundColor: 'rgb(255,0,0,0.25)',
+                                })
+
+                                projectilesPos.push([...indicator.pos])
+
+                                indicator.tick = () => {
+                                    indicator.visibility -= 0.02
+
+                                    indicator.style.opacity = indicator.visibility
+
+                                    if(indicator.visibility <= 0) {
+                                        indicator.remove()
+                                    }
+                                }
+
+                                doge('area').append(indicator)
+                            }
+                        }
+
+                        boss.data.timeouts.push(createTimeout(() => {
+                            for(const pos of projectilesPos) {
+                                const randomAngle = DeBread.randomNum(0,Math.PI*2,10)
+                                const projectileData = {
+                                    damage: 25,
+                                    speed: 0.01,
+                                    speedDiv: 0.95,
+                                    size: 15,
+                                    maxSpeed: 2,
+                                    drillTicks: Infinity,
+                                    damageInterval: 10,
+                                    range: DeBread.randomNum(75,200),
+                                }
+
+                                createProjectile(
+                                    1,
+                                    pos,
+                                    randomAngle,
+                                    projectileData,
+                                    [player.elem],
+                                    boss
+                                )
+                            }
+                        }, 50))
+                    }
+                },
+                { //Surrounding projectiles
+                    duration: 50,
+                    do: boss => {
+                        let projs = 6
+                        let dis = 250
+                        const playerPos = [...player.centerPos]
+                        for(let i = 0; i < projs; i++) {
+                            const angle = ((Math.PI * 2) / projs) * i
+                            const pos = [
+                                playerPos[0] + Math.cos(angle) * dis,
+                                playerPos[1] + Math.sin(angle) * dis
+                            ]
+
+                            const playerAngle = Math.atan2(
+                                pos[1] - boss.data.target.pos[1],
+                                pos[0] - boss.data.target.pos[0],
+                            )
+
+                            createProjectile(
+                                1,
+                                pos,
+                                playerAngle,
+                                {
+                                    speed: 1,
+                                    size: 15,
+                                    damage: 50,
+                                    speedDiv: 0.95,
+                                    maxSpeed: 5,
+                                },
+                                [player.elem]
+                            )
+                        }
+                    }
+                },
+                { //Projectile wall
+                    duration: 50,
+                    do: boss => {
+                        let projectilesPos = []
+                        let randomOffset = DeBread.randomNum(0,-100)
+                        for(let i = 0; i < Math.floor(doge('area').offsetHeight / 100); i++) {
+                            const indicator = document.createElement('div')
+                            indicator.classList.add('entity')
+                            indicator.visibility = 1
+                            indicator.pos = [0,i*100 - randomOffset]
+                            addStyles(indicator, {
+                                position: 'absolute',
+                                left: '0px',
+                                top: indicator.pos[1] + 'px',
+                                width: doge('area').offsetWidth+'px',
+                                height: '15px',
+                                translate: '0 -50%',
+                                backgroundColor: 'rgb(255,0,0,0.25)',
+                            })
+
+                            projectilesPos.push([...indicator.pos])
+
+                            indicator.tick = () => {
+                                indicator.visibility -= 0.02
+
+                                indicator.style.opacity = indicator.visibility
+
+                                if(indicator.visibility <= 0) {
+                                    indicator.remove()
+                                }
+                            }
+
+                            doge('area').append(indicator)
+                        }
+
+                        const randomDir = DeBread.randomNum(0,1)
+                        const randomAngle = Math.PI * (1 - randomDir)
+                        for(let i = 0; i < 5; i++) {
+                            boss.data.timeouts.push(createTimeout(() => {
+                                for(const pos of projectilesPos) {
+                                    const projPos = [pos[0] + doge('area').offsetWidth * randomDir,pos[1]]
+                                    const projectileData = {
+                                        damage: 50,
+                                        speed: 15,
+                                        size: 15,
+                                    }
+    
+                                    createProjectile(
+                                        1,
+                                        projPos,
+                                        randomAngle,
+                                        projectileData,
+                                        [player.elem],
+                                        boss
+                                    )
+                                }
+                            }, 50 + i * 5))
+                        }
+                    }
+                },
+                { //Servant
+                    duration: 50,
+                    requirement: () => {
+                        return elems.enemies.length < 3
+                    },
+
+                    do: boss => {
+                        let servants = 1
+                        let randomServant = DeBread.randomNum(0,1)
+    
+                        const servantData = enemies.tutorialistServant
+                        servantData.textureSheet = `tutorialist/tutorialistServant${randomServant}.png`
+    
+                        const servant = spawnEnemy([...boss.data.pos],enemies.tutorialistServant,player.wave/10,0)
+                        servant.data.servantType = randomServant
+                    }
+                },
+            ]
         ],
 
         onDeath: boss => {
@@ -2930,12 +3217,12 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
         doge('gameBossbarContainer').append(enemyData.bossBar)
 
         if(data.phases) {
-            for(let i = 0; i < data.phases; i++) {
+            for(let i = 1; i < data.phases; i++) {
                 const phaseBar = document.createElement('div')
                 addStyles(phaseBar, {
                     position: 'absolute',
                     translate: '-50% 0',
-                    width: '2px',
+                    width: '4px',
                     height: '100%',
                     backgroundColor: 'black',
                     top: '0',
@@ -3051,7 +3338,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
 
         //Regen
         if(extraData.regen || data.regen) {
-            enemy.data.damage(-(extraData.regen ?? data.regen), true)
+            enemy.data.damage(-(extraData.regen ?? data.regen), true, undefined)
         }
 
         //Explosive stuff
@@ -3087,7 +3374,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                     }
     
                     if(e.gameUpdates % 15 === 0) {
-                        enemyData.damage(20)
+                        enemyData.damage(20, undefined, undefined)
                     }
                 }
             })
@@ -3103,7 +3390,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                     {backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`}
                 )
     
-                enemy.data.damage(1, true)
+                enemy.data.damage(1, true, undefined)
     
                 enemy.querySelector('#enemyFire').style.opacity = '0.75'
             }
@@ -3237,7 +3524,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
         if(data.onSpawn) data.onSpawn(enemy)
     }
 
-    enemy.data.damage = (amountBase, silent, origin) => {
+    enemy.data.damage = (amountBase, silent, origin = player.elem) => {
         if(enemyData.active) {
             let amount = amountBase
             if(enemyData.isBleeding) {
@@ -3284,8 +3571,10 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                 enemy.data.kill(origin)
             }
 
+            if(origin === player.elem) {
+                player.gameOverStats.damageGiven += amount
+            }
             enemyData.damageTaken += amount
-            player.gameOverStats.damageGiven += amount
 
             if(enemyData.health === Infinity) {
                 enemy.querySelector('span').innerText = formatNumber(DeBread.round(enemyData.damageTaken))
@@ -3662,7 +3951,11 @@ function progressWave(portal) {
                         }
                     )
                     createTimeout(() => {
-                        spawnEnemy([doge('area').offsetWidth / 2, doge('area').offsetHeight / 2], boss, 1, 100)
+                        let bossLevel = Math.floor(player.wave / 10) + player.stats.enemy.levelIncrease
+                        if(DeBread.randomNum(player.wave % 10, 10) === 10) {
+                            bossLevel++
+                        }
+                        spawnEnemy([doge('area').offsetWidth / 2, doge('area').offsetHeight / 2], boss, bossLevel, 100)
                     }, 500)
 
                     player.health = player.stats.player.maxHealth
@@ -3682,7 +3975,7 @@ function progressWave(portal) {
                         }
                     )
                     createTimeout(() => {
-                        let bossLevel = Math.floor(player.wave / 10)
+                        let bossLevel = Math.floor(player.wave / 10) + player.stats.enemy.levelIncrease
                         if(DeBread.randomNum(player.wave % 10, 10) === 10) {
                             bossLevel++
                         }

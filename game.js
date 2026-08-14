@@ -92,6 +92,14 @@ function createPlayer() {
             5, //Elixir
         ],
 
+        shopWeightMults: [
+            1,
+            1,
+            1,
+            1,
+            1
+        ],
+
         elixirIDs: [],
         elixirs: [],
 
@@ -411,9 +419,8 @@ function createPlayer() {
         kill: () => {
             if(player.alive && saveData.gameSettings.gamemode < 2) {
                 player.elem.style.opacity = '0'
-                modifyStat(['player','size'],'=0')
                 doge('weapon').style.opacity = '0'
-
+                
                 for(let i = 0; i < 10; i++) {
                     createParticle(
                         0,
@@ -430,12 +437,14 @@ function createPlayer() {
                     )
                 }
 
+                modifyStat(['player','size'],'=0')
                 DeBread.easeShake(doge('area'), 25, 2, 0.05)
         
                 setTimeout(() => {
+                    doge('innerGameOverStuffContainer').innerHTML = ''
                     for(item of player.itemsBought) {
                         let alreadyBought = false
-                        doge('gameOverStuffContainer').querySelectorAll('div').forEach(img => {
+                        doge('innerGameOverStuffContainer').querySelectorAll('div').forEach(img => {
                             if(img.id === item.id) {
                                 img.querySelector('span').innerText++
                                 alreadyBought = true
@@ -465,13 +474,22 @@ function createPlayer() {
 
                     doge('go-score').innerText = DeBread.round(player.score).toString().padStart(10,0)
                     doge('go-wave').innerText = player.wave
+                    doge('go-character').src = `graphics/characters/${saveData.selectedCharacter}Portrait.png`
 
                     doge('go-moneySpent').innerText = `$${DeBread.round(player.gameOverStats.moneySpent)}`
-                    doge('go-damageDelt').innerText = DeBread.round(formatNumber(player.gameOverStats.damageGiven))
-                    doge('go-enemiesKilled').innerText = DeBread.round(formatNumber(player.gameOverStats.enemiesKilled))
+                    doge('go-damageDelt').innerText = formatNumber(player.gameOverStats.damageGiven)
+                    doge('go-enemiesKilled').innerText = formatNumber(player.gameOverStats.enemiesKilled)
 
                     doge('gameOverContainer').style.display = 'flex'
-                }, 1000);
+
+                    doge('go-mods').innerHTML = ''
+                    for(const challenge of saveData.selectedChallenges) {
+                        const icon = document.createElement('img')
+                        icon.width = 32
+                        icon.src = `graphics/challenges/${challenge}.png`
+                        doge('go-mods').append(icon)
+                    }
+                }, 2500);
 
                 // for(let i = 0; i < 50; i++) {
                 //     setTimeout(() => {
@@ -1123,7 +1141,7 @@ function startGame() {
     if(saveData.selectedChallenges.includes('uncanny')) {
         const uncanny = document.createElement('div')
         uncanny.classList.add('entity')
-        uncanny.pos = [0,0]
+        uncanny.pos = [-500,-500]
         uncanny.angle = 0
         addStyles(uncanny, {
             width: '36px',
@@ -1183,6 +1201,13 @@ function startGame() {
         }
 
         doge('area').append(uncanny)
+    }
+
+    doge('gameModDisplay').innerHTML = ''
+    for(const challenge of saveData.selectedChallenges) {
+        const icon = document.createElement('img')
+        icon.src = `graphics/challenges/${challenge}.png`
+        doge('gameModDisplay').append(icon)
     }
 
     if(saveData.gameSettings.gamemode === 3) {
@@ -1562,6 +1587,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
             outline: `1px solid rgb(${characters[saveData.selectedCharacter].color})`,
             animation: 'projectileIn 250ms ease-out 1 forwards'
         })
+
     } else {
         proj.color = 'rgb(255,100,100)'
         addStyles(proj, {
@@ -1571,6 +1597,10 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
             zIndex: '7',
             animation: 'projectileIn 250ms ease-out 1 forwards'
         })
+
+        if(proj.drillTicks > 20) {
+            proj.style.opacity = '0.5'
+        }
     }
 
     proj.tick = () => {
@@ -1645,12 +1675,17 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
             proj.damage *= 1 + 0.01 * (data.grow ?? 0)
             proj.size *= 1 + 0.01 * (data.grow ?? 0)
         }
-        if(style !== 2) {
-            proj.size = Math.max(Math.min(proj.size, 50),5)
+        if(style !== 2 && !data.ignoreSizeLimits) {
+            proj.size = Math.max(Math.min(proj.size, 75),5)
+        }
+
+        if(DeBread.round(proj.size) <= 2) {
+            proj.destroy()
         }
         
         //Speed div
         proj.speed /= data.speedDiv ?? 1
+        proj.speed = Math.min(proj.speed, data.maxSpeed ?? Infinity)
 
         //Range
         if(e.gameUpdates - proj.dateSpawned >= data.range) {
@@ -1877,6 +1912,15 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
                         } else {
                             target.data.onFire = true
                         }
+                    }
+
+                    //Slowing round
+                    if(pData.slow) {
+                        target.data.speedMult /= 1 + pData.slow
+
+                        target.data.timeouts.push(createTimeout(() => {
+                            target.data.speedMult *= 1 + pData.slow
+                        }, 100))
                     }
 
                     //Coins
@@ -2888,7 +2932,7 @@ const updateInterval = DeBread.createInterval(() => {
     
         //Restart
         const lastRestartProgress = player.restartProgress
-        if(e.keysDown.includes('r') && e.keysDown.includes('shift') && e.gameUpdates >= 20) {
+        if(e.keysDown.includes('r') && e.keysDown.includes('shift') && e.gameUpdates >= 20 && player.alive) {
             player.restartProgress++
             doge('gameInnerRestartBar').style.width = player.restartProgress / 50 * 100 + '%'
     
@@ -2954,7 +2998,7 @@ document.addEventListener('mousedown', ev => {
                             }
                         )
                         createTimeout(() => {
-                            spawnEnemy(cursorPos, enemy, 0)
+                            spawnEnemy(cursorPos, enemy, player.stats.enemy.levelIncrease)
                         }, 100)
                     } else {
                         startLargeBossSequence(
@@ -2968,11 +3012,11 @@ document.addEventListener('mousedown', ev => {
                             }
                         )
                         createTimeout(() => {
-                            spawnEnemy(cursorPos, enemy, 0)
+                            spawnEnemy(cursorPos, enemy, player.stats.enemy.levelIncrease)
                         }, 500)
                     }
                 } else {
-                    spawnEnemy([e.relCursorPos[0] - sandBoxEnemy.size / 2, e.relCursorPos[1] - sandBoxEnemy.size / 2], sandBoxEnemy, 0)
+                    spawnEnemy([e.relCursorPos[0] - sandBoxEnemy.size / 2, e.relCursorPos[1] - sandBoxEnemy.size / 2], sandBoxEnemy, player.stats.enemy.levelIncrease)
                 }
                 if(!e.keysDown.includes('shift')) {
                     sandBoxEnemy = undefined
@@ -4116,6 +4160,11 @@ function openSandboxMenu(menu) {
                 const sandboxUpgrade = document.createElement('div')
                 sandboxUpgrade.classList.add('sandboxUpgrade')
 
+                let itemUnlocked = true
+                if(upgrade.unlockable && !saveData.stats.unlocked.items.includes(key)) {
+                    itemUnlocked = false
+                }
+
                 let extension = 'png'
                 if(upgrade.animatedTexture) {
                     extension = 'gif'
@@ -4135,7 +4184,9 @@ function openSandboxMenu(menu) {
                 sandboxUpgrade.data = upgrade
                 sandboxUpgrade.key = key
                 
-                doge('sandboxMenu-upgrades').append(sandboxUpgrade)
+                if(itemUnlocked) {
+                    doge('sandboxMenu-upgrades').append(sandboxUpgrade)
+                }
 
                 sandboxUpgrade.onclick = () => {
                     upgrade.apply()
@@ -4282,8 +4333,15 @@ function openSandboxMenu(menu) {
                 button.innerHTML = `
                     <img src="graphics/powerItems/${key}.png">
                 `
+
+                let itemUnlocked = true
+                if(item.unlockable && !saveData.stats.unlocked.powerItems.includes(key)) {
+                    itemUnlocked = false
+                }
                 
-                doge('sandboxMenu-powerItems').append(button)
+                if(itemUnlocked) {
+                    doge('sandboxMenu-powerItems').append(button)
+                }
 
                 button.onclick = () => {
                     player.powerItem = item

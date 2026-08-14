@@ -397,7 +397,11 @@ const dialogues = {
         {
             text: '(They have nothing to say...)',
             noName: true,
-        }
+        },
+        {
+            text: '(Hopefully they will soon...)',
+            noName: true,
+        },
     ],
     plinkel: [
         {
@@ -567,7 +571,7 @@ const creditAreas = {
                         renderCreditArea(creditAreas.egg)
                         player.inEggRoom = true
                     } else {
-                        player.pos = [256 - player.elem.offsetWidth / 2,512 - player.elem.offsetHeight]
+                        player.pos = [256 - player.elem.offsetWidth / 2,512 - player.elem.offsetHeight-1]
                         renderCreditArea(creditAreas.artRoom)
                     }
                 }
@@ -591,7 +595,7 @@ const creditAreas = {
 
                 onCollide: () => {
                     renderCreditArea(creditAreas.musickRoom)
-                    player.pos = [256 - player.elem.offsetWidth / 2,0]
+                    player.pos = [256 - player.elem.offsetWidth / 2,1]
                     player.inMusicRoom = true
                     player.shitmusic = 0
                 }
@@ -780,7 +784,7 @@ const creditAreas = {
                 },
 
                 onCollide: () => {
-                    player.pos = [256 - player.elem.offsetWidth / 2,512 - player.elem.offsetHeight]
+                    player.pos = [256 - player.elem.offsetWidth / 2,512 - player.elem.offsetHeight - 1]
                     renderCreditArea(creditAreas.main)
                     player.inMusicRoom = false
                 }

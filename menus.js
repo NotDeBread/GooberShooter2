@@ -423,17 +423,6 @@ function openMenu(menu) {
         topper()
     }
 
-    if(menu === 'achievements') {
-        document.title = 'Goober Shooter 2 - Achievements'
-        renderAchievementList()
-        topper([
-            {
-                text: 'Main menu',
-                onclick: () => {openMenu('main')}
-            },
-        ])
-    }
-
     if(menu === 'collection') {
         document.title = 'Goober Shooter 2 - Collection'
         renderCollectionPage('items')
@@ -551,7 +540,6 @@ function openCharacterSkins() {
     })
 
     const skinArray = [...[{name: 'Default',src:saveData.selectedCharacter,taunts:character.taunts}], ...character.skins]
-    console.log(skinArray)
     for(const key in skinArray) {
         const skin = skinArray[key]
         const button = document.createElement('div')
@@ -752,93 +740,6 @@ function changeCSPage(mod) {
     }
     
     renderCharacterSelect(page)
-}
-
-function renderAchievementList() {
-    doge('innerAchList').innerHTML = ''
-    let achievementStatus = [0,0]
-    for(const key in achievements) {
-        const achievement = achievements[key]
-
-        const div = document.createElement('div')
-        div.classList.add('ach')
-        div.innerHTML = `
-            <img src="graphics/achievements/${key}.png">
-            <div class="achText">
-                <strong>${achievement.name}</strong>
-                <span>${achievement.desc}</span>
-            </div>
-        `
-
-        if(achievement.unlock) {
-            const lock = document.createElement('div')
-            lock.innerText = '🔓'
-            addStyles(lock, {
-                position: 'absolute',
-                top: '5px',
-                right: '5px',
-            })
-
-            div.append(lock)
-        }
-
-        let unlocked = false
-        if(!saveData.achievements.includes(key)) {
-            div.style.border = '2px solid rgb(50,50,50)'
-            div.style.color = 'grey'
-            div.querySelector('img').style.filter = 'grayscale() brightness(50%)'
-
-            achievementStatus[1]++
-        } else {
-            achievementStatus[0]++
-            unlocked = true
-        }
-
-        doge('innerAchList').append(div)
-
-        div.onmouseenter = () => {
-            let tag = []
-            let desc = achievement.desc
-            if(achievement.unlock) {
-                desc += `<br><br>
-                <div>Unlocks<br>
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 5px;">
-                        <strong style="white-space: nowrap;">${achievement.unlock.name}</strong>
-                        <div class="coolLine"></div>
-                        <div style="width: 32px; display: flex; justify-content: center; align-items: center;">
-                            <img src="${achievement.unlock.src}" style="width: 32px !important;">
-                        </div>
-                    </div>
-                </div>
-                ${achievement.unlock.data.desc}`
-            }
-
-            if(unlocked) {
-                tag = [
-                    {
-                        text: ['COMPLETED'],
-                        col: '#37683a'
-                    }
-                ]
-            }
-
-            const divRect = div.getBoundingClientRect()
-            tooltip(
-                [divRect.left + div.offsetWidth / 2, divRect.bottom + 10], 
-                achievement.name, 
-                tag, 
-                desc
-            )
-        }
-
-        div.onmouseleave = () => {
-            doge('tooltip').style.opacity = '0'
-        }
-    }
-
-    const percent = achievementStatus[0] / (achievementStatus[0]+achievementStatus[1])
-    doge('achBarText').innerText = `${achievementStatus[0]}/${Object.keys(achievements).length} (${DeBread.round(percent*100,1)}%)`
-    doge('innerAchBar').style.width = percent*100+'%'
 }
 
 const gamemodeNames = [
@@ -1516,6 +1417,13 @@ const settingsHTML = `
                     <span>Plinkel</span>
                 </option>
             </select>
+            <!--<div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-announceCharacter"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Announce selected character</span>
+                    <span>Whenever you select a character, thier name is announced, like SSB.</span>
+                </div>
+            </div>-->
         </div>
         <div class="settingsSection" id="settingsSection-account">
             <button onclick="tryDeleteSave()">Delete Save</button>
@@ -1656,7 +1564,7 @@ function updateSettings() {
 } updateSettings()
 
 const collectionHTML = `
-    <div style="display: flex; gap: 5px;">
+    <div style="display: flex; gap: 5px;" id="collectionTabs">
         <button onclick="renderCollectionItems(upgrades, saveData.stats.collection.items, 'upgrades')">Items</button>
         <button onclick="renderCollectionItems(powerItems, saveData.stats.collection.powerItems, 'powerItems')">Power Items</button>
         <button onclick="renderCollectionItems(elixirs, saveData.stats.collection.elixirs, 'elixirs')">Elixirs</button>
@@ -1669,7 +1577,7 @@ const collectionHTML = `
         <span id="collectionProgressTitle">PROGRESS</span>
         <div id="collectionProgressBar">
             <span id="collectionProgressBarText">-/0 (0%)</span>
-            <div id="innerCollectionProgressBar"></div>
+            <div id="innerCollectionProgressBar" style="width: 0%;"></div>
         </div>
     </div>
 `
@@ -1752,7 +1660,7 @@ function renderCollectionItems(targetList, collectedList, texturePath) {
                         [itemRect.left + div.offsetWidth / 2, itemRect.bottom],
                         itemName,
                         [],
-                        itemDesc + `<br><br>Bought ${timesBought} times`
+                        itemDesc + `<br><br>Bought ${formatNumber(timesBought)} times`
                     )
                 }
     
@@ -1772,108 +1680,92 @@ function renderCollectionItems(targetList, collectedList, texturePath) {
     doge('innerCollectionProgressBar').style.width = itemsUnlocked/totalItems*100 + '%'
 }
 
-// function renderCollectionPage(page) {
-//     doge('collectionList').innerHTML = ''
-//     if(page === 'items') {
-//         let itemProgress = [0,0]
-//         for(const rarity in upgrades) {
-//             for(const key in upgrades[rarity]) {
-//                 const item = document.createElement('div')
-//                 addStyles(item, {
-//                     border: '2px solid grey',
-//                     display: 'flex',
-//                     justifyContent: 'center',
-//                     alignItems: 'center',
-//                     width: '50px',
-//                     height: '50px'
-//                 })
+function openAchievements() {
+    openPrompt('Achievements', collectionHTML, [], [650,300])
+    doge('collectionTabs').style.display = 'none'
+    doge('collectionList').style.maxHeight = '255px'
 
-//                 let textureExtension = 'png'
-//                 if(upgrades[rarity][key].animatedTexture) textureExtension = 'gif'
+    let achievementStatus = [0,0]
+    for(const key in achievements) {
+        const achievement = achievements[key]
 
-//                 item.innerHTML = `<img src="graphics/upgrades/${key}.${textureExtension}" style="width: 32px;">`
+        const div = document.createElement('div')
+        div.classList.add('ach')
+        div.innerHTML = `
+            <img src="graphics/achievements/${key}.png">
+            <div class="achText">
+                <strong>${achievement.name}</strong>
+                <span>${achievement.desc}</span>
+            </div>
+        `
 
-//                 if(rarity === '4') {
-//                     item.style.animation += 'mythicBorder 5s linear infinite forwards'
-//                     item.querySelector('img').style.animation = 'mythicGlow 5s linear infinite forwards'
-//                 } else {
-//                     item.querySelector('img').style.filter = `drop-shadow(0px 0px 5px ${rarities[rarity].color})`
-//                     item.style.boxShadow = `inset 0px 0px 0px 3px ${rarities[rarity].color}`
-//                 }
+        if(achievement.unlock) {
+            const lock = document.createElement('div')
+            lock.innerText = '🔓'
+            addStyles(lock, {
+                position: 'absolute',
+                top: '5px',
+                right: '5px',
+            })
 
-//                 if(rarity !== '5') { //Exclude sandbox upgrades
-//                     doge('collectionList').append(item)
-//                 }
-                
-//                 const data = upgrades[rarity][key]
-//                 let isUnlocked = true
-//                 if(data.unlockable && !saveData.items.includes(key)) {
-//                     isUnlocked = false
-//                 }
+            div.append(lock)
+        }
 
-//                 let isCollected = false
+        let unlocked = false
+        if(!saveData.achievements.includes(key)) {
+            div.style.border = '2px solid rgb(50,50,50)'
+            div.style.color = 'grey'
+            div.querySelector('img').style.filter = 'grayscale() brightness(50%)'
 
-//                 if(isCollected || saveData.settings.devMode) {
-//                     itemProgress[0]++
-//                 } else {
-//                     if(!isUnlocked) {
-//                         item.querySelector('img').src = 'graphics/icons/lock.png'
-//                         item.querySelector('img').style.filter = 'brightness(50%)'
-//                     } else if(!isCollected) {
-//                         item.querySelector('img').src = 'graphics/icons/unknown.png'
-//                         item.querySelector('img').style.filter = 'brightness(50%)'
-//                     }
-//                 }
+            achievementStatus[1]++
+        } else {
+            achievementStatus[0]++
+            unlocked = true
+        }
 
-//                 item.onmouseenter = () => {
-//                     let itemName = data.name
-//                     if(typeof data.name === 'function') {
-//                         itemName = data.name()
-//                     }
+        doge('collectionList').append(div)
     
-//                     let itemDesc = data.desc
-//                     if(typeof data.desc === 'function') {
-//                         itemDesc = data.desc()
-//                     }
+        div.onmouseenter = () => {
+            let tag = []
+            let desc = achievement.desc
+            if(achievement.unlock) {
+                desc += `<br><br>
+                <div>Unlocks<br>
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 5px;">
+                        <strong style="white-space: nowrap;">${achievement.unlock.name}</strong>
+                        <div class="coolLine"></div>
+                        <div style="width: 32px; display: flex; justify-content: center; align-items: center;">
+                            <img src="${achievement.unlock.src}" style="width: 32px !important;">
+                        </div>
+                    </div>
+                </div>
+                ${achievement.unlock.data.desc}`
+            }
 
-//                     const itemRect = item.getBoundingClientRect()
-//                     if(isCollected) {
-//                         tooltip(
-//                             [itemRect.left + item.offsetWidth / 2, itemRect.bottom],
-//                             itemName,
-//                             [],
-//                             itemDesc
-//                         )
-//                     } else {
-//                         if(isUnlocked) {
-//                             tooltip(
-//                                 [itemRect.left + item.offsetWidth / 2, itemRect.bottom],
-//                                 'Not collected',
-//                                 [],
-//                                 'But this item from the shop to add it to the collection!'
-//                             )
-//                         } else {
-//                             tooltip(
-//                                 [itemRect.left + item.offsetWidth / 2, itemRect.bottom],
-//                                 'Locked',
-//                                 [],
-//                                 'Play more to unlock this item!'
-//                             )
-//                         }
-//                     }
-//                 }
+            if(unlocked) {
+                tag = [
+                    {
+                        text: ['COMPLETED'],
+                        col: '#37683a'
+                    }
+                ]
+            }
 
-//                 item.onmouseleave = () => {
-//                     doge('tooltip').style.opacity = '0'
-//                 }
+            const divRect = div.getBoundingClientRect()
+            tooltip(
+                [divRect.left + div.offsetWidth / 2, divRect.bottom + 10], 
+                achievement.name, 
+                tag, 
+                desc
+            )
+        }
 
-//                 itemProgress[1]++
-//             }
-//         }
+        div.onmouseleave = () => {
+            doge('tooltip').style.opacity = '0'
+        }
+    }
 
-//         doge('collectionProgressBarText').innerText = `${itemProgress[0]}/${itemProgress[1]} (${DeBread.round(itemProgress[0]/itemProgress[1]*100,1)}%)`
-//         doge('innerCollectionProgressBar').style.width = itemProgress[0]/itemProgress[1]*100 + '%'
-//     }
-
-//     doge('collectionProgressTitle').innerText = page.toUpperCase()
-// }
+    const percent = achievementStatus[0] / (achievementStatus[0]+achievementStatus[1])
+    doge('collectionProgressBarText').innerText = `${achievementStatus[0]}/${Object.keys(achievements).length} (${DeBread.round(percent*100,1)}%)`
+    doge('innerCollectionProgressBar').style.width = percent*100+'%'
+}

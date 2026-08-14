@@ -362,6 +362,7 @@
 }
 
 #gameOver {
+    width: 375px;
     padding: 5px;
     outline: 2px solid white;
     background-color: rgba(0,0,0);
@@ -1354,10 +1355,15 @@
     bottom: 25px;
     right: 25px;
     display: flex;
-    flex-direction: column;
     align-items: end;
+    gap: 5px;
     line-height: 1;
     transition: opacity ease-in-out 500ms;
+}
+
+#gameModDisplay {
+    display: flex;
+    gap: 5px;
 }
 
 #gameWaveCounter {

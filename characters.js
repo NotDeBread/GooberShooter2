@@ -59,7 +59,7 @@ const weaponPresets = {
 
         apply: () => {
             modifyStat(['bullet','damage'],'=10')
-            modifyStat(['bullet','speed'], '=20')
+            modifyStat(['bullet','speed'], '=15')
             modifyStat(['bullet','multishot'], '=5')
             modifyStat(['bullet','grow'], '=-10')
 
@@ -1498,11 +1498,14 @@ const characters = {
 
         pros: [
             'Poison field trail',
+            'Parasite ammo',
             'Melee damage'
         ],
 
         applyStats: () => {
             modifyStat(['player','droolSize'],'=25')
+            modifyStat(['bullet','heal'],'=0.1')
+            modifyStat(['player','maxWeaponDistance'],'=125')
             modifyStat(['melee','damage'],'=50')
         },
 

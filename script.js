@@ -35,7 +35,8 @@ const defaultSaveData = {
 
         musicVolume: 0,
         sfxVolume: 0.1,
-        enemyVoiceLines: 'none'
+        enemyVoiceLines: 'none',
+        announceCharacter: false,
     },
 
     gameSettings: {
@@ -497,14 +498,12 @@ const challenges = {
     poverty: {
         name: 'Poverty',
         desc: `
-            <cs>1.25x</cs> Score multiplier<br>
             Waves no longer drop money.<br>
             Enemies no longer increase level<br>
             <cp>+$250</cp>
         `,
 
         apply: () => {
-            player.scoreMult = 1.25
             player.getMoney(250)
             modifyStat(['enemy','levelIncrease'], '=-500')
             modifyStat(['misc','waveMoneyMult'], '=0')
@@ -513,12 +512,10 @@ const challenges = {
     itemless: {
         name: 'Itemless',
         desc: `
-            <cs>5x</cs> Score multiplier<br>
             Items no longer appear in the shop.
         `,
 
         apply: () => {
-            player.scoreMult = 5
             modifyStat(['shop','upgrades'], '=0')
         }
     },
@@ -563,31 +560,22 @@ const challenges = {
             <br>
             <em style="color: grey;">April Fools 2026</em>
         `,
-        
-        apply: () => {}
     },
     hidden: {
         name: 'Hidden',
         desc: `
-            <cs>1.5x</cs> Score multiplier<br>
-            Enemies spawn invisible
+            Enemies become invisible after spawning
         `,
-        
-        apply: () => {
-            player.scoreMult = 1.25
-        }
     },
     wheelchair: {
         name: 'Wheelchair',
         desc: `
-            <cs>1.25x</cs> Score multiplier<br>
             <cg>+50</cg> ammo<br>
             <cb>+10</cb> Recoil<br> 
             <cb>0</cb> Speed
         `,
         
         apply: () => {
-            player.scoreMult = 1.25
             modifyStat(['ammo','max'],'+=50')
             modifyStat(['bullet','recoil'], '+=10')
             modifyStat(['player','speed'], '=0')
@@ -596,7 +584,6 @@ const challenges = {
     skillsUSA: {
         name: 'SkillsUSA Judge Mode',
         desc: `
-            <cs>0.01x</cs> Score multiplier<br>
             <cg>+Infinity</cg> Max Ammo<br>
             <cg>+100</cg> Max HP<br>
             <cg>+100</cg> Melee Damage<br>
@@ -614,7 +601,6 @@ const challenges = {
         `,
         
         apply: () => {
-            player.scoreMult = 0.01
             modifyStat(['player','maxHealth'],'+=100')
             modifyStat(['melee','damage'],'+=100')
             modifyStat(['melee','cooldown'],'*=0.1')
@@ -632,12 +618,10 @@ const challenges = {
     spontaneous: {
         name: 'Spontaneous',
         desc: `
-            <cs>2.5x</cs> Score multiplier<br>
             Waves have <cb>0</cb> cooldown
         `,
         
         apply: () => {
-            player.scoreMult = 2.5
             modifyStat(['misc','waveInterval'],'=10')
         }
     },
@@ -656,27 +640,17 @@ const challenges = {
     perfect: {
         name: 'Go for a perfect!',
         desc: `
-            <cs>5x</cs> Score multiplier<br>
             After the player takes damage for the first time, the shop no longer appears.
         `,
-
-        apply: () => {
-            player.scoreMult = 5
-        }
     },
     uncanny: {
         name: 'Uncanny',
         desc: `
-            <cs>2.5x</cs> Score multiplier<br>
             An uncanny cat slowly follows the player.<br>
             If the uncanny cat touches the player, they die instantly.<br>
             <br>
             <em style="color: grey;">Try out Uncanny Cat Golf!</em>
-            `,
-
-        apply: () => {
-            player.scoreMult = 2.5
-        }
+        `,
     },
     boss_rush: {
         name: 'Boss Rush',
@@ -684,17 +658,25 @@ const challenges = {
             A boss spawns every wave instead of enemies.
         `,
     },
+    museum: {
+        name: 'Museum',
+        desc: `
+            Only <div class="tooltipTag" style="background: linear-gradient(to left, rgba(64, 155, 158, 1), rgba(134, 68, 172, 1)); display: inline;">MYTHIC</div> items can appear in the shop.
+        `,
+
+        apply: () => {
+            player.shopWeightMults = [0,0,0,0,1]
+        }
+    },
     classic: {
         name: 'Classic',
         desc: `
-            <cs>0.25x</cs> Score multiplier<br>
             +Enemies no longer increase level
             +Everything in the shop becomes <cg>free</cg><br>
             +Buying an item closes the shop
         `,
 
         apply: () => {
-            player.scoreMult = 0.25
             modifyStat(['enemy','levelIncrease'],'=-Infinity')
         }
     },
@@ -1456,6 +1438,9 @@ for(const key in tracks) {
     }
 }
 
+//Track specific stuff
+tracks.tutorialistDeath.loop = false
+
 function changeTrack(trackKey, carryTime) {
     if(trackKey === currentTrack) return
 
@@ -1481,6 +1466,7 @@ function changeTrack(trackKey, carryTime) {
             }, (duration / steps) * i);
         }
     } else {
+        tracks[trackKey].play()
         tracks[trackKey].currentTime = 0
 
         if(currentTrack) {
@@ -1516,8 +1502,6 @@ function updateTrack(fade = true) {
             player.lastTutorialistDeathTick = e.gameUpdates
         }
     })
-
-    console.log(e.gameUpdates - player.lastTutorialistDeathTick < 100,player.lastTutorialistDeathTick)
     
     if(tutorialistDeath || e.gameUpdates - player.lastTutorialistDeathTick < 150) {
         changeTrack(`tutorialistDeath`,false)
