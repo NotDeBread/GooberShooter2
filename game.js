@@ -21,6 +21,7 @@ function createPlayer() {
         perfectWave: true,
         lastKillDate: 0,
         timesHit: 0,
+        bossInterval: 25,
 
         isCharging: false,
         chargeStartDate: 0,
@@ -154,6 +155,8 @@ function createPlayer() {
                 parryShrapnel: 0,
                 parryHoming: 0,
 
+                waveHeal: 0,
+
                 contactDamage: 0, //How much damage the player deals to colliding enemies every tick.
 
                 explosiveHitChance: 0, //The chance of creating an explosion when the player is hit. (1 = 1% chance)
@@ -173,6 +176,8 @@ function createPlayer() {
                 droolSize: 0,
 
                 canCarrySecondaryPowerItem: false,
+
+                maryContactDamage: 0,
             },
 
             shop: {
@@ -251,7 +256,12 @@ function createPlayer() {
 
                 radiationSize: 0,
 
+                loops: 0,
+
+                enemyBurst: 0,
+
                 style: 0, //0: Player bullet, 1: Enemy projectile
+                shotParticles: true,
                 shotParticleColor: [255,255,255],
                 lockRot: false,
                 silentShot: false,
@@ -286,6 +296,7 @@ function createPlayer() {
                 stillSpeedIncrease: 0,
 
                 burst: 1,
+                burstInterval: 4,
             },
             enemy: {
                 levelIncrease: 0, //How many levels enemies are offset by.
@@ -634,7 +645,7 @@ function createPlayer() {
                         projectile.angle = Math.atan2(projectile.pos[1] - e.relCursorPos[1], projectile.pos[0] - e.relCursorPos[0])
                         projectile.speed += 10
                         projectile.data.explosionSize = 100
-                        projectile.damage *= 1.5
+                        projectile.damage += player.stats.melee.damage
                         projectile.targetList = elems.enemies
                         projectile.isParried = true
 
@@ -938,7 +949,13 @@ function createPlayer() {
                     })
                 }
             }
-        }
+        },
+
+        //Events
+        leftClickEvents: [],
+        shootRequirement: () => {return true},
+        onShoot: () => {},
+        onWaveIncrease: () => {}
     }
 }
 let player = createPlayer()
@@ -1278,10 +1295,9 @@ const weapons = {
         textureSize: [11,7],
 
         leftClick: () => {
-            for(let b = 0; b < player.stats.ammo.burst; b++) {
-                timeouts.push({
-                    duration: b,
-                    run: () => {
+            if(player.shootRequirement()) {
+                for(let b = 0; b < player.stats.ammo.burst; b++) {
+                    createTimeout(() => {
                         const cursorDist = Math.sqrt(Math.pow(player.centerPos[0] - e.relCursorPos[0],2) + Math.pow(player.centerPos[1] - e.relCursorPos[1],2)) / 100
                         if(
                             player.stats.ammo.current > 0 && 
@@ -1334,20 +1350,22 @@ const weapons = {
                                     
                                     player.bulletsShot++
 
-                                    for(let i = 0; i < 5; i++) { //looking back at this now, i is defined twice but still works?!?!?!????
-                                        createParticle(
-                                            1, //layer
-                                            [...bulletPos], //position 
-                                            player.stats.bullet.speed * DeBread.randomNum(0.5,1.5,10), //speed 
-                                            1.1, //speed div
-                                            bulletAngle + offset - Math.PI + DeBread.randomNum(-0.25,0.25,10), //angle 
-                                            player.stats.bullet.size / 2, //size
-                                            1.25, //size div
-                                            25, //duration
-                                            {
-                                                color: `rgb(${player.stats.bullet.shotParticleColor})`
-                                            }
-                                        )
+                                    if(player.stats.bullet.shotParticles) {
+                                        for(let i = 0; i < 5; i++) { //looking back at this now, i is defined twice but still works?!?!?!????
+                                            createParticle(
+                                                1, //layer
+                                                [...bulletPos], //position 
+                                                player.stats.bullet.speed * DeBread.randomNum(0.5,1.5,10), //speed 
+                                                1.1, //speed div
+                                                bulletAngle + offset - Math.PI + DeBread.randomNum(-0.25,0.25,10), //angle 
+                                                player.stats.bullet.size / 2, //size
+                                                1.25, //size div
+                                                25, //duration
+                                                {
+                                                    color: `rgb(${player.stats.bullet.shotParticleColor})`
+                                                }
+                                            )
+                                        }
                                     }
 
                                     doge('weapon').style.animation = ''
@@ -1398,8 +1416,8 @@ const weapons = {
                             createProjectile(0, [...walfling.pos], angle, player.stats.bullet, elems.enemies, player)
                             player.damage(player.stats.bullet.thornDamage, true)
                         })
-                    }
-                })
+                    },b*player.stats.ammo.burstInterval)
+                }
             }
         },
 
@@ -1442,6 +1460,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
     proj.origin = origin
     proj.kills = 0
     proj.lastDamageDate = e.gameUpdates
+    proj.loops = data.loops ?? 0
     
     proj.data = {...data}
     const pData = proj.data
@@ -1608,7 +1627,27 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
         proj.pos[0] += -Math.cos(proj.angle) * proj.speed
         proj.pos[1] += -Math.sin(proj.angle) * proj.speed
         
-        if(
+        if(proj.loops > 0) {
+            if(proj.pos[0] + -Math.cos(proj.angle) * proj.speed < 0) {
+                proj.pos[0] = doge('area').offsetWidth
+                proj.loops--
+            }
+
+            if(proj.pos[0] + -Math.cos(proj.angle) * proj.speed > doge('area').offsetWidth) {
+                proj.pos[0] = 0
+                proj.loops--
+            }
+
+            if(proj.pos[1] + -Math.sin(proj.angle) * proj.speed < 0) {
+                proj.pos[1] = doge('area').offsetHeight
+                proj.loops--
+            }
+
+            if(proj.pos[1] + -Math.sin(proj.angle) * proj.speed > doge('area').offsetHeight) {
+                proj.pos[1] = 0
+                proj.loops--
+            }
+        } else if(
             proj.pos[0] + -Math.cos(proj.angle) * proj.speed < 0 ||
             proj.pos[0] + -Math.cos(proj.angle) * proj.speed > doge('area').offsetWidth ||
             proj.pos[1] + -Math.sin(proj.angle) * proj.speed < 0 ||
@@ -1665,6 +1704,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
 
                 proj.bounces--
                 proj.damage *= 1.2
+                proj.speed *= 0.8
             } else {
                 proj.destroy() 
             }
@@ -2156,37 +2196,31 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
 }
 
 function createFloorItem(pos, itemKey, itemData) {
-    // const entity = document.createElement('div')
-    // entity.classList.add('entity')
-    // entity.ticksActive = 0
-    // addStyles(entity, {
-    //     width: '32px',
-    //     height: '32px',
-    //     position: 'absolute',
-    //     left: pos[0]+'px',
-    //     top: pos[1]+'px',
-    //     backgroundImage: `url(graphics/upgrades/${itemKey}.png)`,
-    //     backgroundSize: 'cover'
-    // })
-
-    // entity.tick = () => {
-    //     if(isColliding(entity,player.elem) && entity.ticksActive > 25) {
-    //         entity.remove()
-    //     }
-
-    //     entity.ticksActive++
-    // }
-
-    createPickup(pos, {
+    const pickup = createPickup(pos, {
         size: [36,36],
         texture: `upgrades/${itemKey}`,
         textureExtension: 'png',
         despawnTime: 250,
+        angle: DeBread.randomNum(0,Math.PI*2,10),
+        speed: 5,
 
         onTouch: () => {
             itemData.apply()
         }
     })
+
+    for(const rarity in upgrades) {
+        if(Object.keys(upgrades[rarity]).includes(itemKey)) {
+            console.log(rarity)
+            if(rarity.toString() === '4') {
+                pickup.style.animation = 'mythicOutline 5s linear infinite '
+            } else {
+                pickup.style.filter = `drop-shadow(2px 0px 0px ${rarities[rarity].color}) drop-shadow(-2px 0px 0px ${rarities[rarity].color}) drop-shadow(0px 2px 0px ${rarities[rarity].color}) drop-shadow(0px -2px 0px ${rarities[rarity].color})`
+            }
+
+            break
+        }
+    }
 }
 
 const area = {
@@ -3028,6 +3062,10 @@ document.addEventListener('mousedown', ev => {
                 weapon.leftClick()
             }
             e.mouseDown[0] = true
+
+            for(clickEvent of player.leftClickEvents) {
+                clickEvent()
+            }
         }
         if(weapon.rightClick && ev.button === 2) {
             weapon.rightClick()
@@ -3224,36 +3262,39 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer, col = [[255,255],[0,2
         backgroundColor: randomColor
     })
 
-    const explosionEffect = explosionEffectBase.cloneNode()
-    explosionEffect.style.setProperty('--explosionEffectScale', '2')
-    addStyles(explosionEffect, {
-        left: pos[0] - size / 2 + 'px',
-        top: pos[1] - size / 2 + 'px',
-        width: size + 'px',
-    })
+    if(!saveData.settings.reduceExplosionEffects) {
+        const explosionEffect = explosionEffectBase.cloneNode()
+        explosionEffect.style.setProperty('--explosionEffectScale', '2')
+        addStyles(explosionEffect, {
+            left: pos[0] - size / 2 + 'px',
+            top: pos[1] - size / 2 + 'px',
+            width: size + 'px',
+        })
+    
+        const largeExplosionEffect = explosionEffectBase.cloneNode()
+        largeExplosionEffect.style.setProperty('--explosionEffectScale', '5')
+        addStyles(largeExplosionEffect, {
+            left: pos[0] - size / 2 + 'px',
+            top: pos[1] - size / 2 + 'px',
+            width: size + 'px',
+            opacity: '0.5'
+        })
+        doge('area').append(explosionEffect)
+        doge('area').append(largeExplosionEffect)
 
-    const largeExplosionEffect = explosionEffectBase.cloneNode()
-    largeExplosionEffect.style.setProperty('--explosionEffectScale', '5')
-    addStyles(largeExplosionEffect, {
-        left: pos[0] - size / 2 + 'px',
-        top: pos[1] - size / 2 + 'px',
-        width: size + 'px',
-        opacity: '0.5'
-    })
-
+        setTimeout(() => {
+            explosionEffect.remove()
+            largeExplosionEffect.remove()
+        }, 500);
+    }
+    
     createParticles(pos, 10, size / 2, [size, size * 2], 500, 'ease-out', {backgroundColor: randomColor})
-
-    // DeBread.easeShake(doge('area'), e.gameUpdateInterval, Math.min(5, dmg), dmg / 25)
     doge('area').append(explosion)
-    doge('area').append(explosionEffect)
-    doge('area').append(largeExplosionEffect)
 
     if(!silent) DeBread.playSound('audio/explosion.mp3')
 
     setTimeout(() => {
         explosion.remove()
-        explosionEffect.remove()
-        largeExplosionEffect.remove()
     }, 500);
 
     elems.enemies.forEach(enemy => {
@@ -3263,7 +3304,7 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer, col = [[255,255],[0,2
         ) / 1.1 //Grace
         const distanceEffect = 1 - distance / size
 
-        if(distance < size && enemy.data.active && !enemy.data.explosionImmunity) {
+        if(distance < size && enemy.data.active && enemy.data.alive && !enemy.data.explosionImmunity) {
             enemy.data.damage(dmg * distanceEffect)
             if(dmg * distanceEffect > 0) {
                 const popup = createPopupText(DeBread.round(dmg * distanceEffect), [...enemy.data.centerPos])
@@ -3359,43 +3400,6 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer, col = [[255,255],[0,2
         }
     }
 }
-
-// function createPoisonField(pos, size, dmg, ticks, tickRate, circular = false, color = [255,255,255], ignoreEnemies = false) {
-//     const field = document.createElement('div')
-//     field.pos = pos
-//     field.damage = dmg
-//     field.circular = circular
-//     field.size = size
-//     field.tickRate = tickRate
-//     field.ignoreEnemies = ignoreEnemies
-    
-//     field.ticks = 0
-//     field.maxTicks = ticks
-
-//     field.lastTick = e.gameUpdates
-//     field.classList.add('poisonField')
-//     field.classList.add('entity')
-//     addStyles(field, {
-//         left: pos[0]+'px',
-//         top: pos[1]+'px',
-//         width: size+'px',
-//         height: size+'px',
-//         zIndex: '5',
-//         backgroundColor: `rgb(${color[0]},${color[1]},${color[2]}, 0.1)`,
-//         outline: `1px solid rgb(${color[0]},${color[1]},${color[2]})`
-//     })
-
-//     if(circular) {
-//         field.style.borderRadius = '50%'
-//     }
-
-
-//     field.tick = () => {
-//         console.log('wo!')
-//     }
-
-//     doge('area').append(field)
-// }
 
 function createPoisonField(pos, size, dmg, ticks, tickRate, targets, color = [255,255,255]) {
     const field = document.createElement('div')
@@ -3521,49 +3525,49 @@ function createPickup(pos, data) {
         dirVels: []
     }
 
-    with(pickup.data) {
+    {
         addStyles(pickup, {
-            left: pos[0]+'px',
-            top: pos[1]+'px',
-            width: size[0]+'px',
-            height: size[1]+'px'
+            left: pickup.data.pos[0]+'px',
+            top: pickup.data.pos[1]+'px',
+            width: pickup.data.size[0]+'px',
+            height: pickup.data.size[1]+'px'
         })
-        pickup.src = `graphics/${texture}.${textureExtension}`
+        pickup.src = `graphics/${pickup.data.texture}.${pickup.data.textureExtension}`
     
     
         pickup.tick = () => {
-            pos[0] += Math.cos(angle) * speed
-            pos[1] += Math.sin(angle) * speed
+            pickup.data.pos[0] += Math.cos(pickup.data.angle) * pickup.data.speed
+            pickup.data.pos[1] += Math.sin(pickup.data.angle) * pickup.data.speed
     
-            if(pos[0] < 0) pos[0] = 0
-            if(pos[1] < 0) pos[1] = 0
-            if(pos[0] > doge('area').offsetWidth) pos[0] = doge('area').offsetWidth
-            if(pos[1] > doge('area').offsetHeight) pos[1] = doge('area').offsetHeight
+            if(pickup.data.pos[0] < 0) pickup.data.pos[0] = 0
+            if(pickup.data.pos[1] < 0) pickup.data.pos[1] = 0
+            if(pickup.data.pos[0] > doge('area').offsetWidth) pickup.data.pos[0] = doge('area').offsetWidth
+            if(pickup.data.pos[1] > doge('area').offsetHeight) pickup.data.pos[1] = doge('area').offsetHeight
     
     
             addStyles(pickup, {
-                left: pos[0]+'px',
-                top: pos[1]+'px',
+                left: pickup.data.pos[0]+'px',
+                top: pickup.data.pos[1]+'px',
             })
     
-            speed /= 1.1
+            pickup.data.speed /= 1.1
     
-            for(let i = 0; i < dirVels.length; i++) {
-                const dirVel = dirVels[i]
-                pos[0] += Math.cos(dirVel.angle) * dirVel.speed
-                pos[1] += Math.sin(dirVel.angle) * dirVel.speed
+            for(let i = 0; i < pickup.data.dirVels.length; i++) {
+                const dirVel = pickup.data.dirVels[i]
+                pickup.data.pos[0] += Math.cos(dirVel.angle) * dirVel.speed
+                pickup.data.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
     
                 dirVel.speed /= dirVel.div
                 if(dirVel.speed <= 0.1) {
-                    dirVels.splice(i, 1)
+                    pickup.data.dirVels.splice(i, 1)
                 }
             }
     
             elems.pickups.forEach(other => {
                 if (pickup === other) return
     
-                const dx = other.data.pos[0] - pos[0]
-                const dy = other.data.pos[1] - pos[1]
+                const dx = other.data.pos[0] - pickup.data.pos[0]
+                const dy = other.data.pos[1] - pickup.data.pos[1]
     
                 const distance = Math.sqrt(
                     Math.pow(dx,2)+
@@ -3583,24 +3587,24 @@ function createPickup(pos, data) {
     
                     const push = overlap / 2
     
-                    pos[0] -= nx * push
-                    pos[1] -= ny * push
+                    pickup.data.pos[0] -= nx * push
+                    pickup.data.pos[1] -= ny * push
     
                     other.data.pos[0] += nx * push
                     other.data.pos[1] += ny * push
                 }
             })
     
-            if(ticksActive > despawnTime - 50) {
-                pickup.style.opacity = ticksActive % 2
+            if(pickup.data.ticksActive > pickup.data.despawnTime - 50) {
+                pickup.style.opacity = pickup.data.ticksActive % 2
             }
 
-            if(ticksActive >= despawnTime) {
+            if(pickup.data.ticksActive >= pickup.data.despawnTime) {
                 pickup.destroy(true)
             }
 
-            ticksActive++   
-        }
+            pickup.data.ticksActive++
+        } 
     }
 
     pickup.destroy = (ignorePickup) => {
@@ -3628,6 +3632,8 @@ function createPickup(pos, data) {
 
     elems.pickups.push(pickup)
     doge('area').append(pickup)
+
+    return pickup
 }
 
 const coinValues = [1, 5, 10, 25, 100]
@@ -4353,10 +4359,7 @@ function openSandboxMenu(menu) {
                     tooltip(
                         [buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], 
                         item.name, 
-                        [
-                            {text: 'POWER ITEM', col: '#5b5a1b'},
-                            {text: rarities[i].name, col: rarities[i].color}
-                        ], 
+                        [{text: rarities[i].name, col: rarities[i].color}], 
                         item.desc
                     )
                 }
@@ -4887,6 +4890,7 @@ const tutorial = [
             player.alive = false
             e.gameActive = false
             saveData.gameSettings.gamemode = 0
+            saveData.tutorialBeat = true
             openMenu('main')
             save()
 

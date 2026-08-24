@@ -262,8 +262,8 @@
 }
 
 .gameSettingsChallenge {
-    width: 50px;
-    height: 50px;
+    width: 45px;
+    height: 45px;
     border: 1px solid grey;
     display: flex;
     justify-content: center;
@@ -395,6 +395,7 @@
     overflow: hidden;
     cursor: pointer;
     user-select: none;
+    position: relative;
 }
 
 .characterSelectCharacterBox:hover {

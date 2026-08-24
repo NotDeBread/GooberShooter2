@@ -577,7 +577,7 @@ const creditAreas = {
                 }
             },
             { //Door bottom
-                texture: 'graphics/credits/musickDoor.png',
+                texture: 'graphics/credits/musickRoomDoor.png',
                 pos: [256,512],
 
                 styles: {

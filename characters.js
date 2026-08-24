@@ -22,6 +22,62 @@ const weaponPresets = {
 
         apply: () => {}
     },
+    luke: {
+        name: 'Fists',
+        desc: `
+            What is he parrying with? <br>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; color: white; font-style: normal; font-size: 1.25em;">
+                <img src="graphics/weapons/MP5SD.png" style="height: 24px;">
+                <span>MP5SD</span>
+            </div>
+            A well-worn silenced SMG. Stuck in burst fire, refitted for 10mm. More damage, but harder to aim.
+        `,
+        ammoChar: '|',
+        textureSize: [0,0],
+        pros: [],
+        cons: [],
+
+        apply: () => {
+            modifyStat(['bullet','silentShot'],'=true')
+            modifyStat(['bullet','physRecoil'], '=0')
+            modifyStat(['bullet','shotParticles'],'=false')
+            modifyStat(['bullet','damage'],'=8')
+            modifyStat(['bullet','accuracy'],'=50')
+            modifyStat(['bullet','shotCooldown'],'=50')
+            modifyStat(['ammo','burst'],'=5')
+            modifyStat(['ammo','max'],'=30')
+            modifyStat(['ammo','reloadSpeed'],'=60')
+            modifyStat(['ammo','burstInterval'],'=2')
+
+
+            player.onShoot = proj => {
+                proj.remove()
+
+                document.querySelectorAll('.mary').forEach(mary => {
+                    mary.shoot()
+                })
+            }
+
+            player.shootRequirement = () => {
+                let maryAlive = false
+                doge('area').querySelectorAll('.mary').forEach(mary => {
+                    if(mary.alive) {
+                        maryAlive = true                        
+                    }
+                })
+
+                return maryAlive
+            }
+
+            player.onWaveIncrease = () => {
+                doge('area').querySelectorAll('.mary').forEach(mary => {
+                    mary.damage(-player.stats.player.maxHealth/10)
+                })
+            }
+
+            upgrades[5].mary.apply()
+        }
+    },
     odstPistol: {
         name: 'ODST Pistol',
         desc: 'halo',
@@ -43,6 +99,7 @@ const weaponPresets = {
         desc: 'Shoots multiple short range bullets.',
         ammoChar: '|',
         textureSize: [18,9],
+        bulletTexture: true,
 
         pros: [
             'Multi-shot',
@@ -60,10 +117,11 @@ const weaponPresets = {
         apply: () => {
             modifyStat(['bullet','damage'],'=10')
             modifyStat(['bullet','speed'], '=15')
-            modifyStat(['bullet','multishot'], '=5')
+            modifyStat(['bullet','multishot'], '=8')
             modifyStat(['bullet','grow'], '=-10')
 
             modifyStat(['ammo','reloadSpeed'], '=75')
+            modifyStat(['ammo','max'], '=32')
             modifyStat(['bullet','range'], '=7')
             modifyStat(['bullet','shotCooldown'], '=25')
             modifyStat(['bullet','recoil'], '=3')
@@ -94,7 +152,7 @@ const weaponPresets = {
             modifyStat(['bullet','speed'], '=20')
             modifyStat(['bullet','multishot'], '=10')
             modifyStat(['bullet','grow'], '=-7')
-            modifyStat(['ammo','max'], '=20')
+            modifyStat(['ammo','max'], '=50')
             modifyStat(['bullet','slow'], '=0.25')
 
             modifyStat(['ammo','reloadSpeed'], '=100')
@@ -158,6 +216,18 @@ const weaponPresets = {
 
             updateUI()
         }
+    },
+    brick: {
+        name: 'Brick',
+        desc: 'Brick. It\'s fun.',
+
+        pros: [
+            'Charging rounds'
+        ],
+
+        cons: [
+            'Accuracy'
+        ]
     },
     piss: {
         name: 'Piss',
@@ -293,27 +363,22 @@ const weaponPresets = {
 
         pros: [
             'Poison field chance',
-            'Poisonous parries',
             'Damage Multiplier'
         ],
 
         cons: [
-            'Accuracy',
             'Shot cooldown'
         ],
         
         apply: () => {
             modifyStat(['bullet','poisonFieldChance'], '=100')
             modifyStat(['bullet','poisonFieldSize'], '=100')
-            modifyStat(['bullet','poisonFieldTicks'], '=2')
+            modifyStat(['bullet','poisonFieldTicks'], '=5')
             modifyStat(['bullet','poisonFieldDmgPercent'], '=40')
+            modifyStat(['bullet','poisonFieldColor'],'=[255,100,0]')
             modifyStat(['bullet','size'], '=40')
-            modifyStat(['bullet','accuracy'], '=40')
             modifyStat(['bullet','shotCooldown'], '=10')
             modifyStat(['bullet','damageMult'], '=1.5')
-            
-            modifyStat(['player','parryPoisonDmg'], '=20')
-            modifyStat(['player','parryPoisonSize'], '=50')
         }
     },
     flintlock: {
@@ -736,6 +801,53 @@ const characters = {
 
         weapon: weaponPresets.riot_shotgun
     },
+    luke: {
+        name: 'Luke & Mary',
+        desc: 'They\'ve survived worse.',
+        color: [255,255,255],
+        unlockable: true,
+        pros: [
+            'Melee size',
+            'Melee damage',
+        ],
+
+        tagList: [
+            {text:'Red Fox & BK',col:'#582A7A'},
+            {text: 'GS2',col: '#775db9'},
+            {text: 'Plinkel Pack', col: '#386942'},
+        ],
+
+        skins: [
+            {
+                name: 'Bridge',
+                src: 'bridge',
+            },
+            // {
+            //     name: 'Senior',
+            //     src: 'senior',
+            // },
+            // {
+            //     name: 'The Stranger',
+            //     src: 'stranger',
+            // },
+            {
+                name: 'Luke (Fella Drawn)',
+                src: 'luke_debread',
+            },
+            {
+                name: 'Luke (Fella Drawn) (Bald)',
+                src: 'luke_debreadbald',
+            },
+        ],
+
+        applyStats: () => {
+            modifyStat(['melee','size'],'=50')
+            modifyStat(['melee','damage'],'=50')
+            modifyStat(['player','maxWeaponDistance'],'=25')
+        },
+        
+        weapon: weaponPresets.luke
+    },
     tana: {
         name: 'Tana',
         desc: '',
@@ -986,6 +1098,14 @@ const characters = {
         `,
 
         weapon: weaponPresets.none,
+
+        skins: [
+            {
+                name: 'flaW',
+                src: 'flaw',
+                taunts: 1,
+            },
+        ],
 
         applyStats: () => {
             player.shopWeights[1] = 0
@@ -1350,14 +1470,33 @@ const characters = {
 
         weapon: weaponPresets.gun
     },
-    // hana: {
-    //     name: 'Hana',
-    //     desc: '',
-    //     color: [206,144,73],
+    hana: {
+        name: 'Hana',
+        color: [206,144,73],
+
+        tagList: [
+            {text:'Kitsune',col:'#ce9049'},
+            {text:'GS2',col:'#775db9'}
+        ],
+
+        pros: [],
+        cons: [
+            'Deadly fire damage'
+        ],
+
+        applyStats: () => {
+            modifyStat(['player','fireDamageMult'],'=5')
+        },
+
+        weapon: weaponPresets.gun
+    },
+    // zolph: {
+    //     name: 'Zolph',
+    //     color: [119, 93, 185],
 
     //     tagList: [
-    //         {text:'Kitsune',col:'#ce9049'},
-    //         {text:'GS2',col:'#775db9'}
+    //         {text:'🖕',col:'#60c1b4'},
+    //         {text:'GS2',col:'rgb(119, 93, 185)'}
     //     ],
 
     //     pros: [],
@@ -1369,7 +1508,7 @@ const characters = {
     //         modifyStat(['player','fireDamageMult'],'=5')
     //     },
 
-    //     weapon: weaponPresets.gun
+    //     weapon: weaponPresets.brick
     // },
     // bMoney: {
     //     name: 'B-Money',
@@ -1458,11 +1597,10 @@ const characters = {
     // },
     glorp: {
         name: 'Glorp',
-        desc: '',
         color: [43, 255, 68],
 
         tagList: [
-            {tag:'Alien',col:'#185225'},
+            {text:'Alien',col:'#185225'},
             {text: 'GS2',col: '#775db9'},
             {text: 'Wizlians',col:'#185225'},
             {text: 'SUSA 2026', col: '#59a7ff'}
@@ -1472,7 +1610,6 @@ const characters = {
     },
     tico: {
         name: 'Tico',
-        desc: '',
         color: [141, 58, 183],
 
         tagList: [

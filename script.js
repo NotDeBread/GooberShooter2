@@ -14,7 +14,7 @@ const defaultSaveData = {
     selectedCharacter: 'debread',
     selectedSkin: -1,
     firstLogin: false,
-    tutorialBeat: true,
+    tutorialBeat: false,
 
     selectedChallenges: [],
 
@@ -31,9 +31,10 @@ const defaultSaveData = {
         debug: false,
         devMode: false,
         autoReload: false,
+        reduceExplosionEffects: false,
         particleLimit: 5000,
 
-        musicVolume: 0,
+        musicVolume: 0.1,
         sfxVolume: 0.1,
         enemyVoiceLines: 'none',
         announceCharacter: false,
@@ -105,7 +106,8 @@ const defaultSaveData = {
             powerItems: [],
             elixirs: [],
             characters: []
-        }
+        },
+        charactersBeaten: []
     },
     achievements: [],
     items: []
@@ -365,7 +367,7 @@ function updateCharacterSelectStats(character, box) {
     tooltip([rect.left + box.offsetWidth / 2,rect.bottom + 25],character.name, [{text: character.tagList[0].text, col: character.tagList[0].col}], 
         `
         <div style="width: ${tooltipWidth}; margin-top: 5px;">
-            ${character.desc}
+            ${character.desc ?? ''}
             <div style="display: flex; gap: 5px; width: 100%;">
                 <div id="characterStatsCharacterContainer" style="height: 100%; width: 100%;">
                     <em style="color: grey; font-size: 0.75em;">CHARACTER</em>
@@ -390,7 +392,7 @@ function updateCharacterSelectStats(character, box) {
     doge('tooltipBody').style.maxWidth = tooltipWidth
 
     doge('characterStatsWeaponName').innerText = character.weapon.name
-    doge('characterStatsWeaponDesc').innerText = character.weapon.desc
+    doge('characterStatsWeaponDesc').innerHTML = character.weapon.desc
     doge('characterStatsWeaponImg').src = `graphics/weapons/${character.weapon.name.toLowerCase().replaceAll(' ','_')}.png`
 
     doge('characterStatsWeaponStats').innerHTML = ''
@@ -658,6 +660,25 @@ const challenges = {
             A boss spawns every wave instead of enemies.
         `,
     },
+    cyberpunk: {
+        name: 'Cyberpunk',
+        desc: `
+            Bosses spawn every <cb>10</cb> waves.<br>
+            Max HP reduces by <cb>5%</cb> every wave.<br>
+            Items in the shop cost <cg>25%</cg> less<br>
+            <cg>+1</cg> Shop slot
+        `,
+
+        apply: () => {
+            player.onWaveIncrease = () => {
+                modifyStat(['player','maxHealth'],'*=0.95')
+                updateUI()
+            }
+            player.bossInterval = 10
+            modifyStat(['shop','priceMult'],'=0.75')
+            modifyStat(['shop','upgrades'],'+=1')
+        }
+    },
     museum: {
         name: 'Museum',
         desc: `
@@ -876,6 +897,21 @@ const achievements = {
             saveData.stats.unlocked.characters.push('isaac')
         }
     },
+    Divorce: {
+        name: 'Divorce',
+        desc: 'Defeat Tana as Lorna.',
+
+        unlock: {
+            type: 'Character',
+            name: 'Luke & Mary',
+            src: 'graphics/characters/lukePortrait.png',
+            data: characters.luke
+        },
+
+        run: () => {
+            saveData.stats.unlocked.characters.push('luke')
+        }
+    },
     Knowledgeable: {
         name: 'Knowledgeable',
         desc: 'Complete the tutorial quickly.',
@@ -1019,6 +1055,11 @@ const achievements = {
     tana_Perfection: {
         name: 'Tana Perfection',
         desc: 'Reach wave 100 using Tana.',
+        difficulty: 0,
+    },
+    luke_Perfection: {
+        name: 'Luke & Mary Perfection',
+        desc: 'Reach wave 100 using Luke & Mary.',
         difficulty: 0,
     },
     nyan_Perfection: {
@@ -1246,6 +1287,22 @@ const achievements = {
 
         run: () => {
             saveData.stats.unlocked.items.push('drool')
+        }
+    },
+    hana_Perfection: {
+        name: 'Hana Perfection',
+        desc: 'Reach wave 100 using Hana.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Lotus',
+            src: 'graphics/upgrades/lotus.png',
+            data: upgrades[2].lotus
+        },
+
+        run: () => {
+            saveData.stats.unlocked.items.push('lotus')
         }
     },
     skywalkr_Perfection: {
@@ -1485,7 +1542,7 @@ function updateTrack(fade = true) {
         gamePauseString = 'Paused'
     }
 
-    if(!e.gameActive) {
+    if(!e.gameActive && !player.inPortal) {
         changeTrack('menu')
         return
     }

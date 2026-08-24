@@ -438,8 +438,8 @@ function openMenu(menu) {
 function renderCharacterSelect(page = 1) {
     function updateSelectedCharacter() {
         const character = characters[saveData.selectedCharacter]
-        doge('selectedCharacterName').innerText = character.name
-        doge('selectedCharacterDesc').innerText = character.desc
+        doge('selectedCharacterName').innerText = `${character.name} ${saveData.stats.charactersBeaten.includes(saveData.selectedCharacter) ? '★': ''}`
+        doge('selectedCharacterDesc').innerText = character.desc ?? ''
         doge('selectedCharacterImg').src = `graphics/characters/${saveData.selectedCharacter}PortraitLarge.png`
         doge('selectedCharacterImgSmall').src = `graphics/characters/${saveData.selectedCharacter}Portrait.png`
 
@@ -514,6 +514,18 @@ function renderCharacterSelect(page = 1) {
             index++
         }
 
+        if(saveData.stats.charactersBeaten.includes(key)) {
+            const star = document.createElement('span')
+            star.innerText = '★'
+            addStyles(star, {
+                position: 'absolute',
+                top: '0px',
+                left: '0px',
+                lineHeight: '1'
+            })
+
+            box.append(star)
+        }
     }
 
     let charactersUnlocked = 0
@@ -536,6 +548,7 @@ function openCharacterSkins() {
     addStyles(promptBody, {
         display: 'flex',
         justifyContent: 'center',
+        flexWrap: 'wrap',
         gap: '5px',
     })
 
@@ -815,7 +828,7 @@ function openGameSettingsMenu(id) {
             tooltip([rect.left + doge('gameSettingsCharacterContainer').offsetWidth / 2,rect.bottom + 25],characters[saveData.selectedCharacter].name, [{text: characters[saveData.selectedCharacter].tagList[0].text, col: characters[saveData.selectedCharacter].tagList[0].col}], 
                 `
                 <div style="width: ${tooltipWidth}; margin-top: 5px;">
-                    ${characters[saveData.selectedCharacter].desc}
+                    ${characters[saveData.selectedCharacter].desc ?? ''}
                     <div style="display: flex; gap: 5px; width: 100%;">
                         <div id="characterStatsCharacterContainer" style="height: 100%; width: 100%;">
                             <em style="color: grey; font-size: 0.75em;">CHARACTER</em>
@@ -840,7 +853,7 @@ function openGameSettingsMenu(id) {
         doge('tooltipBody').style.maxWidth = tooltipWidth
 
         doge('characterStatsWeaponName').innerText = character.weapon.name
-        doge('characterStatsWeaponDesc').innerText = character.weapon.desc
+        doge('characterStatsWeaponDesc').innerHTML = character.weapon.desc
         doge('characterStatsWeaponImg').src = `graphics/weapons/${character.weapon.name.toLowerCase().replaceAll(' ','_')}.png`
 
         doge('characterStatsWeaponStats').innerHTML = ''
@@ -1002,7 +1015,7 @@ function renderChallenges() {
 const creditsHTML = `
     <div style="display: flex; align-items: center; flex-direction: column;">
         <img src="graphics/ui/logo.png" width=175>
-        <span>By <a href="https://debread.space/" target="_blank">DeBread</a></span>
+        <span>By <a href="https://debread.space/" target="_blank">Fella 🦝</a></span>
     </div>
     <span>Music Composer: <a href="https://guns.lol/bmoney.squire" target="_blank">B-Money</a></span><br>
     <span>Background Shader: From <a href="https://www.playbalatro.com/" target="_blank">Balatro</a>, rewritten by <a href="https://xemantic.github.io/shader-web-background/" target="_blank">xemantic</a></span><br>
@@ -1010,7 +1023,7 @@ const creditsHTML = `
     <span>Additional SFX: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
     <span>Playtesters: Nova, TrueSkywalkr, Dottr, <a href="https://plinkel.neocities.org/" target="_blank">Plinkel</a></span>, ExistingSelf<br>
     <span>Save filler: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
-    <span>Special thanks: </span><a href="https://yeen.town/@Chalkllate" target="_blank">Jake</a><br>
+    <span>Special thanks: </span><a href="https://yeen.town/@Chalkllate" target="_blank">Jake</a> and Drew Freeman 🔥<br>
     <span>💖 Supporters: xX_DeBread_H8ER_Xx</span><br>
     <button onclick="openPrompt('Character Credits', getCharacterCreditsHTML(), [{text: 'Back', onclick: () => {openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,375])}}], [400,500])">Characters</button>
 `
@@ -1327,13 +1340,6 @@ const settingsHTML = `
                 </div>
             </div>
             <div class="settingsCheckboxContainer">
-                <div class="genericCheckbox" id="scb-hidePopupTexts"></div>
-                <div class="settingsCheckboxInfo">
-                    <span>Hide popup texts</span>
-                    <span>Hides damage numbers.</span>
-                </div>
-            </div>
-            <div class="settingsCheckboxContainer">
                 <div class="genericCheckbox" id="scb-skunkMode"></div>
                 <div class="settingsCheckboxInfo">
                     <span>Skunk Mode</span>
@@ -1368,6 +1374,20 @@ const settingsHTML = `
                 <div class="settingsCheckboxInfo">
                     <span>Enemy easing</span>
                     <span>Makes enemies smoothly move between postions. Disable if enemies seem jittery.</span>
+                </div>
+            </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-hidePopupTexts"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Hide popup texts</span>
+                    <span>Hides damage numbers.</span>
+                </div>
+            </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-reduceExplosionEffects"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Reduce explosion effects.</span>
+                    <span>Stops explosion shockwaves from being created.</span>
                 </div>
             </div>
             <div class="settingsCheckboxContainer">
@@ -1506,20 +1526,6 @@ function openSettingsMenu(menu) {
 }
 
 function updateSettings() {
-    if(saveData.settings.presentationMode) {
-        powerItems[0].blunt.name = 'Lollipop'
-        characters.jake.desc = 'Stupid dawg'
-        weaponPresets.piss.name = 'Super soaker'
-        weaponPresets.piss.desc = ''
-        characters.skywalkr.desc = 'This game is making me mad'
-    } else {
-        powerItems[0].blunt.name = 'Blunt'
-        characters.jake.des = 'Good morning wag wag'
-        weaponPresets.piss.name = 'Piss'
-        weaponPresets.piss.desc = 'PISSES EVERYWHERE.'
-        characters.skywalkr.desc = 'This game is pissing me off'
-    }
-
     if(saveData.settings.debug) {
         doge('gameDebug').style.display = 'unset'
         doge('performanceDebug').style.display = 'unset'
@@ -1681,9 +1687,9 @@ function renderCollectionItems(targetList, collectedList, texturePath) {
 }
 
 function openAchievements() {
-    openPrompt('Achievements', collectionHTML, [], [650,300])
+    openPrompt('Achievements', collectionHTML, [], [650,500])
     doge('collectionTabs').style.display = 'none'
-    doge('collectionList').style.maxHeight = '255px'
+    doge('collectionList').style.maxHeight = '455px'
 
     let achievementStatus = [0,0]
     for(const key in achievements) {

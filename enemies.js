@@ -87,7 +87,7 @@ const enemies = {
         poisonField: {
             size: 100,
             damage: 10,
-            rate: 10,
+            rate: 25,
         },
 
         credits: 5,
@@ -180,6 +180,77 @@ const enemies = {
             size: 150,
             damage: 75,
             impact: false,
+        }
+    },
+    shrapnel_explosive: {
+        name: 'Shrapnel Explosive',
+        desc: 'Creates an explosion and a ring of particles when damaged.',
+        // texture: 'explosive.png',
+        color: [150,50,50],
+        size: 40,
+        health: 1,
+        speed: 0,
+        credits: 20,
+        poor: true,
+
+        explosive: {
+            size: 75,
+            damage: 75,
+            impact: false,
+        },
+
+        onDeath: enemy => {
+            for(let i = 0; i < 6; i++) {
+                createProjectile(
+                    1,
+                    [...enemy.data.centerPos],
+                    (Math.PI*2 / 6) * i + DeBread.randomNum(-0.5,0.5,10),
+                    {
+                        size: 10,
+                        speed: 7,
+                        damage: 10,
+                    },
+                    [player.elem, ...elems.enemies]
+                )
+            }
+        }
+    },
+    advanced_shrapnel_explosive: {
+        name: 'Advanced Shrapnel Explosive',
+        desc: 'Creates an explosion and a ring of homing particles when damaged.',
+        // texture: 'explosive.png',
+        color: [50,0,50],
+        size: 40,
+        health: 1,
+        speed: 0,
+        credits: 50,
+        poor: true,
+
+        explosive: {
+            size: 75,
+            damage: 75,
+            impact: false,
+        },
+
+        onDeath: enemy => {
+            createTimeout(() => {
+                for(let i = 0; i < 6; i++) {
+                    createProjectile(
+                        1,
+                        [...enemy.data.centerPos],
+                        (Math.PI*2 / 6) * i + DeBread.randomNum(-0.5,0.5,10),
+                        {
+                            size: 10,
+                            speed: 7,
+                            damage: 10,
+                            magnetStrength: 0.5,
+                            bounces: 1,
+                            range: DeBread.randomNum(200,300),
+                        },
+                        [player.elem, ...elems.enemies]
+                    )
+                }
+            },1)
         }
     },
     sprinter: {
@@ -343,7 +414,7 @@ const enemies = {
         desc: 'A large, slow-moving enemy that fires large, explosive, splitting projectiles.',
         color: [135, 78, 59],
         size: 75,
-        health: 500,
+        health: 250,
         speed: 0.5,
         credits: 30,
         explosionImmunity: true,
@@ -351,7 +422,7 @@ const enemies = {
         projectile: {
             cooldown: 120,
             size: 25,
-            damage: 30,
+            damage: 25,
             speed: 15,
             range: 50,
             explosionSize: 100,
@@ -600,7 +671,7 @@ const enemies = {
     bird: {
         name: 'Chud Chip',
         desc: '<em style="color: grey;">Sandbox only</em>',
-        texture: 'chudbird.gif',
+        texture: 'chudChip.gif',
         color: [252, 243, 193],
         size: 34,
         health: 25,
@@ -813,6 +884,12 @@ const enemies = {
             }
 
             enemy.ticksActive++
+        },
+
+        onDeath: enemy => {
+            if(saveData.selectedCharacter = 'lorna') {
+                getAchievement('Divorce')
+            }
         }
     },
     ashtonDeath: {
@@ -1018,6 +1095,10 @@ const enemies = {
             enemy.beamContainer?.remove()
 
             getAchievement('The_End')
+            getAchievement(`${saveData.selectedCharacter}_Perfection`)
+            if(!saveData.stats.charactersBeaten.includes(saveData.selectedCharacter)) {
+                saveData.stats.charactersBeaten.push(saveData.selectedCharacter)
+            }
         }
     }
 }
@@ -1450,6 +1531,12 @@ const minibosses = {
                 angle: angle,
                 div: 1.05
             })
+        },
+
+        onDeath: boss => {
+            if(DeBread.randomNum(1,100) === 1) {
+                createFloorItem([...boss.data.centerPos],'used_needle',upgrades[4].used_needle)
+            }
         },
 
         moves: [
@@ -2504,6 +2591,15 @@ const minibosses = {
             boss.data.movementDir = [-1,1][DeBread.randomNum(0,1)]
             boss.data.followingPlayer = false
             boss.data.lastHitPlayer = 0
+        },
+
+        onDeath: boss => {
+            const random = DeBread.randomNum(1,100)
+            if(random <= 2) {
+                createFloorItem([...boss.data.centerPos],'sharp_ammo',upgrades[3].sharp_ammo)
+            } else if(random <= 50) {
+                createFloorItem([...boss.data.centerPos],'dagger',upgrades[1].dagger)
+            }
         },
 
         onPlayerCollision: boss => {
@@ -3611,7 +3707,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                     createParticle(
                         0,
                         [...enemyData.centerPos],
-                        DeBread.randomNum(0,10),
+                        DeBread.randomNum(0,10,10),
                         1.1,
                         DeBread.randomNum(0,Math.PI*2,10),
                         enemyData.size / 2,
@@ -3662,6 +3758,21 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                             }
                         )
                     }
+                }
+            }
+
+            if(player.stats.bullet.enemyBurst) {
+                const burstAmount = player.stats.bullet.enemyBurst
+                const randomRot = DeBread.randomNum(0,Math.PI*2,10)
+                for(let i = 0; i < burstAmount; i++) {
+                    createProjectile(
+                        0,
+                        [...enemy.data.centerPos],
+                        ((Math.PI*2)/burstAmount)*i + randomRot,
+                        player.stats.bullet,
+                        elems.enemies,
+                        player
+                    )
                 }
             }
             
@@ -3912,24 +4023,24 @@ function spawnWave(wave, poor) {
         for(let i = 0; i < player.stats.misc.horseIncrease; i++) {
             const randomStat = randomStats[DeBread.randomNum(0,randomStats.length-1)]
             modifyStat([randomStat[0],randomStat[1]], randomStat[2])
-            createNotification('Stat up!',`${randomStat[0]}.${randomStat[1]}`)
         }
     }
 
     if(saveData.gameSettings.gamemode !== 3) {
         doge('pageTitle').innerText = `Goober Shooter 2 - Wave ${player.wave}`
 
-        if(wave >= 200) {
+        if(wave > 200) {
             getAchievement('Champion')
-        } else if(wave >= 100) {
-            getAchievement(`${saveData.selectedCharacter}_Perfection`)
+        } else if(wave > 100) {
             getAchievement('Conqueror')
-        } else if(wave === 50) {
+        } else if(wave > 50) {
             getAchievement('Trooper')
-        } else if(wave === 10) {
+        } else if(wave > 10) {
             getAchievement('Survivor')
         }
     }
+
+    player.damage(-player.stats.player.waveHeal)
 }
 
 function progressWave(portal) {
@@ -3960,7 +4071,7 @@ function progressWave(portal) {
 
                     player.health = player.stats.player.maxHealth
                     updateUI()
-                } else if(player.wave % 25 === 0) {
+                } else if(player.wave % player.bossInterval === 0) {
                     player.fightingBoss = true
                     const bossKey = DeBread.randomNum(0, Object.keys(minibosses).length - 1)
                     const boss = minibosses[Object.keys(minibosses)[bossKey]]
@@ -4008,6 +4119,8 @@ function progressWave(portal) {
             if(player.wave % 5 === 0) {
                 player.lastWaveDate = 0
             }
+
+            player.onWaveIncrease()
         }
     }
 }

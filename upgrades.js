@@ -227,6 +227,7 @@ const upgrades = [
             name: 'Light Ammo',
             desc: `
                 <cg>+0.25</cg> Projectile speed<br>
+                <cg>-5%</cg> Shot cooldown<br>
                 <cb>-5%</cb> Damage
             `,
             priceMult: 0.8,
@@ -276,6 +277,10 @@ const upgrades = [
 
             apply: () => {
                 player.health = player.stats.player.maxHealth
+            },
+
+            requirement: () => {
+                return player.health < player.stats.player.maxHealth * 0.75
             }
         },
         four_leaf_clover: {
@@ -912,6 +917,17 @@ const upgrades = [
                 modifyStat(['player','weaponContactDamage'], '+=1')
             }
         },
+        lotus: {
+            unlockable: true,
+            name: 'Lotus',
+            desc: `
+                Gain <cg>+15HP</cg> when a wave spawns.
+            `,
+
+            apply: () => {
+                modifyStat(['player','waveHeal'],'+=15')
+            },
+        },
     },
     {
         black_hole: {
@@ -1193,6 +1209,21 @@ const upgrades = [
                 player.shopWeightMults[0] *= 0.9
             }
         },
+        mary_insurance: {
+            name: 'Mary Insurance',
+            desc: `
+                <strong style="color: #582a7a;">Mary</strong> gains <cg>+1</cg> contact damage.
+            `,
+            priceMult: 1.5,
+    
+            apply: () => {
+                modifyStat(['player','maryContactDamage'],'+=1')
+            },
+
+            requirement: () => {
+                return doge('area').querySelectorAll('.mary').length > 0
+            }
+        },
     },
     {
         bottomless_mag: {
@@ -1317,6 +1348,33 @@ const upgrades = [
     
             apply: () => {
                 player.shopWeightMults[4] *= 1.1
+            }
+        },
+        gs_virus: {
+            name: 'GS-VIRUS',
+            desc: `
+                Enemies burst into <cg>+3</cg> projectiles on death.<br>
+                These projectiles use player projectile attributes.
+            `,
+            priceMult: 2,
+    
+            apply: () => {
+                modifyStat(['bullet','enemyBurst'],'+=3')
+            }
+        },
+        mary_duplicator: {
+            name: 'Mary Duplicator',
+            desc: `
+                Spawn an additional <strong style="color: #582a7a;">Mary</strong>.
+            `,
+            priceMult: 2,
+    
+            apply: () => {
+                upgrades[5].mary.apply()
+            },
+
+            requirement: () => {
+                return doge('area').querySelectorAll('.mary').length > 0
             }
         },
         raccoon_tail: {
@@ -1497,6 +1555,289 @@ const upgrades = [
                 createExplosion([doge('area').offsetWidth / 2, doge('area').offsetHeight / 2], doge('area').offsetWidth, 0, 250, true)
             }
         },
+        mary: {
+            name: 'Mary',
+            desc: `
+                <em style="color: grey;">Character exclusive</em><br>
+                Spawns Mary, who follows close by and fires thier own weapon, copying all player bullet and ammo attributes.<br>
+                <cp>!</cp> Only works while playing as <strong style="color: #fa640a;">Luke</strong>.
+            `,
+
+            apply: () => {
+                const mary = document.createElement('div')
+                mary.classList.add('entity')
+                mary.classList.add('mary')
+                mary.pos = [player.centerPos[0]-100,player.centerPos[1]]
+                mary.rectPos = [0,0]
+                mary.dirVels = []
+                mary.speed = 0
+                mary.health = player.stats.player.maxHealth / 2
+                mary.alive = true
+
+                addStyles(mary, {
+                    position: 'absolute',
+                    width: '32px',
+                    height: '32px',
+                    translate: '-50% -50%',
+                    backgroundImage: 'url(graphics/mary.png)',
+                    backgroundSize: 'cover'
+                })
+
+                mary.innerHTML = `
+                    <div class="enemyHealthBarContainer">
+                        <div class="enemyHealthBar">
+                            <div class="innerEnemyHealthBar" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                `
+
+                const maryWeapon = document.createElement('div')
+                maryWeapon.innerHTML = '<img src="graphics/weapons/MP5SD.png" width="40">'
+                maryWeapon.dirVels = []
+                maryWeapon.classList.add('entity')
+                mary.weapon = maryWeapon
+                addStyles(maryWeapon, {
+                    position: 'absolute',
+                    zIndex: '4',
+                    pointerEvents: 'none',
+                    translate: '-50% -50%',
+                    transition: 'left linear 100ms, top linear 100ms, scale ease-in-out 500ms',
+                })
+
+                doge('area').append(maryWeapon)
+                
+                mary.updatePosition = () => {
+                    addStyles(mary, {
+                        left: mary.pos[0]+'px',
+                        top: mary.pos[1]+'px'
+                    })
+                }; mary.updatePosition()
+
+                mary.tick = () => {
+                    if(mary.alive) {
+                        const playerDis = Math.sqrt(
+                            (mary.pos[0]-player.centerPos[0])**2 +
+                            (mary.pos[1]-player.centerPos[1])**2
+                        )
+    
+                        const playerAngle = Math.atan2(
+                            player.centerPos[1]-mary.pos[1],
+                            player.centerPos[0]-mary.pos[0]
+                        )
+    
+                        if(playerDis > 75 && mary.speed < 5) {
+                            mary.speed += 0.25
+                        } else if(mary.speed > 0) {
+                            mary.speed -= 0.25
+                        }
+                        mary.pos[0] += Math.cos(playerAngle) * mary.speed
+                        mary.pos[1]+= Math.sin(playerAngle) * mary.speed
+                        mary.rectPos = [mary.getBoundingClientRect().left,mary.getBoundingClientRect().top]
+
+                        mary.pos[0] = Math.max(Math.min(mary.pos[0],doge('area').offsetWidth-16),16)
+                        mary.pos[1] = Math.max(Math.min(mary.pos[1],doge('area').offsetHeight-16),16)
+    
+                        mary.updatePosition()
+    
+                        const angle = Math.atan2(e.cursorPos[1] - mary.rectPos[1] - mary.offsetHeight / 2, e.cursorPos[0] - mary.rectPos[0] - mary.offsetWidth / 2)
+                        const weapon = weapons[player.weapon]
+                        const cursorDisance = Math.sqrt(
+                            Math.pow(mary.rectPos[0] + mary.offsetWidth / 2 - e.cursorPos[0], 2)+
+                            Math.pow(mary.rectPos[1] + mary.offsetHeight / 2 - e.cursorPos[1], 2)
+                        ) + (weapon.textureSize[0] + weapon.textureSize[1])/2
+                                
+                        maryWeapon.pos = [
+                            Math.max(Math.min(mary.pos[0] + Math.cos(angle) * Math.min(cursorDisance / 2, player.stats.player.maxWeaponDistance), doge('area').offsetWidth), 0),
+                            Math.max(Math.min(mary.pos[1] + Math.sin(angle) * Math.min(cursorDisance / 2, player.stats.player.maxWeaponDistance), doge('area').offsetHeight), 0)
+                        ]
+    
+                        for(let i = 0; i < maryWeapon.dirVels.length; i++) {
+                            const dirVel = maryWeapon.dirVels[i]
+                            maryWeapon.pos[0] += Math.cos(dirVel.angle) * dirVel.speed
+                            maryWeapon.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
+                
+                            dirVel.speed /= dirVel.div
+                            if(Math.abs(dirVel.speed) <= 0.1) {
+                                maryWeapon.dirVels.splice(i, 1)
+                            }
+                        }
+    
+                        for(let i = 0; i < mary.dirVels.length; i++) {
+                            const dirVel = mary.dirVels[i]
+                            mary.pos[0] += Math.cos(dirVel.angle) * dirVel.speed
+                            mary.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
+                
+                            dirVel.speed /= dirVel.div
+                            if(Math.abs(dirVel.speed) <= 0.1) {
+                                maryWeapon.dirVels.splice(i, 1)
+                            }
+                        }
+    
+                        let yScale = 1
+                        if(maryWeapon.pos[0] < mary.pos[0]) yScale = -1
+    
+                        addStyles(maryWeapon, {
+                            left: maryWeapon.pos[0]+'px',
+                            top: maryWeapon.pos[1]+'px',
+                            rotate: angle+'rad',
+                            transform: `scale(1, ${yScale})`
+                        })
+    
+                        doge('area').querySelectorAll('.projectile').forEach(proj => {
+                            if(isColliding(mary, proj) && proj.origin !== player) {
+                                proj.destroy()
+                                mary.damage(proj.data.damage)
+                            }
+                        })
+    
+                        doge('area').querySelectorAll('.mary').forEach(otherMary => {
+                            const angle = Math.atan2(otherMary.pos[1] - mary.pos[1], otherMary.pos[0] - mary.pos[0])
+                            if (isColliding(mary, otherMary) && mary !== otherMary) {
+                                const distance = Math.sqrt(
+                                    Math.pow(mary.pos[0] - otherMary.pos[0],2) + 
+                                    Math.pow(mary.pos[1] - otherMary.pos[1],2)
+                                )
+                                
+                                const overlap = (36 - distance) / 10
+                                mary.pos[0] -= Math.cos(angle) * overlap
+                                mary.pos[1] -= Math.sin(angle) * overlap                    
+                            }
+                        })
+
+                        if(player.stats.player.maryContactDamage) {
+                            elems.enemies.forEach(enemy => {
+                                if(isColliding(enemy, mary)) {
+                                    enemy.data.damage(player.stats.player.maryContactDamage)
+                                }
+                            })
+                        }
+
+                        const frames = {
+                            "-3": 0,
+                            "-2": 1,
+                            "-1": 2,
+                            "0": 5,
+                            "1": 8,
+                            "2": 7,
+                            "3": 6,
+                            "4": 3,
+                            "-4": 3
+                        }
+
+                        const dir = Math.round(angle / (Math.PI / 4))
+                        mary.style.backgroundPosition = `-${(frames[dir] * 32) + 2 * frames[dir]}px 0px`
+                    }
+                }
+
+                doge('area').append(mary)
+
+                mary.damage = amount => {
+                    if(mary.alive) {
+                        mary.querySelector('.enemyHealthBarContainer').style.opacity = '1'
+    
+                        mary.health -= amount
+                        mary.health = Math.min(Math.max(mary.health, 0),player.stats.player.maxHealth / 2)
+                        mary.querySelector('.innerEnemyHealthBar').style.width = mary.health / (player.stats.player.maxHealth / 2) * 100 + '%'
+    
+                        if(mary.health <= 0) {
+                            mary.alive = false
+                            mary.style.opacity = 0
+                            maryWeapon.style.opacity = 0
+
+                            for(let i = 0; i < 10; i++) {
+                                createParticle(
+                                    0,
+                                    [...mary.pos],
+                                    DeBread.randomNum(0,10),
+                                    1.1,
+                                    DeBread.randomNum(0,Math.PI*2,10),
+                                    16,
+                                    1.1,
+                                    50,
+                                    {
+                                        color: `#793a80`
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                mary.shoot = () => {
+                    if(mary.alive) {
+                        const cursorDist = Math.sqrt(Math.pow(mary.pos[0] - e.relCursorPos[0],2) + Math.pow(mary.pos[1] - e.relCursorPos[1],2)) / 100
+                        const bulletAngle = Math.atan2(
+                            maryWeapon.pos[1] - DeBread.randomNum(
+                                e.relCursorPos[1] - player.stats.bullet.accuracy / 2 * cursorDist, 
+                                e.relCursorPos[1] + player.stats.bullet.accuracy / 2 * cursorDist
+                            ), 
+                            maryWeapon.pos[0] - DeBread.randomNum(
+                                e.relCursorPos[0] - player.stats.bullet.accuracy / 2 * cursorDist, 
+                                e.relCursorPos[0] + player.stats.bullet.accuracy / 2 * cursorDist
+                            )
+                        )
+                        
+                        DeBread.playSound('audio/shoot.mp3', DeBread.randomNum(0.95,1.05,5), false)
+                        
+                        for(let i = 0; i < player.stats.bullet.multishot; i++) {
+                            mary.dirVels.push({angle: bulletAngle, speed: player.stats.bullet.recoil, div: 1.25})
+                            maryWeapon.dirVels.push({angle: bulletAngle, speed: player.stats.bullet.physRecoil, div: 1.25})
+        
+                            const t = (i - (DeBread.round(player.stats.bullet.multishot) - 1) / 2)
+                            const offset = (t / DeBread.round(player.stats.bullet.multishot)) * Math.PI / 12
+                            
+                            createProjectile(
+                                0,
+                                [...maryWeapon.pos],
+                                bulletAngle,
+                                player.stats.bullet,
+                                elems.enemies,
+                                player
+                            )
+    
+                            for(let i = 0; i < 5; i++) {
+                                createParticle(
+                                    1,
+                                    [...maryWeapon.pos], //position 
+                                    player.stats.bullet.speed * DeBread.randomNum(0.5,1.5,10), 
+                                    1.1,
+                                    bulletAngle + offset - Math.PI + DeBread.randomNum(-0.25,0.25,10), 
+                                    player.stats.bullet.size / 2, //size
+                                    1.25,
+                                    25,
+                                    {
+                                        color: `rgb(255,255,255)`
+                                    }
+                                )
+                            }
+    
+                            maryWeapon.style.animation = ''
+                            requestAnimationFrame(() => {
+                                maryWeapon.style.animation = 'weaponSquish 100ms ease-out 1 forwards'
+                            })
+                        }
+        
+                        for(let i = 0; i < player.stats.bullet.multishot; i++) {
+                            document.querySelectorAll('.wisp').forEach(wisp => {
+                                const angle = Math.atan2(
+                                    wisp.pos[1] - DeBread.randomNum(
+                                        e.relCursorPos[1] - player.stats.bullet.accuracy / 2 * cursorDist, 
+                                        e.relCursorPos[1] + player.stats.bullet.accuracy / 2 * cursorDist
+                                    ), 
+                                    wisp.pos[0] + doge('weapon').offsetWidth / 2 - DeBread.randomNum(
+                                        e.relCursorPos[0] - player.stats.bullet.accuracy / 2 * cursorDist, 
+                                        e.relCursorPos[0] + player.stats.bullet.accuracy / 2 * cursorDist
+                                    ) 
+                                )
+                                createProjectile(player.stats.bullet.style, [...wisp.pos], angle, player.stats.bullet, elems.enemies, player, {damage: player.stats.bullet.damage / 2})
+                            })
+                            updateUI()
+                            player.stats.bullet.lastShotDate = e.gameUpdates
+                        }
+                    }
+                }
+            }
+        }
     },
     {
         error: {
@@ -2149,16 +2490,55 @@ const powerItems = [
                 createExplosion([...player.centerPos], 250, 0, 100, true, [[0,50],[155,255],[255,255],0.5])
             }
         },
+        marys_epipen: {
+            name: 'Marys Epipen',
+            desc: `
+                Uses <cp>75</cp> POWER<br>
+                Revives and fully heals <strong style="color: #582a7a;">Mary</strong>.
+            `,
+            charge: 75,
+
+            requirement: () => {
+                return doge('area').querySelectorAll('.mary').length > 0
+            },
+
+            use: () => {
+                document.querySelectorAll('.mary').forEach(mary => {
+                    if(!mary.alive) {
+                        mary.style.opacity = '1'
+                        mary.weapon.style.opacity = '1'
+                        mary.alive = true
+                        mary.damage(-Infinity)
+
+                        for(let i = 0; i < 10; i++) {
+                            createParticle(
+                                0,
+                                [...mary.pos],
+                                DeBread.randomNum(0,10),
+                                1.1,
+                                DeBread.randomNum(0,Math.PI*2,10),
+                                16,
+                                1.1,
+                                50,
+                                {
+                                    color: `#793a80`
+                                }
+                            )
+                        }
+                    }
+                })
+            }
+        },
         lucky_penny: {
             name: 'Lucky Penny',
             desc: `
-                Uses <cp>15</cp> POWER<br>
-                Has a 50% chance to double every pickup in the area, otherwise, it removes all pickups.
+                Uses <cp>30</cp> POWER<br>
+                Has a 75% chance to double every pickup in the area, otherwise, it destroys all pickups.
             `,
-            charge: 15,
+            charge: 30,
 
             use: () => {
-                let chance = DeBread.randomNum(0,1)
+                let chance = DeBread.randomNum(0,3)
                 for(const key in elems.pickups) {
                     const pickup = elems.pickups[key]
                     if(chance) { //Dupe
@@ -2786,7 +3166,62 @@ const powerItems = [
 
                 doge('area').append(mace)
             }
-        }
+        },
+        double_vision: {
+            name: 'Double Vision',
+            desc: `
+                Uses <cp>100</cp> POWER<br>
+                Duplicates all items in the shop.
+                `,
+            charge: 100,
+            canUseInShop: true,
+
+            requirement: () => {
+                return player.inPortal
+            },
+
+            use: () => {
+                const upgrades = []
+                doge('gameShopUpgrades').querySelectorAll('.shopItem').forEach(elem => {
+                    upgrades.push(elem.data)
+                    upgrades.push(elem.data)
+
+                })
+                createShopItems(upgrades)
+
+                let i = 0
+                doge('gameShopUpgrades').querySelectorAll('.shopItem').forEach(elem => {
+                    i++
+
+                    elem.style.opacity = '0.5'
+
+                    if(i % 2 === 0) {
+                        addStyles(elem, {
+                            position: 'absolute',
+                            left: 82.2*(Math.floor((i-1)/2))+10+'px'
+                        })
+                    }
+                })
+            }
+        },
+        // black_knife: {
+        //     name: 'Black Knife',
+        //     desc: `
+        //         Uses <cp>100</cp> POWER<br>
+        //         <strong>Swoons</strong> a random enemy, dealing <cg>9,999</cg> damage.
+        //         `,
+        //     charge: 100,
+
+        //     use: () => {
+        //         document.body.style.filter = 'brightness(0)'
+        //         createTimeout(() => {
+        //             const randomEnemy = elems.enemies[DeBread.randomNum(0,elems.enemies.length-1)]
+        //             randomEnemy.data.damage(9999)
+        //             DeBread.easeShake(doge('area'),20,15,0.25)
+        //             document.body.style.filter = 'brightness(1)'
+        //         }, 100)
+        //     }
+        // },
     },
     {
         wisp: {
@@ -3245,6 +3680,35 @@ const powerItems = [
                 doge('area').append(sword)
             }
         },
+        r_key: {
+            name: 'R Key',
+            desc: `
+                <cp>! SINGLE USE</cp><br>
+                Uses <cp>125</cp> POWER<br>
+                -Kills all enemies on screen.<br>
+                -Sets wave to <cg>0</cg><br>
+                -Sets shop reroll price to <cp>$10</cp><br>
+            `,
+            charge: 150,
+            priceMult: 0,
+
+            use: () => {
+                player.wave = 0
+                player.stats.shop.rerollPrice = 25
+                elems.enemies.forEach(enemy => {
+                    enemy.data.kill()
+                })
+
+                if(player.stats.player.canCarrySecondaryPowerItem) {
+                    player.powerItem = player.secondaryPowerItem
+                    player.secondaryPowerItem = powerItems[5].empty
+                } else {
+                    player.powerItem = undefined
+                }
+
+                updateUI()
+            }
+        },
     },
     {
         empty: {
@@ -3261,7 +3725,7 @@ const powerItems = [
                 Uses <cp>25</cp> POWER<br>
                 Spawns a Walfling on the crosshair<br>
                 Walflings fire projectiles that mimic player bullet attributes<br>
-                Explodes after 300 ticks
+                Explodes after 500 ticks
             `,
             charge: 25,
 
@@ -3296,7 +3760,7 @@ const powerItems = [
                 walfling.tick = () => {
                     walfling.ticksActive++
 
-                    if(walfling.ticksActive >= 300) {
+                    if(walfling.ticksActive >= 500) {
                         walfling.destroy()
                     }
                 }
@@ -3892,7 +4356,7 @@ function createShopItems(items) {
         }
 
         doge('gameShopUpgrades').append(itemSlot)
-        itemSlot.style.animation = `shopItemIn 500ms cubic-bezier(0,1,.5,1) ${key * 100}ms 1 forwards`
+        itemSlot.style.animation = `shopItemIn 500ms cubic-bezier(0,1,.5,1) ${Math.min(key * 100,1000)}ms 1 forwards`
 
         if(itemMeta.rarity === 4) {
             itemSlot.style.animation += ', mythicBorder 5s linear infinite forwards'
@@ -4349,6 +4813,7 @@ function rerollShop() {
 }
 
 function closeShop() {
+    doge('gameShopUpgrades').innerHTML = ''
     doge('gameShopContainer').style.display = 'none'
     e.gameActive = true
     player.perfectSet = true
@@ -4369,6 +4834,31 @@ function closeShop() {
             portal.remove()
             player.elem.style.scale = '1'
             doge('weapon').style.scale = '1'
+
+            document.querySelectorAll('.mary').forEach(mary => {
+                if(!mary.alive) {
+                    mary.style.opacity = '1'
+                    mary.weapon.style.opacity = '1'
+                    mary.alive = true
+                    mary.damage(-Infinity)
+
+                    for(let i = 0; i < 10; i++) {
+                        createParticle(
+                            0,
+                            [...mary.pos],
+                            DeBread.randomNum(0,10),
+                            1.1,
+                            DeBread.randomNum(0,Math.PI*2,10),
+                            16,
+                            1.1,
+                            50,
+                            {
+                                color: `#793a80`
+                            }
+                        )
+                    }
+                }
+            })
         }, 1000);
     })
 

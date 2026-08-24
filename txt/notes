@@ -18,22 +18,31 @@
 - Hide enemy health bars in the hidden challenge
 - Optimize startGame function, gamemode management and challenge management
 - Remake coin textures
+- Remake explosions using the entity system
 
 ## Before next release
 - Add character announcements
+- Fix sasha and musick room texture
+- Finish new explosive enemy textures
+- Luke skins
 
 # Required Songs (For people to want to make a soundtrack)
 ## Every track must be loopable (Besides the boss finish riff of course)
 ## For ideas of what i'd like the music to sound like, listen to the soundtracks of Donut County, Balatro, and MINDWAVE
+## All in-game tracks should have 'radio' alts. Where the music sounds compressed. Used for the pause menu
+  ## This includes all Generic tracks
+## For examples of existing tracks visit the Goober Shooter 2 Soundcloud page by B-Money
+
 - Main Menu
 - Generic (Clean) - Standard melody, no extra tracks
 - Generic (Combat) - More active, more tracks
 - Generic (Boss) - Most active, slightly more than the combat theme, no need to go overboard
-- Generic (Paused) - Chill version of the main melody
-- Boss finish riff (Works the same as TBOIs Boss riff) (Not implemented yet) (Would be cool if the riff was a shortened version of the main melody)
-- Sandbox (Not implemented yet)
-- The Tutorialist (Final Boss) (Not implemented yet)
-- Death Screen (Not implemented yet)
+- Generic (Sandbox/Credits) - Elevator music version of the main melody
+- Boss finish riff (Works the same as TBOIs Boss riff) (Would be cool if the riff was a shortened version of the main melody)
+- The Tutorialist (Final Boss) (Use Black Knife by Toby Fox as reference)
+- Tutorialist death music
+- Death Screen (Use Acceptance by Rediculon for reference)
+- 3 Poopshit beats (Literally just slop) (Check Goober Shooter (Extra Slop) on soundcloud)
 
 # Needed SFX
 - Lightning strike (For Lightning Rod power item)
