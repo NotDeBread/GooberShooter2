@@ -532,7 +532,7 @@ const enemies = {
         size: 50,
         health: Infinity,
         speed: 0.0000000001,
-        poor: true,
+        noKillBonus: true,
     },
     weakDummy: {
         name: 'Weak Dummy',
@@ -542,7 +542,7 @@ const enemies = {
         size: 50,
         health: 10,
         speed: 0.0000000001,
-        poor: true,
+        noKillBonus: true,
     },
     mountedDummy: {
         name: 'Mounted Dummy',
@@ -553,7 +553,7 @@ const enemies = {
         health: Infinity,
         speed: 0,
         mounted: true,
-        poor: true,
+        noKillBonus: true,
     },
     mountedWeakDummy: {
         name: 'Mounted Weak Dummy',
@@ -564,7 +564,7 @@ const enemies = {
         health: 10,
         speed: 0,
         mounted: true,
-        poor: true,
+        noKillBonus: true,
     },
     movingDummy: {
         name: 'Moving dummy',
@@ -574,7 +574,7 @@ const enemies = {
         size: 50,
         health: Infinity,
         speed: 2,
-        poor: true,
+        noKillBonus: true,
     },
     nerfSentry: {
         name: 'Nerf Sentry',
@@ -584,7 +584,7 @@ const enemies = {
         size: 50,
         health: Infinity,
         speed: 0,
-        poor: true,
+        noKillBonus: true,
 
         projectile: {
             cooldown: 100,
@@ -602,7 +602,7 @@ const enemies = {
         speed: 0,
         mounted: true,
         credits: Infinity,
-        poor: true,
+        noKillBonus: true,
 
         explosive: {
             size: 150,
@@ -782,6 +782,12 @@ const enemies = {
             }
 
             enemy.data.ticksActive++
+        },
+
+        onDeath: enemy => {
+            if(characters[saveData.selectedCharacter].tagList.some(tag => tag.text === 'Plinkel Pack')) {
+                getAchievement('Unc')
+            }
         }
     },
     tanaDeath: {
@@ -887,8 +893,12 @@ const enemies = {
         },
 
         onDeath: enemy => {
-            if(saveData.selectedCharacter = 'lorna') {
+            if(saveData.selectedCharacter === 'lorna') {
                 getAchievement('Divorce')
+            }
+
+            if(characters[saveData.selectedCharacter].tagList.some(tag => tag.text === 'Plinkel Pack')) {
+                getAchievement('Unc')
             }
         }
     },
@@ -915,6 +925,12 @@ const enemies = {
             }
 
             enemy.ticksActive++
+        },
+
+        onDeath: enemy => {
+            if(characters[saveData.selectedCharacter].tagList.some(tag => tag.text === 'Plinkel Pack')) {
+                getAchievement('Unc')
+            }
         }
     },
     explodingTutorialistServant: {
@@ -1095,9 +1111,21 @@ const enemies = {
             enemy.beamContainer?.remove()
 
             getAchievement('The_End')
-            getAchievement(`${saveData.selectedCharacter}_Perfection`)
-            if(!saveData.stats.charactersBeaten.includes(saveData.selectedCharacter)) {
-                saveData.stats.charactersBeaten.push(saveData.selectedCharacter)
+            getAchievement(`${saveData.selectedCharacter}_Perfection`, () => {
+                if(!saveData.stats.charactersBeaten.includes(saveData.selectedCharacter)) {
+                    saveData.stats.charactersBeaten.push(saveData.selectedCharacter)
+                }
+            })
+
+            let allCharactersBeaten = true
+            for(const key in characters) {
+                if(!saveData.stats.charactersBeaten.includes(key)) {
+                    allCharactersBeaten = false
+                }
+            }
+
+            if(allCharactersBeaten) {
+                getAchievement('Character_Completionist')
             }
         }
     }
@@ -1537,6 +1565,10 @@ const minibosses = {
             if(DeBread.randomNum(1,100) === 1) {
                 createFloorItem([...boss.data.centerPos],'used_needle',upgrades[4].used_needle)
             }
+
+            if(characters[saveData.selectedCharacter].tagList.some(tag => tag.text === 'Plinkel Pack')) {
+                getAchievement('Unc')
+            }
         },
 
         moves: [
@@ -1621,6 +1653,8 @@ const minibosses = {
         texture: 'ashtonPortrait.png',
         textureSheet: 'ashton.png',
         noTargetCollision: true,
+        noDeathParticles: true,
+        noKillBonus: true,
 
         onSpawn: boss => {
             boss.data.isHoldingPlayer = false
@@ -1701,6 +1735,13 @@ const minibosses = {
 
         onDeath: boss => {
             player.elem.style.zIndex = '3'
+
+            spawnEnemy(
+                boss.data.pos,
+                enemies.ashtonDeath,
+                0,
+                0
+            )
         },
 
         generalMoveRequirement: boss => {
@@ -4121,6 +4162,14 @@ function progressWave(portal) {
             }
 
             player.onWaveIncrease()
+        }
+
+        if(player.wave >= 26 && saveData.selectedCharacter === 'ashton') {
+            getAchievement('Big_Teeth')
+        }
+
+        if(player.wave >= 51 && saveData.selectedCharacter === 'lorna') {
+            getAchievement('Law_Enforcement')
         }
     }
 }

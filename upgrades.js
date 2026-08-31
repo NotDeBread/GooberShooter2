@@ -48,6 +48,8 @@ function fixStats() {
     player.stats.player.speed = Math.min(player.stats.player.speed,10)
 
     player.stats.bullet.multishot = Math.max(DeBread.round(player.stats.bullet.multishot),1)
+
+    player.stats.bullet.speed = Math.min(player.stats.bullet.speed, 25)
 }
 
 function modifyStat(stat, modifier) {
@@ -732,7 +734,7 @@ const upgrades = [
                 modifyStat(['bullet','grow'], '+=0.25')
             }
         },
-        extendo_grip: {
+        stupid_bitch_grip: {
             name: 'Extendo Grip',
             desc: `
                 <cg>+20</cg> Melee size<br>
@@ -1076,13 +1078,13 @@ const upgrades = [
         golden_ammo: {
             name: 'Golden Ammo',
             desc: `
-                Hitting an enemy with a projectile gains a <cg>+1%</cg> chance to spawn a random coin
+                Hitting an enemy with a projectile gains a <cg>+2%</cg> chance to spawn a random coin
             `,
             priceMult: 1.5,
             unlockable: true,
 
             apply: () => {
-                modifyStat(['bullet','coinChance'], '+=1')
+                modifyStat(['bullet','coinChance'], '+=2')
             }
         },
         radioactive_ammo: {
@@ -1209,6 +1211,166 @@ const upgrades = [
                 player.shopWeightMults[0] *= 0.9
             }
         },
+        money_trough: {
+            name: 'Money Trough',
+            desc: `
+                Spawns a money trough that follows the player.<br>
+                If it gets hit with a projectile twice, is spawns <cp>5-10</cp> random coins.<br>
+                If you reach the shop without it breaking, gain money equal to your current wave <cg>*2</cg>.
+            `,
+            priceMult: 1.5,
+    
+            apply: () => {
+                const piggy = document.createElement('div')
+                piggy.classList.add('entity')
+                piggy.classList.add('piggy')
+                piggy.pos = [player.centerPos[0]-100,player.centerPos[1]]
+                piggy.rectPos = [0,0]
+                piggy.dirVels = []
+                piggy.speed = 0
+                piggy.health = 2
+                piggy.alive = true
+
+                addStyles(piggy, {
+                    position: 'absolute',
+                    width: '26px',
+                    height: '22px',
+                    translate: '-50% -50%',
+                    backgroundImage: 'url(graphics/money_trough.png)',
+                    backgroundSize: 'cover'
+                })
+
+                piggy.innerHTML = `
+                    <div class="enemyHealthBarContainer">
+                        <div class="enemyHealthBar">
+                            <div class="innerEnemyHealthBar" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                `
+
+                piggy.updatePosition = () => {
+                    addStyles(piggy, {
+                        left: piggy.pos[0]+'px',
+                        top: piggy.pos[1]+'px'
+                    })
+                }; piggy.updatePosition()
+
+                piggy.updateHealth = () => {
+                    piggy.querySelector('.innerEnemyHealthBar').style.width = piggy.health / 2 * 100 + '%'
+                }
+
+                piggy.tick = () => {
+                    if(piggy.alive) {
+                        const playerDis = Math.sqrt(
+                            (piggy.pos[0]-player.centerPos[0])**2 +
+                            (piggy.pos[1]-player.centerPos[1])**2
+                        )
+    
+                        const playerAngle = Math.atan2(
+                            player.centerPos[1]-piggy.pos[1],
+                            player.centerPos[0]-piggy.pos[0]
+                        )
+    
+                        if(playerDis > 75 && piggy.speed < 5) {
+                            piggy.speed += 0.25
+                        } else if(piggy.speed > 0) {
+                            piggy.speed -= 0.25
+                        }
+                        piggy.pos[0] += Math.cos(playerAngle) * piggy.speed
+                        piggy.pos[1]+= Math.sin(playerAngle) * piggy.speed
+                        piggy.rectPos = [piggy.getBoundingClientRect().left,piggy.getBoundingClientRect().top]
+
+                        piggy.pos[0] = Math.max(Math.min(piggy.pos[0],doge('area').offsetWidth-16),16)
+                        piggy.pos[1] = Math.max(Math.min(piggy.pos[1],doge('area').offsetHeight-16),16)
+    
+                        piggy.updatePosition()
+    
+                        for(let i = 0; i < piggy.dirVels.length; i++) {
+                            const dirVel = piggy.dirVels[i]
+                            piggy.pos[0] += Math.cos(dirVel.angle) * dirVel.speed
+                            piggy.pos[1] += Math.sin(dirVel.angle) * dirVel.speed
+                
+                            dirVel.speed /= dirVel.div
+                        }
+    
+                        doge('area').querySelectorAll('.projectile').forEach(proj => {
+                            if(isColliding(piggy, proj) && proj.origin !== player) {
+                                proj.destroy()
+                                piggy.damage(proj.data.damage)
+                            }
+                        })
+    
+                        doge('area').querySelectorAll('.piggy').forEach(otherPiggy => {
+                            const angle = Math.atan2(otherPiggy.pos[1] - piggy.pos[1], otherPiggy.pos[0] - piggy.pos[0])
+                            if (isColliding(piggy, otherPiggy) && piggy !== otherPiggy) {
+                                const distance = Math.sqrt(
+                                    Math.pow(piggy.pos[0] - otherPiggy.pos[0],2) + 
+                                    Math.pow(piggy.pos[1] - otherPiggy.pos[1],2)
+                                )
+                                
+                                const overlap = (36 - distance) / 10
+                                piggy.pos[0] -= Math.cos(angle) * overlap
+                                piggy.pos[1] -= Math.sin(angle) * overlap                    
+                            }
+                        })
+
+                        if(piggy.pos[0] > player.centerPos[0]) {
+                            addStyles(piggy, {
+                                scale: '1 1'
+                            })
+                            addStyles(piggy.querySelector('.enemyHealthBarContainer'), {
+                                scale: '1 1'
+                            })
+                        } else {
+                            addStyles(piggy, {
+                                scale: '-1 1'
+                            }),
+                            addStyles(piggy.querySelector('.enemyHealthBarContainer'), {
+                                scale: '-1 1'
+                            })
+                        }
+                    }
+                }
+
+                doge('area').append(piggy)
+
+                piggy.damage = () => {
+                    if(piggy.alive) {
+                        piggy.querySelector('.enemyHealthBarContainer').style.opacity = '1'
+    
+                        piggy.health--
+                        piggy.health = Math.min(Math.max(piggy.health, 0),player.stats.player.maxHealth / 2)
+                        piggy.querySelector('.innerEnemyHealthBar').style.width = piggy.health / 2 * 100 + '%'
+    
+                        if(piggy.health <= 0) {
+                            piggy.alive = false
+                            piggy.style.opacity = 0
+                            for(let i = 0; i < DeBread.randomNum(5,10); i++) {
+                                pickups.coin(getWeightedChance([500,100,20,4,1]),[...piggy.pos],5,1)
+                            }
+
+                            for(let i = 0; i < 10; i++) {
+                                createParticle(
+                                    0,
+                                    [...piggy.pos],
+                                    DeBread.randomNum(0,10),
+                                    1.2,
+                                    DeBread.randomNum(0,Math.PI*2,10),
+                                    16,
+                                    1.2,
+                                    50,
+                                    {
+                                        color: `rgb(255,255,100)`
+                                    }
+                                )
+                            }
+
+                            DeBread.playSound('audio/glass.mp3',DeBread.randomNum(0.75,1,10))
+                        }
+                    }
+                }
+            }
+        },
         mary_insurance: {
             name: 'Mary Insurance',
             desc: `
@@ -1231,6 +1393,7 @@ const upgrades = [
             desc: `
             <cg>+50</cg> Max ammo
             `,
+            priceMult: 0.9,
             
             apply: () => {
                 modifyStat(['ammo','max'], '+=50')
@@ -1360,6 +1523,21 @@ const upgrades = [
     
             apply: () => {
                 modifyStat(['bullet','enemyBurst'],'+=3')
+            }
+        },
+        irish_brass_knuckles: {
+            name: 'Irish Brass Knuckles',
+            desc: `
+                Melees apply bleeding to enemies.<br>
+                <cg>+0.5</cg> Melee damage multiplier<br>
+                <cg>+7</cg> Melee damage
+            `,
+            priceMult: 0.8,
+    
+            apply: () => {
+                modifyStat(['melee','applyBleeding'], '=true')
+                modifyStat(['melee','damageMult'], '+=0.5')
+                modifyStat(['melee','damage'], '+=7')
             }
         },
         mary_duplicator: {
@@ -3690,7 +3868,7 @@ const powerItems = [
                 -Sets shop reroll price to <cp>$10</cp><br>
             `,
             charge: 150,
-            priceMult: 0,
+            priceMult: 10,
 
             use: () => {
                 player.wave = 0
@@ -3754,7 +3932,7 @@ const powerItems = [
                     [8,32],
                     250,
                     'ease-out',
-                    {backgroundColor: '#a69e9a'}
+                    {backgroundColor: '#9e9e9e'}
                 )
 
                 walfling.tick = () => {
@@ -3763,6 +3941,23 @@ const powerItems = [
                     if(walfling.ticksActive >= 500) {
                         walfling.destroy()
                     }
+
+                    walfling.rectPos = [walfling.getBoundingClientRect().left,walfling.getBoundingClientRect().top]
+                    const angle = Math.atan2(e.cursorPos[1] - walfling.rectPos[1] - walfling.offsetHeight / 2, e.cursorPos[0] - walfling.rectPos[0] - walfling.offsetWidth / 2)
+                    const frames = {
+                        "-3": 0,
+                        "-2": 1,
+                        "-1": 2,
+                        "0": 5,
+                        "1": 8,
+                        "2": 7,
+                        "3": 6,
+                        "4": 3,
+                        "-4": 3
+                    }
+
+                    const dir = Math.round(angle / (Math.PI / 4))
+                    walfling.style.backgroundPosition = `-${(frames[dir] * 32) + 2 * frames[dir]}px 0px`
                 }
 
                 walfling.destroy = () => {
@@ -3845,7 +4040,7 @@ const powerItems = [
                     left: bird.pos[0]+'px',
                     top: bird.pos[1]+'px',
                     translate: '-50% -50%',
-                    backgroundImage: 'url(graphics/enemies/chudBird.gif)',
+                    backgroundImage: 'url(graphics/enemies/chudChip.gif)',
                     backgroundSize: 'cover',
                     zIndex: '10'
                 })
@@ -4150,7 +4345,7 @@ function openShop(upgradeList) {
             const data = player.moneyBonusQueue[key]
             createTimeout(() => {
                 const bonus = document.createElement('div')
-                bonus.innerHTML = `<strong>+$${data.value}</strong> <span style="color: grey;">-</span> <span style="color: white;">${data.text}</span>`
+                bonus.innerHTML = `<strong>+${`${saveData.selectedCharacter === 'walf' ? '' : '$'}`+formatNumber(Math.floor(data.value))+`${saveData.selectedCharacter === 'walf' ? '🧇' : ''}`}</strong> <span style="color: grey;">-</span> <span style="color: white;">${data.text}</span>`
                 addStyles(bonus, {
                     color: 'rgb(255, 255, 100)',
                     width: 'fit-content',
@@ -4346,7 +4541,7 @@ function createShopItems(items) {
                 <span>${roman(item.tier+1)}</span>
             </div>
             <div class="shopItemPrice">
-                <span>$${formatNumber(itemMeta.cost)}</span>
+                <span>${`${saveData.selectedCharacter === 'walf' ? '' : '$'}`+formatNumber(itemMeta.cost)+`${saveData.selectedCharacter === 'walf' ? '🧇' : ''}`}</span>
             </div>
             <img src="graphics/${texturePath}/${randomItems[key].id}.${textureExtension}">
         `
@@ -4854,6 +5049,31 @@ function closeShop() {
                             50,
                             {
                                 color: `#793a80`
+                            }
+                        )
+                    }
+                }
+            })
+
+            document.querySelectorAll('.piggy').forEach(piggy => {
+                if(!piggy.alive) {
+                    piggy.style.opacity = '1'
+                    piggy.alive = true
+                    piggy.health = 2
+                    piggy.updateHealth()
+
+                    for(let i = 0; i < 10; i++) {
+                        createParticle(
+                            0,
+                            [...piggy.pos],
+                            DeBread.randomNum(0,10),
+                            1.1,
+                            DeBread.randomNum(0,Math.PI*2,10),
+                            16,
+                            1.1,
+                            50,
+                            {
+                                color: `rgb(255,255,100)`
                             }
                         )
                     }

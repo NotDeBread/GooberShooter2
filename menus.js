@@ -129,6 +129,16 @@ function startMainMenu(removeStartScreen = true) {
     if(navigator.userAgent.includes('Firefox') && saveData.firstLogin) {
         openPrompt('You\'re running Firefox','Goober Shooter 2 runs on a tick-based system using the setInterval function. On Firefox browsers this function does not have drift correction, so the game may run slower then expected.',[{text: 'I understand',onclick: closePrompt}])
     }
+
+    for(const key of characterArray) {
+        if(characterCredits[key] === undefined) {
+            createNotification('Whoops...',`Character credit for ${key} isn't defined!`)
+        }
+
+        if(achievements[`${key}_Perfection`] === undefined) {
+            createNotification('Whoops...',`Perfection achievement for ${key} isn't defined!`)
+        }
+    }
 }
 
 doge('gameStartScreen').onclick = startMainMenu
@@ -249,8 +259,8 @@ function tryPlay() {
                 {
                     text: 'Nah i know what im doing',
                     onclick: () => {
-                        openMenu('gameSettings') 
-                        openGameSettingsMenu(0)
+                        saveData.tutorialBeat = true
+                        openMenu('characterSelect') 
                         closePrompt()
                     }
                 }
@@ -590,7 +600,27 @@ function openCharacterSkins() {
         promptBody.append(button)
     }
 
-    openPrompt(`${character.name}'s skins`, promptBody,[{text:'Close',onclick:closePrompt}])
+    openPrompt(`${character.name}'s skins`, promptBody,[{text:'Close',onclick:closePrompt}],[300,300])
+}
+
+function getRandomCharacter() {
+    let characterPicked = false
+    while(!characterPicked) {
+        const randomCharacter = Object.keys(characters)[DeBread.randomNum(0,Object.keys(characters).length-1)]
+
+        let characterUnlocked = false
+        if(characters[randomCharacter].unlockable) {
+            if(saveData.stats.unlocked.characters.includes(randomCharacter)) {
+                characterUnlocked = true
+            }
+        } else {
+            characterUnlocked = true
+        }
+
+        if(characterUnlocked) {
+            return randomCharacter
+        }
+    }
 }
 
 let currentCosmeticLayer = 0
@@ -1030,7 +1060,7 @@ const creditsHTML = `
 
 const creditProfiles = {
     debread: {
-        name: 'DeBread',
+        name: 'Fella',
         socials: {
             Website: 'https://debread.space/',
             Twitter: 'https://twitter.com/notdebread',
@@ -1078,6 +1108,13 @@ const creditProfiles = {
             Game: 'https://floombo.itch.io/garn47'
         }
     },
+    edmund: {
+        name: 'Edmund McMillen',
+        socials: {
+            Twitter: 'https://twitter.com/edmundmcmillen',
+            Website: 'https://edmundmcmillen.tumblr.com/'
+        }
+    },
     isaac: {
         name: 'Edmund McMillen',
         socials: {
@@ -1104,6 +1141,12 @@ const creditProfiles = {
         name: 'Chalk',
         socials: {
             YEEN_TOWN: 'https://yeen.town/@Chalkllate'
+        }
+    },
+    lore: {
+        name: 'Lore',
+        socials: {
+            YEEN_TOWN: 'https://yeen.town/@plagued_lore'
         }
     },
     remagworc: {
@@ -1188,6 +1231,10 @@ const creditProfiles = {
     //         Website: 'https://squishyfishybelle.carrd.co/',
     //     }
     // },
+    frommief: {
+        name: 'frommief',
+        socials: {}
+    },
     skywalkr: {
         name: 'Skywalkr',
         socials: {}
@@ -1205,6 +1252,10 @@ const creditProfiles = {
     corvid: {
         name: 'Corvid',
         socials: {}
+    },
+    tobyfox: {
+        name: 'Toby Fox',
+        socials: {}
     }
 }
 
@@ -1216,15 +1267,19 @@ const characterCredits = {
     tammy: 'plinkel',
     lorna: 'plinkel',
     tana: 'plinkel',
+    luke: 'plinkel',
     nyan: 'nyan',
     jaden: 'jaden',
     peep: 'peep',
     slip: 'slip',
     sasha: 'redjive',
+    the_horse: 'debread',
     car: 'garn',
+    isaac: 'edmund',
     erix: 'erix',
     walf: 'walf',
     jake: 'chalk',
+    lore: 'lore',
     crow: 'remagworc',
     krazy: 'krazy',
     bean: 'bean',
@@ -1237,11 +1292,13 @@ const characterCredits = {
     wasp: 'wasp',
     wolff: 'wolff',
     chip: 'chip',
-    // belle: 'belle',
+    hana: 'frommief',
     skywalkr: 'skywalkr',
     meringue: 'fae',
     glorp: 'kadence',
-    tico: 'corvid'
+    tico: 'corvid',
+    friend: 'tobyfox',
+    tutorialist: 'debread'
 }
 
 function getCharacterCreditsHTML() {
@@ -1745,7 +1802,7 @@ function openAchievements() {
                         </div>
                     </div>
                 </div>
-                ${achievement.unlock.data.desc}`
+                ${achievement.unlock.data.desc ?? ''}`
             }
 
             if(unlocked) {
@@ -1774,4 +1831,90 @@ function openAchievements() {
     const percent = achievementStatus[0] / (achievementStatus[0]+achievementStatus[1])
     doge('collectionProgressBarText').innerText = `${achievementStatus[0]}/${Object.keys(achievements).length} (${DeBread.round(percent*100,1)}%)`
     doge('innerCollectionProgressBar').style.width = percent*100+'%'
+}
+
+function openStats() {
+    let upgradesBought = 0
+    for(upgrade of saveData.stats.collection.items) {
+        upgradesBought += upgrade.count
+    }
+
+    openPrompt(
+        'Statistics',
+        `
+            <div style="display: flex; gap: 5px;">
+                <div class="statSection">
+                    <div class="statStat">
+                        <span>Enemies killed:</span>
+                        <span>${formatNumber(saveData.stats.list.Enemies_Killed)}</span>
+                    </div>
+                    <div class="statStat">
+                        <span>Shop rerolls:</span>
+                        <span>${formatNumber(saveData.stats.list.Times_Rerolled)}</span>
+                    </div>
+                    <div class="statStat">
+                        <span>Deaths:</span>
+                        <span>${formatNumber(saveData.stats.list.Times_Died)}</span>
+                    </div>
+                    <div class="statStat">
+                        <span>Items bought:</span>
+                        <span>${formatNumber(upgradesBought)}</span>
+                    </div>
+                </div>
+                <div class="statSection">
+                    <span>Item distribution</span>
+                    <div id="statsUpgradeList"></div>
+                </div>
+            </div>
+        `,
+        [
+            {
+                text: 'Close',
+                onclick: () => {closePrompt()}
+            }
+        ],
+        [650,350]
+    )
+
+    let allUpgrades = []
+    for(let r = 0; r < 5; r++) {
+        for(const key in upgrades[r]) {
+            allUpgrades.push({data: upgrades[r][key], key: key})
+        }
+    }
+
+    let filteredUpgrades = []
+    for(const upgrade of allUpgrades) {
+        for(const colUpgrade of saveData.stats.collection.items) {
+            if(upgrade.data.name === colUpgrade.name) {
+                filteredUpgrades.push({...upgrade, ...{count: colUpgrade.count}})
+            }
+        }
+    }
+
+    let sortedUpgrades = filteredUpgrades.sort((a, b) => b.count - a.count);
+    let highestValue = sortedUpgrades[0].count
+
+    for(const upgrade of sortedUpgrades) {
+        const div = document.createElement('div')
+        div.classList.add('statUpgrade')
+        div.innerHTML = `
+            <img src="graphics/upgrades/${upgrade.key}.png">
+            <div class="statUpgradeBar">
+                <div style="width: ${upgrade.count / highestValue*100}%;">
+                    <span style="right: 0px;">${upgrade.count}</span>
+                </div>
+            </div>
+        `
+
+        if(upgrade.count / highestValue <= 0.15) {
+            addStyles(div.querySelector('span'), {
+                translate: '25px 0px',
+                marginRight: '0',
+                color: 'white'
+            })
+        }
+
+        doge('statsUpgradeList').append(div)
+    }
 }

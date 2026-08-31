@@ -287,7 +287,7 @@ function tooltip(pos, title, tags, desc, price) {
     }
 
     if(price) {
-        doge('tooltipPrice').innerText = '$' + price
+        doge('tooltipPrice').innerText = `${saveData.selectedCharacter === 'walf' ? '' : '$'}`+formatNumber(Math.ceil(price))+`${saveData.selectedCharacter === 'walf' ? '🧇' : ''}`
     } else {
         doge('tooltipPrice').innerText = ''
     }
@@ -854,7 +854,7 @@ const achievements = {
     },
     Whoops: {
         name: 'Whoops',
-        desc: 'Kill yourself using an explosion.',
+        desc: 'Die to an explosion.',
 
         unlock: {
             type: 'Character',
@@ -897,6 +897,66 @@ const achievements = {
             saveData.stats.unlocked.characters.push('isaac')
         }
     },
+    Found_Me: {
+        name: 'You found me',
+        desc: 'Talk to Ashton in the credits room.',
+
+        unlock: {
+            type: 'Character',
+            name: 'Ashton',
+            src: 'graphics/characters/ashtonPortrait.png',
+            data: characters.ashton
+        },
+
+        run: () => {
+            saveData.stats.unlocked.characters.push('ashton')
+        }
+    },
+    Big_Teeth: {
+        name: 'Big Teeth',
+        desc: 'Beat wave 25 as Ashton.',
+
+        unlock: {
+            type: 'Character',
+            name: 'Tammy',
+            src: 'graphics/characters/tammyPortrait.png',
+            data: characters.tammy
+        },
+
+        run: () => {
+            saveData.stats.unlocked.characters.push('tammy')
+        }
+    },
+    Unc: {
+        name: 'Unc still got it',
+        desc: 'Defeat a Plinkel boss as any Plinkel character.',
+
+        unlock: {
+            type: 'Character',
+            name: 'Lorna',
+            src: 'graphics/characters/lornaPortrait.png',
+            data: characters.lorna
+        },
+
+        run: () => {
+            saveData.stats.unlocked.characters.push('lorna')
+        }
+    },
+    Law_Enforcement: {
+        name: 'Law Enforcement',
+        desc: 'Beat wave 50 as Lorna.',
+
+        unlock: {
+            type: 'Character',
+            name: 'Tana',
+            src: 'graphics/characters/tanaPortrait.png',
+            data: characters.tana
+        },
+
+        run: () => {
+            saveData.stats.unlocked.characters.push('tana')
+        }
+    },
     Divorce: {
         name: 'Divorce',
         desc: 'Defeat Tana as Lorna.',
@@ -915,26 +975,6 @@ const achievements = {
     Knowledgeable: {
         name: 'Knowledgeable',
         desc: 'Complete the tutorial quickly.',
-        difficulty: 0,
-    },
-    Useless_Knowledge_I: {
-        name: 'Useless Knowledge I',
-        desc: 'Talk to Fella about himself.',
-        difficulty: 0,
-    },
-    Useless_Knowledge_II: {
-        name: 'Useless Knowledge II',
-        desc: 'Talk to Fella about Goober Shooter 2.',
-        difficulty: 0,
-    },
-    Useless_Knowledge_III: {
-        name: 'Useless Knowledge III',
-        desc: 'Talk to Fella about SkillsUSA.',
-        difficulty: 0,
-    },
-    Useless_Knowledge_IV: {
-        name: 'Useless Knowledge IV',
-        desc: 'Talk to Fella about the rug.',
         difficulty: 0,
     },
     The_Egg: {
@@ -1163,6 +1203,11 @@ const achievements = {
         desc: 'Reach wave 100 using Jake.',
         difficulty: 0,
     },
+    lore_Perfection: {
+        name: 'Lore Perfection',
+        desc: 'Reach wave 100 using Lore.',
+        difficulty: 0,
+    },
     crow_Perfection: {
         name: 'Crow Perfection',
         desc: 'Reach wave 100 using Crow.',
@@ -1325,6 +1370,11 @@ const achievements = {
         desc: 'Reach wave 100 using Tico.',
         difficulty: 0,
     },
+    friend_Perfection: {
+        name: 'FRIEND Perfection',
+        desc: 'Reach wave 100 using FRIEND.',
+        difficulty: 0,
+    },
     tutorialist_Perfection: {
         name: 'Tutorialist Perfection',
         desc: 'Reach wave 100 using The Tutorialist.',
@@ -1332,15 +1382,16 @@ const achievements = {
     },
     Character_Perfectionist: {
         name: 'Character Perfectionist',
-        desc: 'Reach wave 100 on every character. [not working yet]',
+        desc: 'Defeat The Tutorialist on every character.',
         difficulty: 0,
     }
 }
 
-function getAchievement(key) {
+function getAchievement(key, run) {
     const achievement = achievements[key]
     if(!saveData.achievements.includes(key) && Object.keys(achievements).includes(key) && (![2,3].includes(saveData.gameSettings.gamemode) || achievement.ignoreGamemode) && saveData.selectedChallenges.length === 0) {
         saveData.achievements.push(key)
+        run?.()
 
         createAchNoti(achievement, key)
 
@@ -1356,6 +1407,8 @@ function getAchievement(key) {
 
         if(achievement.run) achievement.run()
         save()
+    } else if(saveData.settings.debug) {
+        console.log(`Tried to get ${key}, but has failed :(`)
     }
 }
 

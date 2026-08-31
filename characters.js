@@ -685,7 +685,6 @@ const characters = {
     debread: {
         name: 'Bread',
         desc: 'Some guy',
-        taunts: 7,
         color: [244, 175, 84],
 
         tagList: [
@@ -704,19 +703,20 @@ const characters = {
             {
                 name: 'Legacy Bread',
                 src: 'debread_old',
-                taunts: 1,
             },
             {
                 name: 'Legacy Arctic Bread',
                 src: 'arctic_debread_old',
-                taunts: 4,
+            },
+            {
+                name: 'Cliff',
+                src: 'cliff',
             }
         ]
     },
     fella: {
         name: 'Fella',
         desc: 'Some guy but real',
-        taunts: 1,
         info: `Starts with the \'Poker Chip\' Power Item.<br>${powerItems[1].poker_chip.desc}`,
         color: [84, 84, 84],
 
@@ -742,12 +742,12 @@ const characters = {
     plonk: {
         name: 'Plonk',
         desc: 'Some other guy',
-        taunts: 9,
         color: [127, 127, 127],
 
         tagList: [
             {text:'Cat',col:'#484848'},
             {text:'GS1',col:'#e0a24a'},
+            {text:'Plinkel Pack',col:'#386942'},
         ],
 
         weapon: weaponPresets.piss,
@@ -764,7 +764,7 @@ const characters = {
         name: 'Ashton',
         desc: 'bro thinks hes james sunderland',
         color: [105, 51, 78],
-        taunts: 1,
+        unlockable: true,
 
         tagList: [
             {text:'Arctic Fox',col:'#5996a8'},
@@ -778,6 +778,7 @@ const characters = {
         name: 'Tammy',
         desc: 'Some other other guy',
         color: [76, 81, 128],
+        unlockable: true,
 
         tagList: [
             {text:'Dire Wolf',col:'#9397b6'},
@@ -792,6 +793,7 @@ const characters = {
         desc: 'ACAB? Even her?',
         color: [45, 27, 30],
         taunts: 1,
+        unlockable: true,
 
         tagList: [
             {text:'Black Wolf',col:'#592c23'},
@@ -822,10 +824,10 @@ const characters = {
                 name: 'Bridge',
                 src: 'bridge',
             },
-            // {
-            //     name: 'Senior',
-            //     src: 'senior',
-            // },
+            {
+                name: 'Senior',
+                src: 'senior',
+            },
             // {
             //     name: 'The Stranger',
             //     src: 'stranger',
@@ -850,8 +852,9 @@ const characters = {
     },
     tana: {
         name: 'Tana',
-        desc: '',
+        desc: 'White woman jumpscare',
         color: [255,255,255],
+        unlockable: true,
 
         tagList: [
             {text:'Dhole',col:'#5cbde6'},
@@ -903,7 +906,6 @@ const characters = {
     },
     peep: {
         name: 'Peep',
-        desc: '',
         taunts: 2,
         color: [255, 255, 255],
         unlockable: true,
@@ -923,7 +925,6 @@ const characters = {
     },
     slip: {
         name: 'Slip',
-        desc: '',
         color: [128, 127, 123],
 
         tagList: [
@@ -977,7 +978,6 @@ const characters = {
     },
     // olive: {
     //     name: 'Olive',
-    //     desc: '',
     //     taunts: 1,
     //     tag: 'Cat',
     //     tagCol: '#9c8670',
@@ -1046,7 +1046,6 @@ const characters = {
     },
     isaac: {
         name: 'Isaac',
-        desc: '',
         color: [129, 113, 106],
         unlockable: true,
 
@@ -1077,7 +1076,6 @@ const characters = {
     },
     walf: {
         name: 'Walf',
-        desc: '',
         color: [158, 158, 158],
 
         tagList: [
@@ -1103,6 +1101,11 @@ const characters = {
             {
                 name: 'flaW',
                 src: 'flaw',
+                taunts: 1,
+            },
+            {
+                name: 'Green Balf',
+                src: 'green_balf',
                 taunts: 1,
             },
         ],
@@ -1131,16 +1134,25 @@ const characters = {
 
         weapon: weaponPresets.spicy_gun
     },
+    lore: {
+        name: 'Lore',
+        color: [88, 93, 112],
+
+        tagList: [
+            {text:'Crow',col:'#299379'},
+            {text: 'GS2',col: '#775db9'},
+        ],
+
+        weapon: weaponPresets.gun
+    },
     // marcy: {
     //     name: 'Marcy',
-    //     desc: '',
     //     tag: 'Fox',
 
     //     weapon: weaponPresets.gun
     // },
     crow: {
         name: 'Crow',
-        desc: '',
         color: [41, 41, 41],
 
         tagList: [
@@ -1164,7 +1176,6 @@ const characters = {
     },
     bean: {
         name: 'Bean',
-        desc: '',
         color: [178, 101, 29],
 
         tagList: [
@@ -1229,7 +1240,6 @@ const characters = {
     },
     phoenix: {
         name: 'Phoenix',
-        desc: '',
         color: [248, 135, 0],
 
         info: `
@@ -1266,7 +1276,6 @@ const characters = {
     },
     allx: {
         name: 'Quantum',
-        desc: '',
         color: [40, 32, 12],
 
         info: `Starts with the \'Tesla Coil\' Power Item.<br>${powerItems[4].tesla_coil.desc}`,
@@ -1351,20 +1360,17 @@ const characters = {
     },
     // nova: {
     //     name: 'Nova',
-    //     desc: '',
 
     //     weapon: weaponPresets.gun
     // },
     // zeko: {
     //     name: 'Zeko',
-    //     desc: '',
     //     tag: 'Arctic Fox',
     //     tagCol: 'rgb(89, 150, 168)',
     //     weapon: weaponPresets.gun
     // },
     udev: {
         name: 'udev',
-        desc: '',
         info: 'All stats are randomly multiplied between 0.1x and 10x at run start.',
         color: [0, 255, 0],
 
@@ -1391,7 +1397,6 @@ const characters = {
     },
     snorp: {
         name: 'Douglas',
-        desc: '',
         color: [237, 237, 237],
 
         info: `
@@ -1416,7 +1421,6 @@ const characters = {
     },
     wasp: {
         name: 'Wasp',
-        desc: '',
         taunts: 1,
         tag: 'Fox',
         tagCol: '#9c4321',
@@ -1533,7 +1537,6 @@ const characters = {
     // },
     // belle: {
     //     name: 'Belle',
-    //     desc: '',
     //     tag: 'Porcupinefish',
     //     tagCol: 'rgb(232, 213, 157)',
     //     color: [232, 213, 157],
@@ -1558,7 +1561,6 @@ const characters = {
     },
     meringue: {
         name: 'Meringue',
-        desc: '',
         color: [175, 184, 204],
 
         tagList: [
@@ -1623,7 +1625,6 @@ const characters = {
     },
     friend: {
         name: 'FRIEND',
-        desc: '',
         color: [255,255,255],
         unlockable: true,
 
@@ -1650,7 +1651,6 @@ const characters = {
     },
     tutorialist: {
         name: 'The Tutorialist',
-        desc: '',
         color: [255,255,255],
         unlockable: true,
 

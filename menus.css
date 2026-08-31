@@ -182,7 +182,30 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 40px;
+    height: 25px;
+    overflow: hidden;
+}
+
+#smallMenuButtons button img {
+    width: 16px;
+    height: 16px;
+    transition: width ease-in-out 250ms, opacity ease-in-out 250ms;
+}
+
+#smallMenuButtons button span {
+    width: 0;
+    opacity: 0;
+    transition: width ease-in-out 250ms, opacity ease-in-out 250ms;
+}
+
+#smallMenuButtons button:hover span {
+    width: 100px;
+    opacity: 1;
+}
+
+#smallMenuButtons button:hover img {
+    width: 0;
+    opacity: 0;
 }
 
 #ffContainer {
@@ -758,6 +781,62 @@
     padding: 5px;
     pointer-events: none;
     background: linear-gradient(to bottom, transparent, black);
+}
+
+/* Stats */
+.statSection {
+    border: 1px solid grey;
+    width: 100%;
+    padding: 5px;
+    height: 250px;
+    display: flex;
+    flex-direction: column;
+}
+
+.statStat {
+    border: 1px solid grey;
+    display: flex;
+    justify-content: space-between;
+    padding: 0px 5px;
+    margin-bottom: 5px;
+}
+
+#statsUpgradeList {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 100%;
+    overflow-y: scroll;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to bottom, white 90%, transparent 100%);
+    padding-bottom: 50px;
+}
+
+.statUpgrade {
+    display: flex;
+    gap: 5px;   
+}
+
+.statUpgradeBar {
+    width: 100%;
+    border: 1px solid grey;
+    height: 20px;
+}
+
+.statUpgradeBar div {
+    height: 100%;
+    width: 50%;
+    background-color: white;
+    position: relative;
+    display: flex;
+    justify-content: end;
+    align-items: center;
+}
+
+.statUpgradeBar div span {
+    color: black;
+    margin-right: 5px;
+    font-weight: 700;
 }
 
 /* Settings */

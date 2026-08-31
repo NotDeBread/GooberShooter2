@@ -275,6 +275,7 @@ function createPlayer() {
 
                 explosionPower: 0, //How big and powerful the explosion created by meleeing an enemy is.
                 heal: 0, //How much the player heals when meleeing an enemy.
+                applyBleeding: false,
             },
             ammo: {
                 current: 10, //Ignore this
@@ -320,111 +321,202 @@ function createPlayer() {
 
         //Functions
         damage: (baseAmount, light, origin, hardDamage = 0, ignoreImmunity) => {
-            if(!player.alive) return
-            let idolAlive = false
-            for(const enemy of elems.enemies) {
-                if(enemy.data.data.name === 'Idol' && enemy.data.active) {
-                    idolAlive = true
-                    break
-                }
-            }
+            if(player.alive && baseAmount) {
+                const amount = baseAmount / (1 + (player.stats.player.armor ?? 0))
 
-            const amount = baseAmount / (1 + (player.stats.player.armor ?? 0))
-
-            const startAmount = player.health
-            if(!player.immune && e.gameUpdates - (player.lastHitDate >= player.stats.player.immunityTime || ignoreImmunity) && !player.stats.cheats.invincible) {
-                if(player.health - amount < 1 && player.health > 1) {
-                    player.health = 1
-                } else {
-                    if(amount > 0) {
-                        player.health -= amount
-                    } else if(!idolAlive) {
+                if(amount > 0 && ((!player.immune && e.gameUpdates - player.lastHitDate >= player.stats.player.immunityTime && !player.stats.cheats.invincible) || ignoreImmunity)) { //Damage
+                    
+                    if(player.health - amount < 1 && player.health > 1) { //Grace
+                        player.health = 1
+                    } else {
                         player.health -= amount
                     }
-                }
-            }
-
-            player.hardDamage += hardDamage
-            player.hardDamage = Math.max(Math.min(player.hardDamage, player.stats.player.maxHealth / 2),0)
-
-            player.health = Math.max(Math.min(player.health, player.stats.player.maxHealth - player.hardDamage),0)
-            
-            if(amount > 0 && !player.immune && e.gameUpdates - player.lastHitDate >= player.stats.player.immunityTime && !player.stats.cheats.invincible) {          
-                player.gameOverStats.damageTaken += -(player.health - startAmount)
-                
-                player.elem.style.animation = 'none'
-                setTimeout(() => {
-                    player.elem.style.animation = 'playerHit 250ms ease-out 1 forwards'
-                }, e.gameUpdateInterval)
-                
-                if(!light) {
-                    player.getPower(-(Math.min(amount / 2, 15)))
-                    DeBread.playSound('audio/hit.mp3')
                     
-                    player.combo = Math.round(player.combo / 2)
-
-                    doge('streakCount').innerText = 'x'+Math.floor(player.combo/100)
-                    DeBread.easeShake(doge('streakCount'),10,5,0.25)
-
-                    player.perfectWave = false
+                    player.hardDamage += hardDamage
+                    player.hardDamage = Math.max(Math.min(player.hardDamage, player.stats.player.maxHealth * 0.75),0)
                     player.lastHitDate = e.gameUpdates
-
-                    //Explosive Damage
-                    if(DeBread.randomNum(1,100) < player.stats.player.explosiveHitChance) {
-                        createExplosion([...player.centerPos],player.stats.player.size * 3, player.stats.bullet.damage * player.stats.player.explosiveHitDamage, 50, true)
-                    }
-
-                    player.perfectSet = false
                     
-                    if(saveData.selectedChallenges.includes('perfect') && doge('perfect') && player.timesHit === 0) {
-                        DeBread.playSound('audio/perfectFail.mp3')
-                        DeBread.easeShake(doge('perfect'),10,10,0.25)
-                    }
-                    player.timesHit++
-                }
+                    if(!light) {
+                        player.perfectSet = false
+                        
+                        player.combo = Math.round(player.combo / 2)
+                        
+                        doge('streakCount').innerText = 'x'+Math.floor(player.combo/100)
+                        DeBread.easeShake(doge('streakCount'),10,5,0.25)
+                        
+                        if(player.health <= 0) {player.kill()}
 
-            }
+                        //Passive stuff
+                        //Explosive Damage
+                        if(DeBread.randomNum(1,100) < player.stats.player.explosiveHitChance) {
+                            createExplosion([...player.centerPos],player.stats.player.size * 3, player.stats.bullet.damage * player.stats.player.explosiveHitDamage, 50, true)
+                        }
 
-            doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'   
-            doge('hardDamageBar').style.width = player.hardDamage / player.stats.player.maxHealth * 100 + '%'    
-
-            //Health bar num
-            doge('healthBarNum').innerHTML = ''
-            const healthNum = document.createElement('div')
-            for(let i = 0; i < formatNumber(Math.ceil(player.health)).length; i++) {
-                const num = healthNum.cloneNode()
-                num.innerText = formatNumber(Math.ceil(player.health))[i]
-                doge('healthBarNum').append(num)
-                
-                DeBread.easeShake(num, 10, Math.min(amount / 3, 25), 0.5)
-            }
-            DeBread.easeShake(doge('healthBarContainer'), 10, Math.min(amount / 6, 25), 0.5)
-
-            if(amount < 0 && Math.abs(DeBread.round(amount, 1)) !== 0) {
-                if(!idolAlive && !light) {
-                    const popup = createPopupText('+'+DeBread.round(Math.abs(amount), 1), player.centerPos)
-                    popup.style.color = 'lime'
-                    popup.style.fontSize = '15px'
-                    doge('area').append(popup)
+                        //Challenge stuff
+                        if(saveData.selectedChallenges.includes('perfect') && doge('perfect') && player.timesHit === 0) {
+                            DeBread.playSound('audio/perfectFail.mp3')
+                            DeBread.easeShake(doge('perfect'),10,10,0.25)
+                        }
+                        player.timesHit++
     
-                    if(amount <= -25) {
-                        createParticles(player.centerPos, 10, 10, [25, 50], 500, 'ease-out', {backgroundColor: 'lime',zIndex: '5'})
+                        //Hit effects
+                        DeBread.playSound('audio/hit.mp3')
+                        DeBread.easeShake(doge('healthBarContainer'), 10, Math.min(amount / 6, 25), 0.5)
+
+                        DeBread.easeShake(doge('area'), 10, Math.min(amount / 10, 10), 0.5)
+
+                        player.elem.style.animation = 'none'
+                        setTimeout(() => {
+                            player.elem.style.animation = 'playerHit 250ms ease-out 1 forwards'
+                        }, e.gameUpdateInterval)
+                    }
+                } else if(amount < 0) { //Heal
+                    let idolAlive = false
+                    for(const enemy of elems.enemies) {
+                        if(enemy.data.data.name === 'Idol' && enemy.data.active) {
+                            idolAlive = true
+                            break
+                        }
+                    }
+
+                    if(!idolAlive) {
+                        player.health -= amount
                     }
 
                     player.isBleeding = false
                 }
+                
+                player.health = Math.max(0,Math.min(player.health,player.stats.player.maxHealth - player.hardDamage))
+                
+                doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'
+                doge('hardDamageBar').style.width = player.hardDamage / player.stats.player.maxHealth * 100 + '%'
+                doge('healthBarNum').innerHTML = ''
+                const healthNum = document.createElement('div')
+                for(let i = 0; i < formatNumber(Math.ceil(player.health)).length; i++) {
+                    const num = healthNum.cloneNode()
+                    num.innerText = formatNumber(Math.ceil(player.health))[i]
+                    doge('healthBarNum').append(num)
+                    
+                    DeBread.easeShake(num, 10, Math.min(amount / 3, 25), 0.5)
+                } 
+
+                //Health based effects
+                if(player.health <= player.stats.player.maxHealth * 0.25) {
+                    doge('healthBarContainer').style.animation = 'healthBarAnim 1s ease-out infinite forwards'
+                } else {
+                    doge('healthBarContainer').style.animation = 'none'
+                }
+
+                updateArea()
+
+                return amount
             }
+            // console.log(player.alive)
+            // if(!player.alive) return 0
+            // let idolAlive = false
+            // for(const enemy of elems.enemies) {
+            //     if(enemy.data.data.name === 'Idol' && enemy.data.active) {
+            //         idolAlive = true
+            //         break
+            //     }
+            // }
 
-            if(player.health <= 0) player.kill()
+            // const amount = baseAmount / (1 + (player.stats.player.armor ?? 0))
 
-            if(player.health <= player.stats.player.maxHealth * 0.25) {
-                doge('healthBarContainer').style.animation = 'healthBarAnim 1s ease-out infinite forwards'
-            } else {
-                doge('healthBarContainer').style.animation = 'none'
-            }
+            // const startAmount = player.health
+            // if(!player.immune && e.gameUpdates - (player.lastHitDate >= player.stats.player.immunityTime || ignoreImmunity) && !player.stats.cheats.invincible) {
+            //     if(player.health - amount < 1 && player.health > 1) {
+            //         player.health = 1
+            //     } else {
+            //         if(amount > 0) {
+            //             player.health -= amount
+            //         } else if(!idolAlive) {
+            //             player.health -= amount
+            //         }
+            //     }
+            // }
 
-            updateArea()
-            return amount
+            // player.hardDamage += hardDamage
+            // player.hardDamage = Math.max(Math.min(player.hardDamage, player.stats.player.maxHealth / 2),0)
+
+            // player.health = Math.max(Math.min(player.health, player.stats.player.maxHealth - player.hardDamage),0)
+            
+            // if(amount > 0 && !player.immune && e.gameUpdates - player.lastHitDate >= player.stats.player.immunityTime && !player.stats.cheats.invincible) {          
+            //     player.gameOverStats.damageTaken += -(player.health - startAmount)
+                
+            //     player.elem.style.animation = 'none'
+            //     setTimeout(() => {
+            //         player.elem.style.animation = 'playerHit 250ms ease-out 1 forwards'
+            //     }, e.gameUpdateInterval)
+                
+            //     if(!light) {
+            //         player.getPower(-(Math.min(amount / 2, 15)))
+            //         DeBread.playSound('audio/hit.mp3')
+                    
+            //         player.combo = Math.round(player.combo / 2)
+
+            //         doge('streakCount').innerText = 'x'+Math.floor(player.combo/100)
+            //         DeBread.easeShake(doge('streakCount'),10,5,0.25)
+
+            //         player.perfectWave = false
+            //         player.lastHitDate = e.gameUpdates
+
+            //         //Explosive Damage
+            //         if(DeBread.randomNum(1,100) < player.stats.player.explosiveHitChance) {
+            //             createExplosion([...player.centerPos],player.stats.player.size * 3, player.stats.bullet.damage * player.stats.player.explosiveHitDamage, 50, true)
+            //         }
+
+            //         player.perfectSet = false
+                    
+            //         if(saveData.selectedChallenges.includes('perfect') && doge('perfect') && player.timesHit === 0) {
+            //             DeBread.playSound('audio/perfectFail.mp3')
+            //             DeBread.easeShake(doge('perfect'),10,10,0.25)
+            //         }
+            //         player.timesHit++
+            //     }
+
+            // }
+
+            // doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'   
+            // doge('hardDamageBar').style.width = player.hardDamage / player.stats.player.maxHealth * 100 + '%'    
+
+            // //Health bar num
+            // doge('healthBarNum').innerHTML = ''
+            // const healthNum = document.createElement('div')
+            // for(let i = 0; i < formatNumber(Math.ceil(player.health)).length; i++) {
+            //     const num = healthNum.cloneNode()
+            //     num.innerText = formatNumber(Math.ceil(player.health))[i]
+            //     doge('healthBarNum').append(num)
+                
+            //     DeBread.easeShake(num, 10, Math.min(amount / 3, 25), 0.5)
+            // }
+            // DeBread.easeShake(doge('healthBarContainer'), 10, Math.min(amount / 6, 25), 0.5)
+
+            // if(amount < 0 && Math.abs(DeBread.round(amount, 1)) !== 0) {
+            //     if(!idolAlive && !light) {
+            //         const popup = createPopupText('+'+DeBread.round(Math.abs(amount), 1), player.centerPos)
+            //         popup.style.color = 'lime'
+            //         popup.style.fontSize = '15px'
+            //         doge('area').append(popup)
+    
+            //         if(amount <= -25) {
+            //             createParticles(player.centerPos, 10, 10, [25, 50], 500, 'ease-out', {backgroundColor: 'lime',zIndex: '5'})
+            //         }
+
+            //         player.isBleeding = false
+            //     }
+            // }
+
+            // if(player.health <= 0) player.kill()
+
+            // if(player.health <= player.stats.player.maxHealth * 0.25) {
+            //     doge('healthBarContainer').style.animation = 'healthBarAnim 1s ease-out infinite forwards'
+            // } else {
+            //     doge('healthBarContainer').style.animation = 'none'
+            // }
+
+            // updateArea()
+            // return amount
         },
 
         kill: () => {
@@ -592,10 +684,13 @@ function createPlayer() {
                         popup.style.fontSize = Math.min(Math.max(player.stats.melee.damage / 5, 15), 50) + 'px'
                         doge('area').append(popup)
 
+                        if(player.stats.melee.applyBleeding) {
+                            enemy.data.isBleeding = true
+                        }
+
                         if(!enemy.data.alive) {
                             getAchievement('Knuckle_Sandwich')
                         }
-
 
                         player.damage(-player.stats.melee.heal)
 
@@ -802,7 +897,7 @@ function createPlayer() {
         getMoney: (amount) => {
             player.money += amount
 
-            doge('gameMoneyCount').innerText = '$'+formatNumber(Math.floor(player.money))
+            doge('gameMoneyCount').innerText = `${saveData.selectedCharacter === 'walf' ? '' : '$'}`+formatNumber(Math.floor(player.money))+`${saveData.selectedCharacter === 'walf' ? '🧇' : ''}`
             doge('gameMoneyCount').style.setProperty('--moneyRot',DeBread.randomNum(-5,5)+'deg')
             doge('gameMoneyCount').style.setProperty('--moneyScale', 1 + Math.max(Math.min(amount / 50, 1), -0.1))
             doge('gameMoneyCount').style.animation = ''
@@ -2403,7 +2498,7 @@ const updateInterval = DeBread.createInterval(() => {
                     data.size = player.stats.player.droolSize
                     data.speed = 0
                     data.knockback = 0
-                    data.damageInterval = 10
+                    data.damageInterval = player.stats.bullet.shotCooldown * 5
                     data.drillTicks = Infinity
 
                     let angle = 0
@@ -2835,8 +2930,8 @@ const updateInterval = DeBread.createInterval(() => {
             doge('healthBarContainer').style.filter = ''
         }
     
-        if(leechAlive && e.gameUpdates % 5 === 0 && player.health > 10) {
-            player.damage(1, true, undefined, 1)
+        if(leechAlive && e.gameUpdates % 5 === 0) {
+            player.damage(player.health > 10 ? 1 : 1e-300, true, undefined, 1)
         }
     
         //Portal
@@ -4563,6 +4658,20 @@ function spawnPortal() {
             player.moneyBonusQueue.push({
                 text: 'Flawless',
                 value: 50 + player.wave
+            })
+        }
+
+        let piggysAlive = 0 
+        doge('area').querySelectorAll('.piggy').forEach(piggy => {
+            if(piggy.alive) {
+                piggysAlive++
+            }
+        })
+
+        if(piggysAlive) {
+            player.moneyBonusQueue.push({
+                text: 'Money trough',
+                value: player.wave * 2 * piggysAlive
             })
         }
 
