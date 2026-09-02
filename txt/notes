@@ -1,4 +1,4 @@
-# Character creation checklist
+# Character creation checklist (now automated!!)
 - Spritesheet
 - Portrait Texture
 - Large Portrait Texture
@@ -11,7 +11,7 @@
 - Fix inconsistencies with outline width on menus and buttons.
 - Add controller support
 - Limit number of notifications
-- Consumables
+- Consumables (maybe, im not sure anymore)
   - Thick thighs pussy salad
 - Add cosmetics and the ability for them to be unlocked
 - Hide enemy health bars in the hidden challenge
@@ -25,6 +25,7 @@
 - Fix sasha
 - Finish new explosive enemy textures
 - Luke skins
+- Fix walfling multishot
 
 # Required Songs (For people to want to make a soundtrack)
 ## Every track must be loopable (Besides the boss finish riff of course)

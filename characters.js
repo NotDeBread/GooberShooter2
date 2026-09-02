@@ -648,6 +648,41 @@ const weaponPresets = {
             }
         }
     },
+    keytar: {
+        name: 'Keytar',
+        desc: '',
+        textureSize: [8,20],
+        ammoChar: '|',
+        bulletTexture: true,
+
+        pros: [
+            'Ghost ammo'
+        ],
+        cons: [
+        ],
+
+        apply: () => {
+            modifyStat(['player','maxWeaponDistance'],'=30')
+            modifyStat(['bullet','size'],'=14')
+            modifyStat(['bullet','silentShot'], '=true')
+            modifyStat(['bullet','shotParticleColor'],'=[97, 231, 166]')
+            modifyStat(['bullet','drillTicks'],'=20')
+            modifyStat(['bullet','damageInterval'],'=3')
+
+            player.onShoot = proj => {
+                if(player.currentNoteSFX) {
+                    player.currentNoteSFX++
+                    if(player.currentNoteSFX > 4) {
+                        player.currentNoteSFX = 1
+                    }
+                } else {
+                    player.currentNoteSFX = 1
+                }
+
+                DeBread.playSound(`audio/note${player.currentNoteSFX}.mp3`)
+            }
+        }
+    },
     crossbow: {
         name: 'Crossbow',
         desc: 'Long ranged weapon with charging capabilities.',
@@ -1077,6 +1112,7 @@ const characters = {
     walf: {
         name: 'Walf',
         color: [158, 158, 158],
+        noDeathParticles: true,
 
         tagList: [
             {text:'Walf',col:'#9e9e9e'},
@@ -1090,7 +1126,7 @@ const characters = {
         ],
 
         info: `
-            Cannot fire thier own projectiles.<br>
+            Cannot fire their own projectiles.<br>
             <br>
             Starts with the \'Walfling\' Power Item.<br>${powerItems[5].walfling.desc}
         `,
@@ -1106,6 +1142,7 @@ const characters = {
             {
                 name: 'Green Balf',
                 src: 'green_balf',
+                desc: 'He\'s green for an amazing reason! ✅✅',
                 taunts: 1,
             },
         ],
@@ -1114,6 +1151,36 @@ const characters = {
             player.shopWeights[1] = 0
             modifyStat(['player','powerRegen'],'=0.1')
             player.powerItem = powerItems[5].walfling
+
+            player.onDeath = () => {
+                const walfDeath = document.createElement('div')
+                walfDeath.classList.add('entity')
+                addStyles(walfDeath, {
+                    width: player.stats.player.size+'px',
+                    height: player.stats.player.size+'px',
+                    position: 'absolute',
+                    left: player.pos[0]+'px',
+                    top: player.pos[1]+'px',
+                    backgroundImage: 'url(graphics/characters/walfDeath.png)',
+                    backgroundSize: 'cover'
+                })
+                doge('area').append(walfDeath)
+
+                DeBread.easeShake(walfDeath, 20, 0, -0.5)
+
+                DeBread.playSound('audio/walfScream.mp3')
+                createTimeout(() => {
+                    walfDeath.remove()
+                    DeBread.playSound('audio/deltaruneExplosion.mp3')
+                    createExplosion(
+                        [...player.centerPos],
+                        250,
+                        100,
+                        100,
+                        true
+                    )
+                }, 18)
+            }
         },
     },
     jake: {
@@ -1136,14 +1203,34 @@ const characters = {
     },
     lore: {
         name: 'Lore',
+        desc: 'I make songs in my bedroom',
         color: [88, 93, 112],
 
         tagList: [
             {text:'Crow',col:'#299379'},
             {text: 'GS2',col: '#775db9'},
+            {text: 'FL Studio',col: '#f69e27'},
         ],
 
-        weapon: weaponPresets.gun
+        pros: [
+            'Small',
+            'CD Reloads',
+        ],
+
+        cons: [
+            'Reload Speed'
+        ],
+
+        weapon: weaponPresets.keytar,
+
+        applyStats: () => {
+            modifyStat(['player','size'],'=30'),
+            modifyStat(['ammo','reloadSpeed'],'=100')
+            player.onReloadFinish = () => {
+                powerItems[2].cd.use()
+                player.currentNoteSFX = 0
+            }
+        }
     },
     // marcy: {
     //     name: 'Marcy',
@@ -1371,7 +1458,7 @@ const characters = {
     // },
     udev: {
         name: 'udev',
-        info: 'All stats are randomly multiplied between 0.1x and 10x at run start.',
+        info: 'All possible player stats are randomly multiplied between 0.1x and 10x at run start.',
         color: [0, 255, 0],
 
         tagList: [

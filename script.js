@@ -33,6 +33,10 @@ const defaultSaveData = {
         autoReload: false,
         reduceExplosionEffects: false,
         particleLimit: 5000,
+        disableBackdropFilters: false,
+        playerProjectileOpacity: 1,
+        enemyProjectileOpacity: 1,
+        disableAmenBreak: false,
 
         musicVolume: 0.1,
         sfxVolume: 0.1,
@@ -753,7 +757,9 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('red_mushroom')
+            if(!saveData.stats.unlocked.items.includes('red_mushroom')) {
+                saveData.stats.unlocked.items.push('red_mushroom')
+            }
         }
     },
     Stylish: {
@@ -769,7 +775,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('feedbacker')
+            unlock('items',upgrades[1].feedbacker,'feedbacker')
         }
     },
     Intentional_Game_Design: {
@@ -785,7 +791,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('knuckleblaster')
+            unlock('items',upgrades[2].knuckleblaster,'knuckleblaster')
         }
     },
     Greed: {
@@ -801,7 +807,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('golden_ammo')
+            unlock('items',upgrades[3].golden_ammo,'golden_ammo')
         }
     },
     Speed_Demon: {
@@ -817,7 +823,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.characters.push('sasha')
+            unlock('characters',characters.sasha,'sasha')
         }
     },
     Knuckle_Sandwich: {
@@ -833,7 +839,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('boxing_gloves')
+            unlock('items',upgrades[1].boxing_gloves,'boxing_gloves')
         }
     },
     Item_Abuse: {
@@ -849,7 +855,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.powerItems.push('the_d100')
+            unlock('powerItems',powerItems[3].the_d100,'the_d100')
         }
     },
     Whoops: {
@@ -864,7 +870,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.characters.push('peep')
+            unlock('characters',characters.peep,'peep')
         }
     },
     Optimization: {
@@ -879,7 +885,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.characters.push('the_horse')
+            unlock('characters',characters.the_horse,'the_horse')
         }
     },
     Reroll_Addict: {
@@ -894,7 +900,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.characters.push('isaac')
+            unlock('characters',characters.isaac,'isaac')
         }
     },
     Found_Me: {
@@ -909,7 +915,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.characters.push('ashton')
+            unlock('characters',characters.ashton,'ashton')
         }
     },
     Big_Teeth: {
@@ -924,7 +930,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.characters.push('tammy')
+            unlock('characters',characters.tammy,'tammy')
         }
     },
     Unc: {
@@ -939,7 +945,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.characters.push('lorna')
+            unlock('characters',characters.lorna,'lorna')
         }
     },
     Law_Enforcement: {
@@ -954,7 +960,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.characters.push('tana')
+            unlock('characters',characters.tana,'tana')
         }
     },
     Divorce: {
@@ -969,7 +975,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.characters.push('luke')
+            unlock('characters',characters.luke,'luke')
         }
     },
     Knowledgeable: {
@@ -990,7 +996,7 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.characters.push('friend')
+            unlock('characters',characters.friend,'friend')
         }
     },
     Survivor: {
@@ -1005,7 +1011,7 @@ const achievements = {
     },
     Conqueror: {
         name: 'Conqueror',
-        desc: 'Reach wave 100.',
+        desc: 'Beat wave 100.',
         difficulty: 0,
     },
     Champion: {
@@ -1026,12 +1032,12 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.characters.push('tutorialist')
+            unlock('characters',characters.tutorialist,'tutorialist')
         }
     },
     debread_Perfection: {
         name: 'DeBread Perfection',
-        desc: 'Reach wave 100 using DeBread.',
+        desc: 'Beat wave 100 using DeBread.',
         difficulty: 0,
 
         unlock: {
@@ -1042,12 +1048,12 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('the_tophat')
+            unlock('items',upgrades[4].the_tophat,'the_tophat')
         }
     },
     fella_Perfection: {
         name: 'Fella Perfection',
-        desc: 'Reach wave 100 using Fella.',
+        desc: 'Beat wave 100 using Fella.',
         difficulty: 0,
 
         unlock: {
@@ -1058,12 +1064,12 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('raccoon_tail')
+            unlock('items',upgrades[4].raccoon_tail,'raccoon_tail')
         }
     },
     plonk_Perfection: {
         name: 'Plonk Perfection',
-        desc: 'Reach wave 100 using Plonk.',
+        desc: 'Beat wave 100 using Plonk.',
         difficulty: 0,
 
         unlock: {
@@ -1074,42 +1080,53 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('used_needle')
+            unlock('items',upgrades[4].used_needle,'used_needle')
         }
     },
     ashton_Perfection: {
         name: 'Ashton Perfection',
-        desc: 'Reach wave 100 using Ashton.',
+        desc: 'Beat wave 100 using Ashton.',
         difficulty: 0,
     },
     lorna_Perfection: {
         name: 'Lorna Perfection',
-        desc: 'Reach wave 100 using Lorna.',
+        desc: 'Beat wave 100 using Lorna.',
         difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Rock Salt',
+            src: 'graphics/upgrades/rock_salt.png',
+            data: upgrades[2].rock_salt
+        },
+
+        run: () => {
+            unlock('items',upgrades[2].rock_salt,'rock_salt')
+        }
     },
     tammy_Perfection: {
         name: 'Tammy Perfection',
-        desc: 'Reach wave 100 using Tammy.',
+        desc: 'Beat wave 100 using Tammy.',
         difficulty: 0,
     },
     tana_Perfection: {
         name: 'Tana Perfection',
-        desc: 'Reach wave 100 using Tana.',
+        desc: 'Beat wave 100 using Tana.',
         difficulty: 0,
     },
     luke_Perfection: {
         name: 'Luke & Mary Perfection',
-        desc: 'Reach wave 100 using Luke & Mary.',
+        desc: 'Beat wave 100 using Luke & Mary.',
         difficulty: 0,
     },
     nyan_Perfection: {
         name: 'Nyan Perfection',
-        desc: 'Reach wave 100 using Nyan.',
+        desc: 'Beat wave 100 using Nyan.',
         difficulty: 0,
     },
     jaden_Perfection: {
         name: 'Jaden Perfection',
-        desc: 'Reach wave 100 using Jaden.',
+        desc: 'Beat wave 100 using Jaden.',
         difficulty: 0,
         unlockable: true,
 
@@ -1121,12 +1138,12 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('dagger')
+            unlock('items',upgrades[1].dagger,'dagger')
         }
     },
     peep_Perfection: {
         name: 'Peep Perfection',
-        desc: 'Reach wave 100 using Peep.',
+        desc: 'Beat wave 100 using Peep.',
         difficulty: 0,
         unlockable: true,
 
@@ -1138,32 +1155,32 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('beret')
+            unlock('items',upgrades[4].beret,'beret')
         }
     },
     slip_Perfection: {
         name: 'Slip Perfection',
-        desc: 'Reach wave 100 using Slip.',
+        desc: 'Beat wave 100 using Slip.',
         difficulty: 0,
     },
     sasha_Perfection: {
         name: 'Sasha Perfection',
-        desc: 'Reach wave 100 using Sasha.',
+        desc: 'Beat wave 100 using Sasha.',
         difficulty: 0,
     },
     the_horse_Perfection: {
         name: 'The Horse Perfection',
-        desc: 'Reach wave 100 using The Horse.',
+        desc: 'Beat wave 100 using The Horse.',
         difficulty: 0,
     },
     car_Perfection: {
         name: 'car Perfection',
-        desc: 'Reach wave 100 using car.',
+        desc: 'Beat wave 100 using car.',
         difficulty: 0,
     },
     isaac_Perfection: {
         name: 'Isaac Perfection',
-        desc: 'Reach wave 100 using Isaac.',
+        desc: 'Beat wave 100 using Isaac.',
         difficulty: 0,
 
         unlock: {
@@ -1174,17 +1191,17 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.powerItems.push('the_d6')
+            unlock('powerItems',powerItems[3].the_d6,'the_d6')
         }
     },
     erix_Perfection: {
         name: 'erix Perfection',
-        desc: 'Reach wave 100 using erix.',
+        desc: 'Beat wave 100 using erix.',
         difficulty: 0,
     },
     walf_Perfection: {
         name: 'Walf Perfection',
-        desc: 'Reach wave 100 using Walf.',
+        desc: 'Beat wave 100 using Walf.',
         difficulty: 0,
 
         unlock: {
@@ -1195,22 +1212,33 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.powerItems.push('wisp')
+            unlock('powerItems',powerItems[4].wisp,'wisp')
         }
     },
     jake_Perfection: {
         name: 'Jake Perfection',
-        desc: 'Reach wave 100 using Jake.',
+        desc: 'Beat wave 100 using Jake.',
         difficulty: 0,
     },
     lore_Perfection: {
         name: 'Lore Perfection',
-        desc: 'Reach wave 100 using Lore.',
+        desc: 'Beat wave 100 using Lore.',
         difficulty: 0,
+
+        unlock: {
+            type: 'Power Item',
+            name: 'CD',
+            src: 'graphics/powerItems/cd.png',
+            data: powerItems[2].cd
+        },
+
+        run: () => {
+            unlock('powerItems',powerItems[2].cd,'cd')
+        }
     },
     crow_Perfection: {
         name: 'Crow Perfection',
-        desc: 'Reach wave 100 using Crow.',
+        desc: 'Beat wave 100 using Crow.',
         difficulty: 0,
 
         unlock: {
@@ -1221,27 +1249,27 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('black_feather')
+            unlock('items',upgrades[4].black_feather,'black_feather')
         }
     },
     krazy_Perfection: {
         name: 'Krazy Perfection',
-        desc: 'Reach wave 100 using Krazy.',
+        desc: 'Beat wave 100 using Krazy.',
         difficulty: 0,
     },
     bean_Perfection: {
         name: 'Bean Perfection',
-        desc: 'Reach wave 100 using Bean.',
+        desc: 'Beat wave 100 using Bean.',
         difficulty: 0,
     },
     phoenix_Perfection: {
         name: 'Phoenix Perfection',
-        desc: 'Reach wave 100 using Phoenix.',
+        desc: 'Beat wave 100 using Phoenix.',
         difficulty: 0,
     },
     allx_Perfection: {
         name: 'Quantum Perfection',
-        desc: 'Reach wave 100 using Quantum.',
+        desc: 'Beat wave 100 using Quantum.',
         difficulty: 0,
 
         unlock: {
@@ -1252,12 +1280,12 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.powerItems.push('tesla_coil')
+            unlock('powerItems',powerItems[4].tesla_coil,'tesla_coil')
         }
     },
     dottr_Perfection: {
         name: 'Dottr Perfection',
-        desc: 'Reach wave 100 using Dottr.',
+        desc: 'Beat wave 100 using Dottr.',
         difficulty: 0,
 
         unlock: {
@@ -1268,12 +1296,12 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('soap')
+            unlock('items',upgrades[4].soap,'soap')
         }
     },
     skunk_Perfection: {
         name: 'Skunk Perfection',
-        desc: 'Reach wave 100 using Skunk.',
+        desc: 'Beat wave 100 using Skunk.',
         difficulty: 0,
 
         unlock: {
@@ -1284,12 +1312,12 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('pepto_bismol')
+            unlock('items',upgrades[1].pepto_bismol,'pepto_bismol')
         }
     },
     udev_Perfection: {
         name: 'udev Perfection',
-        desc: 'Reach wave 100 using udev',
+        desc: 'Beat wave 100 using udev',
         difficulty: 0,
 
         unlock: {
@@ -1300,27 +1328,27 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('old_laptop')
+            unlock('items',upgrades[4].old_laptop,'old_laptop')
         }
     },
     snorp_Perfection: {
         name: 'Douglas Perfection',
-        desc: 'Reach wave 100 using Douglas.',
+        desc: 'Beat wave 100 using Douglas.',
         difficulty: 0,
     },
     wasp_Perfection: {
         name: 'Wasp Perfection',
-        desc: 'Reach wave 100 using Wasp.',
+        desc: 'Beat wave 100 using Wasp.',
         difficulty: 0,
     },
     wolff_Perfection: {
         name: 'Wolff Perfection',
-        desc: 'Reach wave 100 using Wolff.',
+        desc: 'Beat wave 100 using Wolff.',
         difficulty: 0,
     },
     chip_Perfection: {
         name: 'Chip Perfection',
-        desc: 'Reach wave 100 using Chip.',
+        desc: 'Beat wave 100 using Chip.',
         difficulty: 0,
 
         unlock: {
@@ -1331,12 +1359,12 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('drool')
+            unlock('items',upgrades[4].drool,'drool')
         }
     },
     hana_Perfection: {
         name: 'Hana Perfection',
-        desc: 'Reach wave 100 using Hana.',
+        desc: 'Beat wave 100 using Hana.',
         difficulty: 0,
 
         unlock: {
@@ -1347,37 +1375,37 @@ const achievements = {
         },
 
         run: () => {
-            saveData.stats.unlocked.items.push('lotus')
+            unlock('items',upgrades[2].lotus,'lotus')
         }
     },
     skywalkr_Perfection: {
         name: 'Skywalkr Perfection',
-        desc: 'Reach wave 100 using Skywalkr.',
+        desc: 'Beat wave 100 using Skywalkr.',
         difficulty: 0,
     },
     meringue_Perfection: {
         name: 'Meringue Perfection',
-        desc: 'Reach wave 100 using Meringue.',
+        desc: 'Beat wave 100 using Meringue.',
         difficulty: 0,
     },
     glorp_Perfection: {
         name: 'Glorp Perfection',
-        desc: 'Reach wave 100 using Glorp.',
+        desc: 'Beat wave 100 using Glorp.',
         difficulty: 0,
     },
     tico_Perfection: {
         name: 'Tico Perfection',
-        desc: 'Reach wave 100 using Tico.',
+        desc: 'Beat wave 100 using Tico.',
         difficulty: 0,
     },
     friend_Perfection: {
         name: 'FRIEND Perfection',
-        desc: 'Reach wave 100 using FRIEND.',
+        desc: 'Beat wave 100 using FRIEND.',
         difficulty: 0,
     },
     tutorialist_Perfection: {
         name: 'Tutorialist Perfection',
-        desc: 'Reach wave 100 using The Tutorialist.',
+        desc: 'Beat wave 100 using The Tutorialist.',
         difficulty: 0,
     },
     Character_Perfectionist: {
@@ -1395,15 +1423,15 @@ function getAchievement(key, run) {
 
         createAchNoti(achievement, key)
 
-        if(achievement.unlock) {
-            mainMenuEventQueue.push(() => {
-                let unlockString = `<strong>${achievement.unlock.name}</strong> can now appear in the shop.`
-                if(achievement.unlock.type === 'Character') {
-                    unlockString = `You can now play as <strong>${achievement.unlock.name}</strong>`
-                }
-                createNotification(`${achievement.unlock.type} Unlocked!`,unlockString,achievement.unlock.src)
-            })
-        }
+        // if(achievement.unlock) {
+        //     mainMenuEventQueue.push(() => {
+        //         let unlockString = `<strong>${achievement.unlock.name}</strong> can now appear in the shop.`
+        //         if(achievement.unlock.type === 'Character') {
+        //             unlockString = `You can now play as <strong>${achievement.unlock.name}</strong>`
+        //         }
+        //         createNotification(`${achievement.unlock.type} Unlocked!`,unlockString,achievement.unlock.src)
+        //     })
+        // }
 
         if(achievement.run) achievement.run()
         save()
@@ -1415,6 +1443,31 @@ function getAchievement(key, run) {
 function getAllAchievements() {
     for(key in achievements) {
         getAchievement(key)
+    }
+}
+
+function unlock(type, data, key) {
+    if(!saveData.stats.unlocked[type].includes(key)) {
+        saveData.stats.unlocked[type].push(key)
+
+        const typeNames = {
+            items: 'Item',
+            powerItems: 'Power Item',
+            characters: 'Character'
+        }
+
+        let src
+        if(type === 'characters') {src = `graphics/characters/${key}Portrait.png`}
+        if(type === 'items') {src = `graphics/upgrades/${key}.png`}
+        if(type === 'powerItems') {src = `graphics/powerItems/${key}.png`}
+
+        mainMenuEventQueue.push(() => {
+            createNotification(
+                `${typeNames[type]} unlocked!`,
+                `${type === 'characters' ? `You can now play as <strong>${data.name}</strong>`:`${data.name} can now appear in the shop.`}`,
+                src
+            )
+        })
     }
 }
 

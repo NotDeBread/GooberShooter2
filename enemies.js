@@ -3972,9 +3972,12 @@ function spawnWave(wave, poor) {
         const bossKey = DeBread.randomNum(0, Object.keys(minibosses).length - 1)
         const boss = minibosses[Object.keys(minibosses)[bossKey]]
 
-        boss.health *= (wave / 10)
+        boss.dontFinishBossWave = true
 
-        spawnEnemy([doge('area').offsetWidth / 2, doge('area').offsetHeight / 2], boss, wave, 100)
+        boss.health *= (wave / 10)
+        boss.onDeath = () => {}
+
+        spawnEnemy([doge('area').offsetWidth / 2, doge('area').offsetHeight / 2], boss, Math.floor(wave/10), 100)
 
         return
     }

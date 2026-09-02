@@ -462,7 +462,7 @@ const dialogues = {
             },
             {
                 text: 'A LOT of the guns.',
-                portrait: 'graphics/credits/portraits/plinkelIdk.png',
+                portrait: 'graphics/credits/portraits/plinkelidk.png',
             },
             {
                 text: 'I\'m the reason he had to lift the size limitations on weapons, cause...',
@@ -504,7 +504,7 @@ const dialogues = {
             },
             {
                 text: 'I just exist?',
-                portrait: 'graphics/credits/portraits/plinkelIdk.png'
+                portrait: 'graphics/credits/portraits/plinkelidk.png'
             },
             {
                 text: 'Kind of?',
@@ -590,7 +590,7 @@ const dialogues = {
                 text: 'You have to learn the tools for the game you\'re modding, design levels, make assets, code, all this other crap. It\'s nowhere near as accessible, but that\'s also what makes more people get together to make a mod happen.'
             },
             {
-                portrait:'graphics/credits/portraits/plinkelIdk.png',
+                portrait:'graphics/credits/portraits/plinkelidk.png',
                 text: 'A double-edged sword, if you must.'
             },
             {
@@ -620,7 +620,7 @@ const dialogues = {
                 text: 'I like it when I\'m having to figure out some incomprehensible mess and slowly piece it together back into shape.'
             },
             {
-                portrait:'graphics/credits/portraits/plinkelIdk.png',
+                portrait:'graphics/credits/portraits/plinkelidk.png',
                 text: 'Must be why I mod GoldSrc.'
             },
             {
@@ -705,7 +705,7 @@ const dialogues = {
             },
             {
                 text: 'It would be really embarrassing if I\'ve been an ass to him about it this whole time.',
-                portrait: 'graphics/credits/portraits/plinkelIdk.png',
+                portrait: 'graphics/credits/portraits/plinkelidk.png',
             },
             {
                 text: 'OH! RIGHT!',
@@ -724,7 +724,7 @@ const dialogues = {
             },
             {
                 text: 'Those are sonas!',
-                portrait: 'graphics/credits/portraits/plinkelIdk.png'
+                portrait: 'graphics/credits/portraits/plinkelidk.png'
             },
             {
                 text: 'Like,',
@@ -761,7 +761,7 @@ const dialogues = {
             },
             {
                 text: 'That\'d be ridiculous,',
-                portrait: 'graphics/credits/portraits/plinkelIdk.png',
+                portrait: 'graphics/credits/portraits/plinkelidk.png',
             },
             {
                 text: 'I think I make up like a 10th of the roster at this point!',
@@ -781,7 +781,7 @@ const dialogues = {
                         text: 'More characters?',
                         onclick: () => {
                             progressFunction()
-                            startDialogueSequence(defaultSaveData.stats.unlocked.characters.includes('lorna') ? dialogues.plinkel.moreCharacters : {text:'Oh, you haven\'t even seen them yet, It doesn\'t matter...'})
+                            startDialogueSequence(saveData.stats.unlocked.characters.includes('lorna') ? dialogues.plinkel.moreCharacters : [{text:'Oh, you haven\'t even seen them yet, It doesn\'t matter...'}])
                         }
                     },
                 ]
@@ -834,7 +834,7 @@ const dialogues = {
             },
             {
                 text: 'Sorry, <strong style="color: rgb(175,122,255)">Fella</strong>.',
-                portrait: 'graphics/credits/portraits/plinkelIdk.png',
+                portrait: 'graphics/credits/portraits/plinkelidk.png',
             },
             {
                 text: 'Those other two I mentioned are Milly and Eli.',
@@ -882,7 +882,7 @@ const dialogues = {
                 text: 'I\'ve already embarrassed myself enough in this one dialogue tree...'
             },
             {
-                portrait: 'graphics/credits/portraits/plinkelIdk.png',
+                portrait: 'graphics/credits/portraits/plinkelidk.png',
                 text: 'Just a heads up, I do NOT blame you for skipping through this.'
             },
             {
@@ -975,7 +975,7 @@ const dialogues = {
                 text: 'If you ever meet me in person or online, DO NOT bring this shit up. I will think you\'re weird. and creepy.'
             },
             {
-                portrait: 'graphics/credits/portraits/plinkelIdk.png',
+                portrait: 'graphics/credits/portraits/plinkelidk.png',
                 text: 'Creepyweird.'
             },
         ],
@@ -1061,7 +1061,7 @@ const dialogues = {
             },
             {
                 text: 'You can reach out for information if you\'re REALLY that curious.',
-                portrait: 'graphics/credits/portraits/plinkelIdk.png',
+                portrait: 'graphics/credits/portraits/plinkelidk.png',
             }
         ],
         goober: [
@@ -1150,7 +1150,7 @@ const dialogues = {
             },
             {
                 text: 'Not the "dumpster fire" this game is, like, ACTUALLY held together with glitter glue.',
-                portrait: 'graphics/credits/portraits/plinkelIdk.png',
+                portrait: 'graphics/credits/portraits/plinkelidk.png',
             },
             {
                 text: 'It was actually where I got started programming JS,',
@@ -1180,7 +1180,7 @@ const dialogues = {
             },
             {
                 text: 'Sorry, tangent.',
-                portrait: 'graphics/credits/portraits/plinkelIdk.png',
+                portrait: 'graphics/credits/portraits/plinkelidk.png',
             }
         ],
         socials: [
@@ -1201,7 +1201,7 @@ const dialogues = {
             },
             {
                 text: 'I also tend to have crappy opinions and be unbearably annoying,',
-                portrait: 'graphics/credits/portraits/plinkelIdk.png',
+                portrait: 'graphics/credits/portraits/plinkelidk.png',
             },
             {
                 text: 'so I try to reserve myself.',

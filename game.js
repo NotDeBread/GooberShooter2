@@ -521,23 +521,27 @@ function createPlayer() {
 
         kill: () => {
             if(player.alive && saveData.gameSettings.gamemode < 2) {
+                player.onDeath?.()
+
                 player.elem.style.opacity = '0'
                 doge('weapon').style.opacity = '0'
                 
-                for(let i = 0; i < 10; i++) {
-                    createParticle(
-                        0,
-                        [...player.centerPos],
-                        DeBread.randomNum(0,10),
-                        1.1,
-                        DeBread.randomNum(0,Math.PI*2,10),
-                        player.stats.player.size / 2,
-                        1.1,
-                        50,
-                        {
-                            color: `rgb(${characters[saveData.selectedCharacter].color})`
-                        }
-                    )
+                if(!characters[saveData.selectedCharacter].noDeathParticles) {
+                    for(let i = 0; i < 10; i++) {
+                        createParticle(
+                            0,
+                            [...player.centerPos],
+                            DeBread.randomNum(0,10),
+                            1.1,
+                            DeBread.randomNum(0,Math.PI*2,10),
+                            player.stats.player.size / 2,
+                            1.1,
+                            50,
+                            {
+                                color: `rgb(${characters[saveData.selectedCharacter].color})`
+                            }
+                        )
+                    }
                 }
 
                 modifyStat(['player','size'],'=0')
@@ -1050,7 +1054,9 @@ function createPlayer() {
         leftClickEvents: [],
         shootRequirement: () => {return true},
         onShoot: () => {},
-        onWaveIncrease: () => {}
+        onWaveIncrease: () => {},
+        onDeath: () => {},
+        onReloadFinish: () => {},
     }
 }
 let player = createPlayer()
@@ -1077,8 +1083,9 @@ function startGame() {
     doge('weapon').style.opacity = '1'
     player.characterWeapon = characters[saveData.selectedCharacter].weapon
     doge('gameWeaponName').innerText = characters[saveData.selectedCharacter].weapon.name
-
+    
     cleanArea()
+    sandBoxEnemy = undefined
     
     doge('gameWaveCounter').innerText = '0'
     doge('gameStyleContainer').innerHTML = ''
@@ -1508,8 +1515,26 @@ const weapons = {
                                     e.relCursorPos[0] + player.stats.bullet.accuracy / 2 * cursorDist
                                 ) 
                             )
-                            createProjectile(0, [...walfling.pos], angle, player.stats.bullet, elems.enemies, player)
+                            const proj = createProjectile(0, [...walfling.pos], angle, player.stats.bullet, elems.enemies, player)
                             player.damage(player.stats.bullet.thornDamage, true)
+
+                            if(player.stats.bullet.shotParticles) {
+                                for(let i = 0; i < 5; i++) {
+                                    createParticle(
+                                        0,
+                                        [...proj.pos], 
+                                        player.stats.bullet.speed * DeBread.randomNum(0.5,1.5,10),
+                                        1.1,
+                                        angle - Math.PI + DeBread.randomNum(-0.25,0.25,10),
+                                        player.stats.bullet.size / 2,
+                                        1.25,
+                                        25,
+                                        {
+                                            color: `rgb(${player.stats.bullet.shotParticleColor})`
+                                        }
+                                    )
+                                }
+                            }
                         })
                     },b*player.stats.ammo.burstInterval)
                 }
@@ -1518,7 +1543,6 @@ const weapons = {
 
         r: () => {
             function reload() {
-
                 player.stats.ammo.isReloading = true
                 player.stats.ammo.reloadDate = e.gameUpdates
                 
@@ -1690,9 +1714,11 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
             proj.style.backgroundImage = `url(graphics/weapons/${characters[saveData.selectedCharacter].weapon.name.replaceAll(' ','_').toLowerCase()}_bullet.gif)`
         }
 
+        proj.style.opacity = saveData.settings.playerProjectileOpacity
         if(player.stats.bullet.drillTicks > 20) {
-            proj.style.opacity = '0.5'
+            proj.style.opacity = saveData.settings.playerProjectileOpacity / 2
         }
+        
     } else if(style === 2) {
         proj.color = 'white'
         addStyles(proj, {
@@ -1712,8 +1738,9 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
             animation: 'projectileIn 250ms ease-out 1 forwards'
         })
 
+        proj.style.opacity = saveData.settings.enemyProjectileOpacity
         if(proj.drillTicks > 20) {
-            proj.style.opacity = '0.5'
+            proj.style.opacity = saveData.settings.enemyProjectileOpacity / 2
         }
     }
 
@@ -1963,19 +1990,21 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
                     }
                     const damage = target.data.damage(proj.damage, false, proj)
 
-                    const popup = createPopupText(formatNumber(DeBread.round(damage)), [...proj.pos])
-                    if(proj.isCrit) {
-                        popup.style.color = 'yellow'
-                        popup.innerText += '!'
-                    } else {
-                        popup.style.color = 'white'
+                    if(damage) {
+                        const popup = createPopupText(formatNumber(DeBread.round(damage)), [...proj.pos])
+                        if(proj.isCrit) {
+                            popup.style.color = 'yellow'
+                            popup.innerText += '!'
+                        } else {
+                            popup.style.color = 'white'
+                        }
+        
+                        if(origin !== player) {
+                            popup.style.color = '#ff6464'
+                        }
+                        popup.style.fontSize = Math.min(Math.max(proj.damage / 5, 15), 25) + 'px'
+                        doge('area').append(popup)
                     }
-    
-                    if(origin !== player) {
-                        popup.style.color = '#ff6464'
-                    }
-                    popup.style.fontSize = Math.min(Math.max(proj.damage / 5, 15), 25) + 'px'
-                    doge('area').append(popup)
     
                     //Hit damage mult
                     if(pData.hitDamageMult) {
@@ -2566,12 +2595,14 @@ const updateInterval = DeBread.createInterval(() => {
                 doge('gameAmmoLinesCurrent').innerText = ''
                 doge('gameAmmoLinesMax').innerText = ''
                 let reloadProgress = (e.gameUpdates - player.stats.ammo.reloadDate) / player.stats.ammo.reloadSpeed
-                if(reloadProgress > 1) {
+                if(reloadProgress >= 1) {
                     player.stats.ammo.isReloading = false
                     player.stats.ammo.current = player.stats.ammo.max
                     DeBread.shake(doge('gameAmmo'), e.gameUpdateInterval, 6.7, 0, 100,)
                     DeBread.playSound('audio/reload-long-end.mp3')
                     
+                    player.onReloadFinish?.()
+
                     if(player.tutorial.stage === 2) {
                         player.tutorial.goalValue++
                         updateTutorialGoal()
@@ -2624,7 +2655,7 @@ const updateInterval = DeBread.createInterval(() => {
                 doge('gameAmmoContainer').style.color = 'white'
             }
     
-            //Update enemies and thier projectiles
+            //Update enemies and their projectiles
             elems.enemies.forEach(enemy => {
     
                 if(isColliding(enemy, doge('weapon')) && player.stats.player.weaponContactDamage > 0) {
@@ -3946,6 +3977,10 @@ function pauseGame(state) {
         })
 
         openPauseMenu('main')
+
+        while(dialogueActive) {
+            progressFunction()
+        }
     } else { //close
         addStyles(doge('gamePauseContainer'), {
             backdropFilter: 'blur(0px)',
@@ -4070,7 +4105,7 @@ function openPauseMenu(id) {
 
                 if(id === 'main') {
                     if(saveData.gameSettings.gamemode < 2) {
-                        doge('gamePauseTitle').innerText = `PAUSED - WAVE ${player.wave-1}`
+                        doge('gamePauseTitle').innerText = `PAUSED - WAVE ${player.wave}`
                     } else if(saveData.gameSettings.gamemode === 2) {
                         doge('gamePauseTitle').innerText = `PAUSED - SANDBOX`
                     } else if(saveData.gameSettings.gamemode === 3) {

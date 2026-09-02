@@ -92,7 +92,7 @@
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
             <div style="line-height: 1;">
-                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest22</a></span><br>
+                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest23</a></span><br>
                 <a style="font-size: 0.75em; opacity: 0.5; cursor: pointer;" href="https://forms.gle/JDaQUZ1wR6GhAscZ8" target="_blank">Report a bug</a>
             </div>
         </div>
@@ -457,7 +457,6 @@
                         <button onclick="elems.enemies.forEach(enemy => {enemy.data.kill()})">Kill all enemies</button>
                         <button onclick="player.damage(-Infinity)">Heal player</button>
                         <button onclick="spawnPortal()">Spawn portal</button>
-                        <!-- <button onclick="spawnWave(25)">Spawn wave 25</button> -->
                         <div class="numInput">
                             <button onclick="spawnWave(parseInt(0+doge('sandboxWaveInput').value))">Spawn wave</button>
                             <input type="number" id="sandboxWaveInput" placeholder="Wave">
@@ -473,7 +472,7 @@
                         </div>
                         <div class="numInput">
                             <button onclick="player.damage(-parseInt(0+doge('sandboxDamageInput').value))" style="width: 70px;">Heal</button>
-                            <button onclick="player.damage(parseInt(0+doge('sandboxDamageInput').value), false, undefined, parseInt(doge('sandboxHardDamageInput').value))" style="width: 70px;">Damage</button>
+                            <button onclick="player.damage(parseInt(0+doge('sandboxDamageInput').value), false, undefined, parseInt(0+doge('sandboxHardDamageInput').value))" style="width: 70px;">Damage</button>
                             <input type="number" id="sandboxDamageInput" placeholder="Amount" style="width: 75px;">
                             <input type="number" id="sandboxHardDamageInput" placeholder="HD" style="width: 50px;">
                         </div>

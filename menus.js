@@ -33,7 +33,7 @@ const funFacts = [
     'You can parry your own projectiles!',
     'Goober Shooter 2 was originally going to be like TBOI, where you have to clear floors to progress.',
     'Many items are pulled straight out of the original Goober Shooter!',
-    'Originally, the player could\'ve had \'shield\' on top of thier health, but it caused too many issues so it was scrapped.',
+    'Originally, the player could\'ve had \'shield\' on top of their health, but it caused too many issues so it was scrapped.',
     'You can press H in the sandbox to toggle the sandbox menu!',
     'You can hold SHIFT+R in game to quickly restart!',
     'Press ctrl++ or ctrl+- to change the game scale!'
@@ -102,6 +102,10 @@ function startTitle() {
 }
 
 function startMainMenu(removeStartScreen = true) {
+    for(key of saveData.achievements) {
+        achievements[key].run?.()
+    }
+
     if(!saveData.firstLogin) {
         if(removeStartScreen) {
             doge('gameStartScreen').remove()
@@ -138,6 +142,11 @@ function startMainMenu(removeStartScreen = true) {
         if(achievements[`${key}_Perfection`] === undefined) {
             createNotification('Whoops...',`Perfection achievement for ${key} isn't defined!`)
         }
+    }
+
+    if(!CSS.supports('backdrop-filter','blur(0px)')) {
+        saveData.settings.disableBackdropFilters = true
+        updateSettings()
     }
 }
 
@@ -590,7 +599,7 @@ function openCharacterSkins() {
 
         button.onmouseenter = () => {
             const buttonRect = button.getBoundingClientRect()
-            tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], skin.name, [{text: 'SKIN', col: '#973a3a'}], '')
+            tooltip([buttonRect.left + button.offsetWidth / 2, buttonRect.top + button.offsetHeight + 12], skin.name, [{text: 'SKIN', col: '#973a3a'}], skin.desc ?? '')
         }
 
         button.onmouseleave = () => {
@@ -1369,6 +1378,7 @@ const settingsHTML = `
     <div id="settings">
         <div style="display: flex; gap: 5px; padding-bottom: 5px; border-bottom: 1px solid grey; height: 24px;">
             <button onclick="openSettingsMenu('general')">General</button>
+            <button onclick="openSettingsMenu('accessibility')">Accessibility</button>
             <button onclick="openSettingsMenu('performance')">Performance</button>
             <button onclick="openSettingsMenu('sound')">Sound</button>
             <button onclick="openSettingsMenu('fun')">Fun</button>
@@ -1418,6 +1428,24 @@ const settingsHTML = `
                 </div>
             </div>
         </div>
+        <div class="settingsSection" id="settingsSection-accessibility">
+            <div class="settingsRangeContainer" id="playerProjectileOpacityRangeContainer">
+                <div>
+                    <span style="font-weight: 700;">Player projectile opacity: </span>
+                    <span id="sr-playerProjectileOpacity-label">???</span>
+                </div>
+                <div class="coolLine"></div>
+                <input type="range" min="0" step="0.05" max="1" id="sr-playerProjectileOpacity">
+            </div>
+            <div class="settingsRangeContainer" id="enemyProjectileOpacityRangeContainer">
+                <div>
+                    <span style="font-weight: 700;">Enemy projectile opacity: </span>
+                    <span id="sr-enemyProjectileOpacity-label">???</span>
+                </div>
+                <div class="coolLine"></div>
+                <input type="range" min="0" step="0.05" max="1" id="sr-enemyProjectileOpacity">
+            </div>
+        </div>
         <div class="settingsSection" id="settingsSection-performance">
             <div class="settingsCheckboxContainer">
                 <div class="genericCheckbox" id="scb-weaponEasing"></div>
@@ -1445,6 +1473,13 @@ const settingsHTML = `
                 <div class="settingsCheckboxInfo">
                     <span>Reduce explosion effects.</span>
                     <span>Stops explosion shockwaves from being created.</span>
+                </div>
+            </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-disableBackdropFilters"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Disable CSS backdrop filters</span>
+                    <span>Disables the resource intensive backdrop-filter CSS property.</span>
                 </div>
             </div>
             <div class="settingsCheckboxContainer">
@@ -1480,6 +1515,13 @@ const settingsHTML = `
                 <div class="coolLine"></div>
                 <input type="range" min="0" step="0.01" max="1" id="sr-sfxVolume">
             </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-disableAmenBreak"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Disable CD Amen Break</span>
+                    <span>Disables the sound effect from Lore's CD power item.</span>
+                </div>
+            </div>
         </div>
         <div class="settingsSection" id="settingsSection-fun">
             <span>Enemy voice lines:</span>
@@ -1498,7 +1540,7 @@ const settingsHTML = `
                 <div class="genericCheckbox" id="scb-announceCharacter"></div>
                 <div class="settingsCheckboxInfo">
                     <span>Announce selected character</span>
-                    <span>Whenever you select a character, thier name is announced, like SSB.</span>
+                    <span>Whenever you select a character, their name is announced, like SSB.</span>
                 </div>
             </div>-->
         </div>
@@ -1617,6 +1659,29 @@ function updateSettings() {
         } else {
             doge('particlesRangeContainer').style.display = 'none'
         }
+    }
+
+    if(saveData.settings.disableBackdropFilters) {
+        const style = document.createElement('style')
+        style.classList.add('backdropFilterStyle')
+        style.innerHTML = `
+            * {
+                backdrop-filter: none !important;
+            }
+        `
+        document.head.append(style)
+
+        doge('area').style.cursor = 'crosshair'
+        doge('tooltip').style.backgroundColor = 'black'
+        doge('prompt').style.backgroundColor = 'black'
+    } else {
+        document.head.querySelectorAll('.backdropFilterStyle').forEach(style => {
+            style.remove()
+        })
+
+        doge('area').style.cursor = 'none'
+        doge('tooltip').style.backgroundColor = 'rgb(0,0,0,0.75)'
+        doge('prompt').style.backgroundColor = 'rgb(0,0,0,0.75)'
     }
 
     if(currentTrack) {
@@ -1876,45 +1941,49 @@ function openStats() {
         [650,350]
     )
 
-    let allUpgrades = []
-    for(let r = 0; r < 5; r++) {
-        for(const key in upgrades[r]) {
-            allUpgrades.push({data: upgrades[r][key], key: key})
-        }
-    }
-
-    let filteredUpgrades = []
-    for(const upgrade of allUpgrades) {
-        for(const colUpgrade of saveData.stats.collection.items) {
-            if(upgrade.data.name === colUpgrade.name) {
-                filteredUpgrades.push({...upgrade, ...{count: colUpgrade.count}})
+    if(Object.keys(saveData.stats.collection.items).length > 0) {
+        let allUpgrades = []
+        for(let r = 0; r < 5; r++) {
+            for(const key in upgrades[r]) {
+                allUpgrades.push({data: upgrades[r][key], key: key})
             }
         }
-    }
-
-    let sortedUpgrades = filteredUpgrades.sort((a, b) => b.count - a.count);
-    let highestValue = sortedUpgrades[0].count
-
-    for(const upgrade of sortedUpgrades) {
-        const div = document.createElement('div')
-        div.classList.add('statUpgrade')
-        div.innerHTML = `
-            <img src="graphics/upgrades/${upgrade.key}.png">
-            <div class="statUpgradeBar">
-                <div style="width: ${upgrade.count / highestValue*100}%;">
-                    <span style="right: 0px;">${upgrade.count}</span>
-                </div>
-            </div>
-        `
-
-        if(upgrade.count / highestValue <= 0.15) {
-            addStyles(div.querySelector('span'), {
-                translate: '25px 0px',
-                marginRight: '0',
-                color: 'white'
-            })
+    
+        let filteredUpgrades = []
+        for(const upgrade of allUpgrades) {
+            for(const colUpgrade of saveData.stats.collection.items) {
+                if(upgrade.data.name === colUpgrade.name) {
+                    filteredUpgrades.push({...upgrade, ...{count: colUpgrade.count}})
+                }
+            }
         }
-
-        doge('statsUpgradeList').append(div)
+    
+        let sortedUpgrades = filteredUpgrades.sort((a, b) => b.count - a.count);
+        let highestValue = sortedUpgrades[0].count
+    
+        for(const upgrade of sortedUpgrades) {
+            const div = document.createElement('div')
+            div.classList.add('statUpgrade')
+            div.innerHTML = `
+                <img src="graphics/upgrades/${upgrade.key}.png">
+                <div class="statUpgradeBar">
+                    <div style="width: ${upgrade.count / highestValue*100}%;">
+                        <span style="right: 0px;">${upgrade.count}</span>
+                    </div>
+                </div>
+            `
+    
+            if(upgrade.count / highestValue <= 0.15) {
+                addStyles(div.querySelector('span'), {
+                    translate: '25px 0px',
+                    marginRight: '0',
+                    color: 'white'
+                })
+            }
+    
+            doge('statsUpgradeList').append(div)
+        }
+    } else {
+        doge('statsUpgradeList').innerHTML = 'You haven\'t bought any items yet!'
     }
 }

@@ -923,11 +923,22 @@ const upgrades = [
             unlockable: true,
             name: 'Lotus',
             desc: `
-                Gain <cg>+15HP</cg> when a wave spawns.
+                Gain <cg>+20HP</cg> when a wave spawns.
             `,
 
             apply: () => {
-                modifyStat(['player','waveHeal'],'+=15')
+                modifyStat(['player','waveHeal'],'+=20')
+            },
+        },
+        rock_salt: {
+            unlockable: true,
+            name: 'Rock Salt',
+            desc: `
+                Hitting an enemy with a projectile slows them down temporarily.
+            `,
+
+            apply: () => {
+                modifyStat(['bullet','slow'],'+=0.2')
             },
         },
     },
@@ -1091,7 +1102,8 @@ const upgrades = [
             name: 'Radioactive Ammo',
             desc: `
                 Player projectiles gain a damaging aura, dealing up to <cg>+150%</cg> of your damage every 10 ticks<br>
-                <cg>+10</cg> Radiation size
+                <cg>+10</cg> Radiation size<br>
+                <cb>-50%</cb> Max HP
             `,
             priceMult: 1.75,
 
@@ -1101,6 +1113,7 @@ const upgrades = [
                 } else {
                     modifyStat(['bullet','radiationSize'], '+=10')
                 }
+                modifyStat(['player','maxHealth'], '*=0.5')
             }
         },
         sharp_ammo: {
@@ -2818,6 +2831,100 @@ const powerItems = [
                 doge('area').append(bottle)
             }
         },
+        cd: {
+            name: 'CD',
+            desc: `
+                Uses <cp>35</cp> POWER<br>
+                Throws a CD towards your cursor.<br>
+                The CD bounces off of walls, deals <cg>100%</cg> of your damage every 3 ticks and applies bleeding to colliding enemies.<br>
+                <em style="color: grey;">Amen Break SFX can be disabled in sound settings.<em>
+            `,
+            charge: 35,
+            unlockable: true,
+
+            use: () => {
+                const cd = document.createElement('div')
+                cd.classList.add('entity')
+                cd.pos = [...player.centerPos]
+                cd.rot = 0
+                cd.ticksActive = 0
+                cd.angle = Math.atan2(e.relCursorPos[1] - cd.pos[1], e.relCursorPos[0] - cd.pos[0])
+                addStyles(cd, {
+                    width: '64px',
+                    height: '64px',
+                    backgroundImage: 'url(graphics/cd.png)',
+                    backgroundSize: 'cover',
+                    position: 'absolute',
+                    translate: '-50% -50%'
+                })
+
+                cd.updatePosition = () => {
+                    addStyles(cd,{
+                        left: cd.pos[0]+'px',
+                        top: cd.pos[1]+'px',
+                        rotate: cd.rot+'deg'
+                    })
+                }
+                cd.updatePosition()
+
+                cd.tick = () => {
+                    cd.pos[0] += Math.cos(cd.angle) * 10
+                    cd.pos[1] += Math.sin(cd.angle) * 10
+                    cd.rot += 5
+
+                    if(cd.pos[0] >= doge('area').offsetWidth || cd.pos[0] <= 0) {
+                        cd.angle = Math.PI - cd.angle
+                    }
+                    
+                    if(cd.pos[1] >= doge('area').offsetHeight || cd.pos[1] <= 0) {
+                        cd.angle = -cd.angle
+                    }
+
+                    cd.updatePosition()
+
+                    if(cd.ticksActive % 138 === 0 && !saveData.settings.disableAmenBreak) {
+                        DeBread.playSound('audio/amenBreak.mp3')
+                    }
+                    
+                    elems.enemies.forEach(enemy => {
+                        if(isColliding(enemy, cd) && enemy.data.active && cd.ticksActive % 3 === 0) {
+                            enemy.data.isBleeding = true
+                            const popup = createPopupText(formatNumber(enemy.data.damage(player.stats.bullet.damage)), [...enemy.data.centerPos])
+                            popup.style.color = 'white'
+                            doge('area').append(popup)
+                        }
+                    })
+                    
+                    if(cd.ticksActive > 138*2-4) {
+                        cd.destroy()
+                    }
+                    cd.ticksActive++
+                }
+
+                cd.destroy = () => {
+                    cd.remove()
+                    DeBread.playSound('audio/glass.mp3',DeBread.randomNum(0.9,1.1,10))
+                    for(let i = 0; i < 10; i++) {
+                        createParticle(
+                            1,
+                            [...cd.pos],
+                            DeBread.randomNum(0,25,10),
+                            1.25,
+                            DeBread.randomNum(0,Math.PI*2,10),
+                            64,
+                            1.25,
+                            50,
+                            {
+                                color: 'white'
+                            }
+                        )
+                    }
+                }
+
+                doge('area').append(cd)
+            }
+        },
+
         // perfume: {
         //     name: 'Perfume',
         //     desc: `
@@ -4712,74 +4819,6 @@ function createShopItems(items) {
     }
 }
 
-// function createShopItems() {
-//     let randomItems = []
-//     let randomItemsIDs = []
-        
-//     for(let i = 0; i < player.stats.shop.upgrades; i++) {
-//         //Gets a random item type based on previously specified item type weights
-//         const itemType = getWeightedChance(player.shopWeights) 
-
-//         let itemList = []
-//         if(itemType === 0) {
-//             itemList = upgrades
-//         } else if(itemType === 1) {
-//             itemList = powerItems
-//         } else if(itemType === 2) {
-//             itemList = elixirs
-//         }
-
-//         let rarity = 0
-//         const luck = player.stats.shop.luck
-//         if(itemType < 2) {
-//             rarity = getWeightedChance([ //Returns a random number between 0 and 4 based on weights
-//                 55 + luck,
-//                 27 + 1.25*luck,
-//                 16 + 1.25*luck,
-//                 1.95 + 1.25*luck,
-//                 0.01 + 0.05*luck
-//             ])
-//         }
-        
-//         let attempts = 0
-//         let itemChosen = false
-
-//         while(!itemChosen) {
-//             const keys = Object.keys(itemList[rarity]) //Turns the list object into an array to iterate through
-
-//             const randomKey = keys[DeBread.randomNum(0, keys.length - 1)]
-//             const randomItem = itemList[rarity][randomKey]
-            
-//             if(!randomItemsIDs.includes(randomKey)) {
-//                 itemChosen = true
-//                 randomItems.push({
-//                     data: randomItem,
-//                     id: randomKey,
-//                     rarity: rarity,
-//                     type: itemType,
-//                     cost: DeBread.round(rarities[rarity].costBase * (1 + player.wave / 10) * (randomItem.priceMult ?? 1))
-//                 })
-//                 randomItemsIDs.push(randomKey)
-//             }
-
-//             attempts++
-
-//             if(attempts > 500) { //If the picker fails to find an item after 500 attempts, it chooses the rare 'error' item
-//                 itemChosen = true
-//                 randomItems.push({
-//                     data: upgrades[6].error,
-//                     rarity: 6,
-//                     type: 0,
-//                     id: 'error',
-//                     cost: 10,
-//                 })
-
-//                 break
-//             }
-//         }
-//     }
-// }
-
 function updateShopTab() {
     const powerItemDiv = doge('shopTab-powerItem').querySelector('div')
     if(player.powerItem) {
@@ -4841,143 +4880,6 @@ function updateShopTab() {
         }
     }
 }
-
-// function createShopUpgrades(upgradeList) {
-//     let randomUpgrades
-//     if(upgradeList) {
-//         randomUpgrades = upgradeList
-//     } else {
-//         randomUpgrades = []
-//     }
-
-    
-//     let upgradeAttempts = 0
-//     if(!upgradeList) {
-//         while((randomUpgrades.length < player.stats.shop.upgrades && upgradeAttempts < 1000)) {
-//             let rarity = 0
-//             const randomRarityNum = DeBread.randomNum(0,1,100)
-            
-//             const luck = player.stats.shop.luck / 2
-//             let weights = [
-//                 55 + luck,
-//                 27 + 1.25*luck,
-//                 16 + 1.25*luck,
-//                 1.95 + 1.25*luck,
-//                 0.01 + 0.05*luck
-//             ]
-//             let total = weights[0]+weights[1]+weights[2]+weights[3]+weights[4]
-//             let proportions = [
-//                 weights[0]/total,
-//                 weights[1]/total+weights[0]/total,
-//                 weights[2]/total+weights[1]/total+weights[0]/total,
-//                 weights[3]/total+weights[2]/total+weights[1]/total+weights[0]/total,
-//                 weights[4]/total+weights[3]/total+weights[2]/total+weights[1]/total+weights[0]/total,
-//             ]
-            
-//             for(let i = 0; i < proportions.length; i++) {
-//                 if(randomRarityNum < proportions[i]) {
-//                     rarity = i
-//                     break
-//                 }
-//             }
-            
-//             const upgradeKeys = Object.keys(upgrades[rarity])
-//             const randomUpgrade = upgradeKeys[DeBread.randomNum(0,upgradeKeys.length - 1)]
-            
-//             if(!randomUpgrades.some(u => u.id === randomUpgrade && u.rarity === rarity)) {
-//                 randomUpgrades.push({id: randomUpgrade, rarity: rarity})
-//             }
-    
-//             upgradeAttempts++
-//         }
-//     }
-    
-//     if(upgradeAttempts >= 1000) {
-//         randomUpgrades.push({id: 'rock', rarity: 0})
-//     }
-
-//     doge('gameShopUpgrades').querySelectorAll('.shopItem').forEach(elem => {elem.remove()})
-
-//     const upgradeSlotBase = document.createElement('div')
-//     upgradeSlotBase.classList.add('shopItem')
-//     upgradeSlotBase.innerHTML = `
-//         <div class="shopItemPrice">
-//             <span>$25</span>
-//         </div>
-//         <img src="graphics/placeholder.png">
-//     `
-//     for(const key in randomUpgrades) {
-//         const rarity = randomUpgrades[key].rarity
-//         const id = randomUpgrades[key].id.toString()
-
-//         const upgrade = {
-//             price: upgrades[rarity][id].price ?? Math.pow(4,rarity+1),
-//             data: upgrades[rarity][id]
-//         }
-//         const upgradeSlot = upgradeSlotBase.cloneNode(true)
-        
-//         upgradeSlot.style.animation = `shopItemIn 500ms cubic-bezier(0,1,.5,1) ${key * 100}ms 1 forwards`
-
-//         doge('gameShopUpgrades').append(upgradeSlot)
-//         upgradeSlot.querySelector('.shopItemPrice').querySelector('span').innerText = '$' + formatNumber(upgrade.price)
-//         upgradeSlot.querySelector('img').src = `graphics/upgrades/${randomUpgrades[key].id}.png`
-
-//         if(rarity === 4) {
-//             upgradeSlot.style.animation = 'mythicBorder 5s linear infinite forwards'
-//             upgradeSlot.querySelector('img').style.animation = 'mythicGlow 5s linear infinite forwards'
-//         } else {
-//             upgradeSlot.querySelector('img').style.filter = `drop-shadow(0px 0px 5px ${rarities[rarity].color})`
-//         }
-
-//         upgradeSlot.onclick = () => {
-//             if(upgrade.price <= player.money) {
-//                 upgradeSlot.style.pointerEvents = 'none'
-//                 upgradeSlot.querySelector('.shopItemPrice').innerText = 'SOLD OUT'
-//                 upgradeSlot.style.filter = 'grayscale(1) brightness(50%)'
-//                 upgrades[rarity][randomUpgrades[key].id].apply()
-//                 updateUI()
-
-//                 player.getMoney(-upgrade.price)
-                
-//                 player.gameOverStats.items++
-//                 player.gameOverStats.moneySpent += upgrade.price
-
-//                 if(player.tutorial.stage === 17) {
-//                     player.tutorial.goalValue++
-//                     updateTutorialGoal()
-//                 }
-//             }
-//         }
-
-//         upgradeSlot.onmouseenter = () => {
-//             const upgradeRect = upgradeSlot.getBoundingClientRect()
-
-//             //literally just for the error item
-
-//             let itemName = upgrade.data.name
-//             if(typeof upgrade.data.name === 'function') {
-//                 itemName = upgrade.data.name()
-//             }
-
-//             let itemDesc = upgrade.data.desc
-//             if(typeof upgrade.data.desc === 'function') {
-//                 itemDesc = upgrade.data.desc()
-//             }
-
-//             tooltip(
-//                 [upgradeRect.left + upgradeSlot.offsetWidth / 2, upgradeRect.top + upgradeSlot.offsetHeight + 12], 
-//                 itemName, 
-//                 [{text: rarities[rarity].name, col: rarities[rarity].color}], 
-//                 itemDesc, 
-//                 upgrade.price
-//             )
-//         }
-
-//         upgradeSlot.onmouseleave = () => {
-//             doge('tooltip').style.opacity = '0'
-//         }
-//     }
-// }
 
 function rerollShop() {
     if(player.rerolls === 0 && player.money > player.stats.shop.rerollPrice) {
