@@ -583,6 +583,10 @@ const upgrades = [
                 Gain <cp>+$10</cp> when entering the shop.
             `,
 
+            requirement: () => {
+                return player.allowShop
+            },
+
             priceMult: 1.1,
             apply: () => {
                 modifyStat(['player','couponBonus'],'+=10')
@@ -595,11 +599,16 @@ const upgrades = [
             `,
 
             priceMult: 1.25,
+
+            requirement: () => {
+                return player.allowShop
+            },
+
             apply: () => {
                 modifyStat(['shop','rerollPrice'],'*=0.85')
 
                 if(player.rerolls === 0) {
-                    doge('rerollPrice').innerText = `($${Math.floor(player.stats.shop.rerollPrice)})`
+                    doge('rerollPrice').innerText = `${saveData.selectedCharacter === 'walf' ? '' : '$'}`+formatNumber(Math.ceil(player.stats.shop.rerollPrice))+`${saveData.selectedCharacter === 'walf' ? '🧇' : ''}`
                 }
             },
         },
@@ -1167,6 +1176,10 @@ const upgrades = [
                 Gain <cg>+1</cg> free shop reroll.
             `,
             priceMult: 2,
+
+            requirement: () => {
+                return player.allowShop
+            },
     
             apply: () => {
                 modifyStat(['shop','rerolls'], '+=1')
@@ -1209,6 +1222,10 @@ const upgrades = [
             `,
             priceMult: 5,
     
+            requirement: () => {
+                return player.allowShop
+            },
+
             apply: () => {
                 modifyStat(['shop','rerollPrice'], '*=0.25')
             }
@@ -1232,6 +1249,10 @@ const upgrades = [
                 If you reach the shop without it breaking, gain money equal to your current wave <cg>*2</cg>.
             `,
             priceMult: 1.5,
+
+            requirement: () => {
+                return player.allowShop
+            },
     
             apply: () => {
                 const piggy = document.createElement('div')
@@ -1499,9 +1520,16 @@ const upgrades = [
             `,
             priceMult: 2,
 
+            requirement: () => {
+                return player.allowShop
+            },
+
             apply: () => {
                 modifyStat(['shop','rerollPrice'],'=5')
                 modifyStat(['shop','priceMult'],'*=0.5')
+                if(player.rerolls === 0) {
+                    doge('rerollPrice').innerText = `${saveData.selectedCharacter === 'walf' ? '' : '$'}`+formatNumber(Math.ceil(player.stats.shop.rerollPrice))+`${saveData.selectedCharacter === 'walf' ? '🧇' : ''}`
+                }
             }
         },
         the_tophat: {
@@ -3487,8 +3515,28 @@ const powerItems = [
                         })
                     }
                 })
-            }
+            },
         },
+        // d: {
+        //     name: 'eee',
+        //     desc: `
+        //         Uses <cp>50</cp> POWER<br>
+        //         Triggers the effect of a random, non-mythic <strong>Power Item</strong>.<br>
+        //         Randomizes <cp>POWER</cp> cost between 0 and 100 on use.
+        //         `,
+        //     charge: 50,
+
+        //     use: () => {
+        //         player.powerItem.charge = DeBread.randomNum(0,100)
+                
+        //         const randomList = powerItems[DeBread.randomNum(0,2)]
+        //         const randomKey = Object.keys(randomList)[DeBread.randomNum(0,Object.keys(randomList).length-1)]
+
+        //         randomList[randomKey].use()
+
+        //         updateUI()
+        //     }
+        // },
         // black_knife: {
         //     name: 'Black Knife',
         //     desc: `
@@ -3705,7 +3753,7 @@ const powerItems = [
             id: 'pringles_can',
             desc: `
                 Uses <cp>100</cp> POWER<br>
-                Throws a pringles can towards your cursor, dealing <cg>1000%</cg> of your damage on impact and pushes enemies away.<br>
+                Throws a pringles can towards your cursor, dealing <cg>25,000%</cg> of your damage on impact and pushes enemies away.<br>
                 <br>
                 <em style="color: grey;">Only real ones know that chaos I've caused with these.</em>
             `,
@@ -3761,7 +3809,7 @@ const powerItems = [
 
                     enemies.forEach(enemy => {
                         if(isColliding(bottle, enemy) && enemy.data.active) {
-                            enemy.data.damage(player.stats.bullet.damage * 10)
+                            enemy.data.damage(player.stats.bullet.damage * 250)
                             bottle.destroy()
                         }
                     })
@@ -4306,7 +4354,7 @@ const elixirs = [{
             <cg>+10</cg> Area size
         `,
         baseCost: 100,
-        costIncrease: 2,
+        costIncrease: 1.5,
         buyLimit: 15,
         tier: 0,
 
@@ -4420,7 +4468,7 @@ function openShop(upgradeList) {
         if(player.stats.shop.rerolls > 0) {
             doge('rerollPrice').innerText = `(${player.rerolls})`
         } else {
-            doge('rerollPrice').innerText = `($${Math.floor(player.stats.shop.rerollPrice)})`
+            doge('rerollPrice').innerText = `${saveData.selectedCharacter === 'walf' ? '' : '$'}`+formatNumber(Math.ceil(player.stats.shop.rerollPrice))+`${saveData.selectedCharacter === 'walf' ? '🧇' : ''}`
         }
         doge('gameShopTitle').innerText = 'Shop :)'
         applyFlowText(doge('gameShopTitle'))
@@ -4885,7 +4933,7 @@ function rerollShop() {
     if(player.rerolls === 0 && player.money > player.stats.shop.rerollPrice) {
         player.getMoney(-player.stats.shop.rerollPrice)
         modifyStat(['shop','rerollPrice'],'*=1.1')
-        doge('rerollPrice').innerText = `($${Math.floor(player.stats.shop.rerollPrice)})`
+        doge('rerollPrice').innerText = `${saveData.selectedCharacter === 'walf' ? '' : '$'}`+formatNumber(Math.ceil(player.stats.shop.rerollPrice))+`${saveData.selectedCharacter === 'walf' ? '🧇' : ''}`
 
         createShopItems()
         saveData.stats.list.Times_Rerolled++
@@ -4900,7 +4948,7 @@ function rerollShop() {
         player.gameOverStats.rerolls++
 
         if(player.rerolls === 0) {
-            doge('rerollPrice').innerText = `($${Math.floor(player.stats.shop.rerollPrice)})`
+            doge('rerollPrice').innerText = `${saveData.selectedCharacter === 'walf' ? '' : '$'}`+formatNumber(Math.ceil(player.stats.shop.rerollPrice))+`${saveData.selectedCharacter === 'walf' ? '🧇' : ''}`
         }
     }
 
@@ -4994,5 +5042,30 @@ function closeShop() {
     if(player.tutorial.stage === 20) {
         player.tutorial.goalValue++
         updateTutorialGoal()
+    }
+}
+
+function getRandomItem() {
+    let itemChosen = false
+    while(!itemChosen) {
+        let rarity = getWeightedChance([
+            (55 + player.stats.shop.luck) * player.shopWeightMults[0],
+            (27 + 1.25*player.stats.shop.luck) * player.shopWeightMults[1],
+            (16 + 1.25*player.stats.shop.luck) * player.shopWeightMults[2],
+            (1.95 + 1.25*player.stats.shop.luck) * player.shopWeightMults[3],
+            (0.01 + 0.05*player.stats.shop.luck) * player.shopWeightMults[4]
+        ])
+
+        const randomKey = Object.keys(upgrades[rarity])[DeBread.randomNum(0,Object.keys(upgrades[rarity]).length-1)]
+        const randomItem = upgrades[rarity][randomKey]
+
+        let meetsRequirement = true
+        if(randomItem.requirement) {
+            meetsRequirement = randomItem.requirement()
+        }
+
+        if(meetsRequirement) {
+            return {data: randomItem, rarity: rarity, key: randomKey}
+        }
     }
 }

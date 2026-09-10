@@ -807,7 +807,14 @@ const characters = {
             {text:'Plinkel Pack',col:'#386942'},
         ],
 
-        weapon: weaponPresets.shotgun
+        weapon: weaponPresets.shotgun,
+
+        skins: [
+            {
+                name: 'Pink Ashton',
+                src: 'pinkAshton',
+            },
+        ]
     },
     tammy: {
         name: 'Tammy',
@@ -937,7 +944,18 @@ const characters = {
             modifyStat(['player','maxHealth'], '=50')
         },
 
-        weapon: weaponPresets.flintlock
+        weapon: weaponPresets.flintlock,
+
+        skins: [
+            {
+                name: 'Black Jaden',
+                src: 'blackJaden',
+            },
+            {
+                name: 'Bald Black Jaden',
+                src: 'baldBlackJaden',
+            },
+        ],
     },
     peep: {
         name: 'Peep',
@@ -1359,7 +1377,14 @@ const characters = {
             player.visibleStats.push('bullet-speedDiv')
         },
 
-        weapon: weaponPresets.fire_paws
+        weapon: weaponPresets.fire_paws,
+        
+        skins: [
+            {
+                name: 'Purple Phoenix',
+                src: 'purplePhoenix',
+            },
+        ],
     },
     allx: {
         name: 'Quantum',
@@ -1579,7 +1604,15 @@ const characters = {
             modifyStat(['player','fireDamageMult'],'=5')
         },
 
-        weapon: weaponPresets.gun
+        weapon: weaponPresets.gun,
+
+        skins: [
+            {
+                name: 'Purple Hana',
+                src: 'purpleHana',
+
+            },
+        ],
     },
     // zolph: {
     //     name: 'Zolph',

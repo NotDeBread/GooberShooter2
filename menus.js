@@ -526,8 +526,11 @@ function renderCharacterSelect(page = 1) {
             updateSelectedCharacter(box.character)
         }
 
-        if(characterUnlocked) {
+        if(characterUnlocked || saveData.settings.devMode) {
             if(index > pageSize * (page-1) && index <= pageSize * page) {
+                if(saveData.settings.devMode && !characterUnlocked) {
+                    box.style.opacity = '0.25'
+                }
                 doge('characterSelectContainer').append(box)
             }
             index++
@@ -1059,11 +1062,11 @@ const creditsHTML = `
     <span>Music Composer: <a href="https://guns.lol/bmoney.squire" target="_blank">B-Money</a></span><br>
     <span>Background Shader: From <a href="https://www.playbalatro.com/" target="_blank">Balatro</a>, rewritten by <a href="https://xemantic.github.io/shader-web-background/" target="_blank">xemantic</a></span><br>
     <span>Addditional Textures: <a href="https://plinkel.neocities.org/" target="_blank">Plinkel</a></span><br>
-    <span>Additional SFX: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
+    <span>Additional SFX: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a>, <a href="https://guns.lol/bmoney.squire" target="_blank">B-Money</a><br>
     <span>Playtesters: Nova, TrueSkywalkr, Dottr, <a href="https://plinkel.neocities.org/" target="_blank">Plinkel</a></span>, ExistingSelf<br>
     <span>Save filler: </span><a href="https://www.youtube.com/@redjive2/" target="_blank">Redjive2</a><br>
     <span>Special thanks: </span><a href="https://yeen.town/@Chalkllate" target="_blank">Jake</a> and Drew Freeman 🔥<br>
-    <span>💖 Supporters: xX_DeBread_H8ER_Xx</span><br>
+    <span>💖 Supporters: Lore, xX_DeBread_H8ER_Xx</span><br>
     <button onclick="openPrompt('Character Credits', getCharacterCreditsHTML(), [{text: 'Back', onclick: () => {openPrompt('Credits', creditsHTML, [{text: 'Close', onclick: () => {closePrompt()}}], [500,375])}}], [400,500])">Characters</button>
 `
 

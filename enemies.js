@@ -743,16 +743,13 @@ const enemies = {
         desc: '<em style="color: grey;">Sandbox only</em>',
         texture: 'tammyDie.png',
         size: 36,
-        health: Infinity,
+        health: 1e300,
         weight: Infinity,
         credits: Infinity,
         color: [76, 81, 128],
         finishBossWave: true,
         noKillBonus: true,
-
-        onSpawn: enemy => {
-            enemy.data.ticksActive = 0
-        },
+        hideHealthbar: true,
 
         tick: enemy => {
             if(enemy.data.ticksActive <= 50) {
@@ -781,7 +778,7 @@ const enemies = {
                 enemy.data.kill()
             }
 
-            enemy.data.ticksActive++
+            enemy.data.ticksActive = (enemy.data.ticksActive ?? 0) + 1 
         },
 
         onDeath: enemy => {
@@ -802,6 +799,7 @@ const enemies = {
         finishBossWave: true,
         noKillBonus: true,
         noDeathParticles: true,
+        hideHealthbar: true,
 
         onSpawn: enemy => {
             enemy.ticksActive = 0
@@ -912,6 +910,7 @@ const enemies = {
         credits: Infinity,
         color: [76, 119, 128],
         finishBossWave: true,
+        hideHealthbar: true,
         noKillBonus: true,
 
         onSpawn: enemy => {
@@ -973,6 +972,7 @@ const enemies = {
         color: [255,255,255],
         finishBossWave: true,
         noKillBonus: true,
+        hideHealthbar: true,
 
         onSpawn: enemy => {
             enemy.ticksActive = 0
@@ -1132,76 +1132,76 @@ const enemies = {
 }
 
 const minibosses = {
-    testBoss: {
-        name: 'Test Boss',
-        desc: 'Boss used for testing!',
-        health: 1000,
-        size: 100,
-        color: [100, 100, 100],
-        boss: true,
-        miniboss: true,
-        weight: 5,
-        texture: 'testBossNormal.png',
+    // testBoss: {
+    //     name: 'Test Boss',
+    //     desc: 'Boss used for testing!',
+    //     health: 1000,
+    //     size: 100,
+    //     color: [100, 100, 100],
+    //     boss: true,
+    //     miniboss: true,
+    //     weight: 5,
+    //     texture: 'testBossNormal.png',
 
-        moves: [
-            { //Dash
-                duration: 25,
-                do: boss => {
-                    boss.style.backgroundImage = 'url(graphics/enemies/testBossDash.png)'
+    //     moves: [
+    //         { //Dash
+    //             duration: 25,
+    //             do: boss => {
+    //                 boss.style.backgroundImage = 'url(graphics/enemies/testBossDash.png)'
 
-                    const playerAngle = Math.atan2(
-                        player.centerPos[1] - boss.data.centerPos[1],
-                        player.centerPos[0] - boss.data.centerPos[0]
-                    )
+    //                 const playerAngle = Math.atan2(
+    //                     player.centerPos[1] - boss.data.centerPos[1],
+    //                     player.centerPos[0] - boss.data.centerPos[0]
+    //                 )
 
-                    boss.data.dirVels.push({
-                        speed: 15 * player.stats.enemy.speedMult,
-                        angle: playerAngle,
-                        div: 1.1
-                    })
-                }
-            },
-            { //Fire
-                duration: 25,
-                do: boss => {
-                    boss.style.backgroundImage = 'url(graphics/enemies/testBossNormal.png)'
-                    const projPos = [boss.data.pos[0] + (boss.data.size)/2, boss.data.pos[1] + (boss.data.size)/2]
-                    const projAngle = Math.atan2(
-                        projPos[1] - DeBread.randomNum(boss.data.target.pos[1], boss.data.target.pos[1] + boss.data.target.elem.offsetHeight),
-                        projPos[0] - DeBread.randomNum(boss.data.target.pos[0], boss.data.target.pos[0] + boss.data.target.elem.offsetWidth),
-                    )
+    //                 boss.data.dirVels.push({
+    //                     speed: 15 * player.stats.enemy.speedMult,
+    //                     angle: playerAngle,
+    //                     div: 1.1
+    //                 })
+    //             }
+    //         },
+    //         { //Fire
+    //             duration: 25,
+    //             do: boss => {
+    //                 boss.style.backgroundImage = 'url(graphics/enemies/testBossNormal.png)'
+    //                 const projPos = [boss.data.pos[0] + (boss.data.size)/2, boss.data.pos[1] + (boss.data.size)/2]
+    //                 const projAngle = Math.atan2(
+    //                     projPos[1] - DeBread.randomNum(boss.data.target.pos[1], boss.data.target.pos[1] + boss.data.target.elem.offsetHeight),
+    //                     projPos[0] - DeBread.randomNum(boss.data.target.pos[0], boss.data.target.pos[0] + boss.data.target.elem.offsetWidth),
+    //                 )
 
-                    const projData = {
-                        damage: 50,
-                        size: 25,
-                        speed: 7 * player.stats.enemy.speedMult,
-                    }
+    //                 const projData = {
+    //                     damage: 50,
+    //                     size: 25,
+    //                     speed: 7 * player.stats.enemy.speedMult,
+    //                 }
 
-                    createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
-                }
-            },
-            { //Burst
-                duration: 125,
-                do: boss => {
-                    boss.style.backgroundImage = 'url(graphics/enemies/testBossBurstCharge.png)'
+    //                 createProjectile(1, [...projPos], projAngle, projData, [player.elem], boss.data)
+    //             }
+    //         },
+    //         { //Burst
+    //             duration: 125,
+    //             do: boss => {
+    //                 boss.style.backgroundImage = 'url(graphics/enemies/testBossBurstCharge.png)'
 
-                    createTimeout(() => {
-                        const projData = {
-                            damage: 50,
-                            size: 20,
-                            speed: 10 * player.stats.enemy.speedMult,
-                        }
+    //                 createTimeout(() => {
+    //                     const projData = {
+    //                         damage: 50,
+    //                         size: 20,
+    //                         speed: 10 * player.stats.enemy.speedMult,
+    //                     }
 
-                        for(let i = 0; i < 10; i++) {
-                            createProjectile(1,[...boss.data.centerPos],(Math.PI * 2 / 10) * i, projData, [player.elem], boss.data)
-                        }
+    //                     for(let i = 0; i < 10; i++) {
+    //                         createProjectile(1,[...boss.data.centerPos],(Math.PI * 2 / 10) * i, projData, [player.elem], boss.data)
+    //                     }
 
-                        boss.style.backgroundImage = 'url(graphics/enemies/testBossBurst.png)'
-                    }, 75)
-                }
-            }
-        ]
-    },
+    //                     boss.style.backgroundImage = 'url(graphics/enemies/testBossBurst.png)'
+    //                 }, 75)
+    //             }
+    //         }
+    //     ]
+    // },
     sasha: {
         name: 'SASHA',
         desc: 'Run.',
@@ -1658,7 +1658,7 @@ const minibosses = {
 
         onSpawn: boss => {
             boss.data.isHoldingPlayer = false
-            boss.data.holdPlayerDate = 0
+            boss.data.holdPlayerDate = 51
             boss.data.randomTargetPos = [0,0]
         },
 
@@ -1775,8 +1775,8 @@ const minibosses = {
                         damage: 20,
                         size: 10,
                         speed: 15 * player.stats.enemy.speedMult * boss.data.speedMult,
-                        range: 15,
-                        grow: -10,
+                        range: 30,
+                        grow: -5,
                     }
                     
                     for(let i = 0; i < 5; i++) {
@@ -2712,7 +2712,6 @@ const minibosses = {
 const bosses = {
     the_tutorialist: {
         name: 'THE TUTORIALIST',
-        desc: 'The creator of all',
         health: 15_000,
         size: 36,
         color: [255,255,255],
@@ -3674,7 +3673,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                 amount = 0
             }
 
-            if(enemyData.health < Infinity) {
+            if(enemyData.health < Infinity && !data.hideHealthbar) {
                 enemy.querySelector('.enemyHealthBarContainer').style.opacity = '1'
             }
 
@@ -3815,6 +3814,24 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                         player
                     )
                 }
+            }
+
+
+            function dropFloorItem() {
+                const randomItem = getRandomItem()
+                createFloorItem(
+                    [...enemy.data.centerPos],
+                    randomItem.key,
+                    randomItem.data
+                )
+            }
+
+            for(let i = 0; i < Math.floor(player.stats.enemy.itemChance / 100); i++) {
+                dropFloorItem()
+            }
+
+            if(DeBread.randomNum(0,100,5) <= player.stats.enemy.itemChance % 100) {
+                dropFloorItem()
             }
             
             enemy.remove()
@@ -4088,10 +4105,11 @@ function spawnWave(wave, poor) {
 }
 
 function progressWave(portal) {
+    if(!player.allowWaveProgression) return
     if(![2,3,4].includes(saveData.gameSettings.gamemode) && e.gameUpdates - player.lastWaveDate > 2) {
         if(player.wave % 5 === 0 && player.wave > 0 && !portal) {
             if(elems.enemies.length === 0 && e.gameUpdates - player.lastKillDate > 100) {
-                if(player.wave % 100 === 0) {
+                if(player.wave % 100 === 0 && player.allowBosses) {
                     player.fightingBoss = true
                     const bossKey = DeBread.randomNum(0, Object.keys(bosses).length - 1)
                     const boss = bosses[Object.keys(bosses)[bossKey]]
@@ -4115,7 +4133,7 @@ function progressWave(portal) {
 
                     player.health = player.stats.player.maxHealth
                     updateUI()
-                } else if(player.wave % player.bossInterval === 0) {
+                } else if(player.wave % player.bossInterval === 0 && player.allowMinibosses) {
                     player.fightingBoss = true
                     const bossKey = DeBread.randomNum(0, Object.keys(minibosses).length - 1)
                     const boss = minibosses[Object.keys(minibosses)[bossKey]]
@@ -4140,7 +4158,7 @@ function progressWave(portal) {
                     player.health = player.stats.player.maxHealth
                     updateUI()
                 } else {
-                    if(saveData.selectedChallenges.includes('perfect') && player.timesHit > 0) {
+                    if(!player.allowShop) {
                         player.autoWavesPaused = false
                         progressWave(true)
                     } else {
@@ -4164,7 +4182,9 @@ function progressWave(portal) {
                 player.lastWaveDate = 0
             }
 
-            player.onWaveIncrease()
+            for(func of player.onWaveIncrease) {
+                func()
+            }
         }
 
         if(player.wave >= 26 && saveData.selectedCharacter === 'ashton') {

@@ -674,10 +674,10 @@ const challenges = {
         `,
 
         apply: () => {
-            player.onWaveIncrease = () => {
+            player.onWaveIncrease.push(() => {
                 modifyStat(['player','maxHealth'],'*=0.95')
                 updateUI()
-            }
+            })
             player.bossInterval = 10
             modifyStat(['shop','priceMult'],'=0.75')
             modifyStat(['shop','upgrades'],'+=1')
@@ -1001,12 +1001,12 @@ const achievements = {
     },
     Survivor: {
         name: 'Survivor',
-        desc: 'Reach wave 10.',
+        desc: 'Beat wave 10.',
         difficulty: 0,
     },
     Trooper: {
         name: 'Trooper',
-        desc: 'Reach wave 50.',
+        desc: 'Beat wave 50.',
         difficulty: 0,
     },
     Conqueror: {
@@ -1016,7 +1016,7 @@ const achievements = {
     },
     Champion: {
         name: 'Champion',
-        desc: 'Reach wave 200.',
+        desc: 'Beat wave 200.',
         difficulty: 0,
     },
     The_End: {
@@ -1417,7 +1417,7 @@ const achievements = {
 
 function getAchievement(key, run) {
     const achievement = achievements[key]
-    if(!saveData.achievements.includes(key) && Object.keys(achievements).includes(key) && (![2,3].includes(saveData.gameSettings.gamemode) || achievement.ignoreGamemode) && saveData.selectedChallenges.length === 0) {
+    if(!saveData.achievements.includes(key) && Object.keys(achievements).includes(key) && (![1,2,3].includes(saveData.gameSettings.gamemode) || achievement.ignoreGamemode) && saveData.selectedChallenges.length === 0) {
         saveData.achievements.push(key)
         run?.()
 

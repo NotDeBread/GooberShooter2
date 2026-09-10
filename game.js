@@ -47,8 +47,10 @@ function createPlayer() {
         perfectSet: true,
 
         hideUI: false,
-
-        bankBreakChance: 0,
+        allowWaveProgression: true,
+        allowShop: true,
+        allowBosses: true,
+        allowMinibosses: true,
 
         weapon: 'gun',
         characterWeapon: weaponPresets.gun,
@@ -303,6 +305,7 @@ function createPlayer() {
                 levelIncrease: 0, //How many levels enemies are offset by.
                 speedMult: 1, //How much enemy speed is multiplied by. This also effects shot and melee cooldowns.
                 moneyMult: 1, //How much the amount of money an enemy drops is multiplied by.
+                itemChance: 0, //The chance that an item drops from enemies after they are killed.
             },
             misc: {
                 areaSize: 500,
@@ -1025,7 +1028,6 @@ function createPlayer() {
                 })
 
                 //Graze Hitbox
-
                 addStyles(doge('grazeHitbox'), {
                     left: player.centerPos[0]+'px',
                     top: player.centerPos[1]+'px',
@@ -1054,7 +1056,7 @@ function createPlayer() {
         leftClickEvents: [],
         shootRequirement: () => {return true},
         onShoot: () => {},
-        onWaveIncrease: () => {},
+        onWaveIncrease: [],
         onDeath: () => {},
         onReloadFinish: () => {},
     }
@@ -1083,7 +1085,12 @@ function startGame() {
     doge('weapon').style.opacity = '1'
     player.characterWeapon = characters[saveData.selectedCharacter].weapon
     doge('gameWeaponName').innerText = characters[saveData.selectedCharacter].weapon.name
-    
+    if(saveData.gameSettings.gamemode === 1) {
+        player.allowShop = false
+        player.allowBosses = false
+        player.stats.misc.waveMoneyMult = 0
+    }
+
     cleanArea()
     sandBoxEnemy = undefined
     
@@ -2330,6 +2337,7 @@ function createFloorItem(pos, itemKey, itemData) {
 
         onTouch: () => {
             itemData.apply()
+            updateUI()
         }
     })
 
@@ -2433,7 +2441,11 @@ function updateUI() {
 function updateArea() {
     doge('area').style.width = player.stats.misc.areaSize + 'px'
     doge('area').style.height = player.stats.misc.areaSize + 'px'
-
+    doge('areaCanvasTop').width = player.stats.misc.areaSize
+    doge('areaCanvasTop').height = player.stats.misc.areaSize
+    doge('areaCanvasBottom').width = player.stats.misc.areaSize
+    doge('areaCanvasBottom').height = player.stats.misc.areaSize
+    
     if(player.health / player.stats.player.maxHealth <= 0.25) {
         doge('area').style.boxShadow = 'inset 0px 0px 25px red'
     } else {
@@ -2527,7 +2539,7 @@ const updateInterval = DeBread.createInterval(() => {
                     data.size = player.stats.player.droolSize
                     data.speed = 0
                     data.knockback = 0
-                    data.damageInterval = player.stats.bullet.shotCooldown * 5
+                    data.damageInterval = Math.floor(player.stats.bullet.shotCooldown * 5)
                     data.drillTicks = Infinity
 
                     let angle = 0
@@ -2749,6 +2761,11 @@ const updateInterval = DeBread.createInterval(() => {
         
                     createProjectile(0, bulletPos, enemyAngle + offset, player.stats.bullet, elems.enemies, player)
                 }
+            }
+
+            //SPRINT
+            if(saveData.gameSettings.gamemode === 1) {
+                //Put timer stuff here
             }
         } //END OF PLAYER ALIVE TICKS
 
@@ -3057,11 +3074,13 @@ const updateInterval = DeBread.createInterval(() => {
         //Sandbox Enemy
             
         if(sandBoxEnemy) {
-            doge('sandboxEnemy').style.opacity = '0.25'
-            doge('sandboxEnemy').style.left = e.relCursorPos[0]+'px'
-            doge('sandboxEnemy').style.top = e.relCursorPos[1]+'px'
-            doge('sandboxEnemy').style.width = sandBoxEnemy.size + 'px'
-            doge('sandboxEnemy').style.backgroundColor = `rgb(${sandBoxEnemy.color})`
+            addStyles(doge('sandboxEnemy'),{
+                opacity: '0.25',
+                left: e.relCursorPos[0]+'px',
+                top: e.relCursorPos[1]+'px',
+                width: sandBoxEnemy.size+'px',
+                backgroundColor: `rgb(${sandBoxEnemy.color})`
+            })
         } else {
             doge('sandboxEnemy').style.opacity = '0'
         }
@@ -3529,7 +3548,6 @@ function createExplosion(pos, size, dmg, kb, ignorePlayer, col = [[255,255],[0,2
 
 function createPoisonField(pos, size, dmg, ticks, tickRate, targets, color = [255,255,255]) {
     const field = document.createElement('div')
-    field.classList.add('poisonField')
     field.classList.add('entity')
 
     field.active = true
@@ -3537,20 +3555,24 @@ function createPoisonField(pos, size, dmg, ticks, tickRate, targets, color = [25
     field.ticks = ticks
 
     addStyles(field, {
+        position: 'absolute',
+        translate: '-50% -50%',
         left: pos[0]+'px',
         top: pos[1]+'px',
         width: size+'px',
         height: size+'px',
         zIndex: '5',
         backgroundColor: `rgb(${color[0]},${color[1]},${color[2]}, 0.1)`,
-        outline: `1px solid rgb(${color[0]},${color[1]},${color[2]})`
+        outline: `1px solid rgb(${color[0]},${color[1]},${color[2]})`,
+        transition: 'transform ease-in 500ms',
+        animation: 'poisonFieldIn 500ms cubic-bezier(0,1,.5,1) 1 forwards'
     })
 
     field.tick = () => {
         if(field.active) {
             if(e.gameUpdates - field.lastTick > tickRate) {
                 targets.forEach(target => {
-                    if(isColliding(field,target.data.elem) && target.data.active) {
+                    if(isColliding(field,target.data.elem) && target.data.active && target.data.alive) {
                         const damage = target.data.damage(dmg)
 
                         const popup = createPopupText(DeBread.round(damage), [...target.data.centerPos])
@@ -4297,7 +4319,7 @@ function openSandboxMenu(menu) {
                 sandboxUpgrade.classList.add('sandboxUpgrade')
 
                 let itemUnlocked = true
-                if(upgrade.unlockable && !saveData.stats.unlocked.items.includes(key)) {
+                if((upgrade.unlockable && !saveData.stats.unlocked.items.includes(key))) {
                     itemUnlocked = false
                 }
 
@@ -4321,6 +4343,9 @@ function openSandboxMenu(menu) {
                 sandboxUpgrade.key = key
                 
                 if(itemUnlocked) {
+                    doge('sandboxMenu-upgrades').append(sandboxUpgrade)
+                } else if(saveData.settings.devMode) {
+                    sandboxUpgrade.style.opacity = '0.25'
                     doge('sandboxMenu-upgrades').append(sandboxUpgrade)
                 }
 
@@ -4477,6 +4502,9 @@ function openSandboxMenu(menu) {
                 
                 if(itemUnlocked) {
                     doge('sandboxMenu-powerItems').append(button)
+                } else if(saveData.settings.devMode) {
+                    button.style.opacity = '0.25'
+                    doge('sandboxMenu-powerItems').append(button)
                 }
 
                 button.onclick = () => {
@@ -4616,6 +4644,9 @@ function openSandboxMenu(menu) {
 
             if(characterUnlocked) {
                 doge('sandboxMenu-characters').append(button)
+            } else if(saveData.settings.devMode) {
+                doge('sandboxMenu-characters').append(button)
+                button.style.opacity = '0.25'
             }
         }
     }
