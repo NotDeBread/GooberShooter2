@@ -343,39 +343,47 @@ function formatNumber(num) {
     }
 }
 
+// function formatTime(seconds) {
+//     const time = {}
+
+//     time.centuries = Math.floor(seconds/3153600000)
+//     seconds %= 3153600000
+//     time.decades = Math.floor(seconds/315360000)
+//     seconds %= 315360000
+//     time.years = Math.floor(seconds/31536000)
+//     seconds %= 31536000
+//     time.weeks = Math.floor(seconds/604800)
+//     seconds %= 604800
+//     time.days = Math.floor(seconds/86400)
+//     seconds %= 86400
+//     time.hours = Math.floor(seconds/3600)
+//     seconds %= 3600
+//     time.minutes = Math.floor(seconds/60)
+//     time.seconds = seconds % 60
+
+//     let output = ''
+//     let timesMarked = 0
+//     for(const key in time) {
+//         if(time[key] !== 0) {
+//             if(time[key] === 1) {
+//                 output += `${formatNumber(time[key])} ${key.slice(0,-1)} `
+//             } else {
+//                 output += `${formatNumber(time[key])} ${key} `
+//             }
+//             timesMarked++
+//             if(timesMarked === 2) {
+//                 break
+//             }
+//         }
+//     } return output
+// }
+
 function formatTime(seconds) {
-    const time = {}
-
-    time.centuries = Math.floor(seconds/3153600000)
-    seconds %= 3153600000
-    time.decades = Math.floor(seconds/315360000)
-    seconds %= 315360000
-    time.years = Math.floor(seconds/31536000)
-    seconds %= 31536000
-    time.weeks = Math.floor(seconds/604800)
-    seconds %= 604800
-    time.days = Math.floor(seconds/86400)
-    seconds %= 86400
-    time.hours = Math.floor(seconds/3600)
-    seconds %= 3600
-    time.minutes = Math.floor(seconds/60)
-    time.seconds = seconds % 60
-
-    let output = ''
-    let timesMarked = 0
-    for(const key in time) {
-        if(time[key] !== 0) {
-            if(time[key] === 1) {
-                output += `${formatNumber(time[key])} ${key.slice(0,-1)} `
-            } else {
-                output += `${formatNumber(time[key])} ${key} `
-            }
-            timesMarked++
-            if(timesMarked === 2) {
-                break
-            }
-        }
-    } return output
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    const formattedMinutes = String(minutes).padStart(2, '0')
+    const formattedSeconds = String(remainingSeconds).padStart(2, '0')
+    return `${formattedMinutes}:${formattedSeconds}`
 }
 
 function applyFlowText(elem,speedMult = 1) {

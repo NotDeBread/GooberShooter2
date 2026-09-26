@@ -960,19 +960,19 @@
 
 #statusEffectContainer {
     display: flex;
+    flex-direction: row-reverse;
     gap: 5px;
 }
 
 .statusEffect {
-    border-radius: 50%;
-    border: 2px solid white;
-    width: 48px;
-    height: 48px;
+    width: 32px;
+    height: 32px;
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
     position: relative;
+    pointer-events: all;
 }
 
 .statusEffect img {
@@ -1003,7 +1003,7 @@
 .gameBossbar {
     width: 500px;
     height: 30px;
-    min-height: 5px;
+    min-height: 2px;
     background-color: black;
     outline: 2px solid white;
     border: 2px solid black;
@@ -1114,6 +1114,7 @@
     height: 5px;
     overflow: hidden;
     background-color: rgb(255,255,255,0.5);
+    position: relative;
 }
 
 #gameInnerAmmoBar {
@@ -1417,7 +1418,8 @@
     background-color: black;
     cursor: none;
     position: relative;
-    transition: box-shadow ease-in-out 1s, scale ease-in-out 500ms;
+    pointer-events: none;
+    transition: box-shadow ease-in-out 1s, scale ease-in-out 500ms, width ease-in-out 500ms, height ease-in-out 500ms;
 }
 
 #areaCanvasTop {
@@ -1428,6 +1430,7 @@
     position: absolute;
     top: 0;
     left: 0;
+    pointer-events: none;
 }
 
 #player {

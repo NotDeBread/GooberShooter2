@@ -51,17 +51,6 @@ const exmapleDialogue = [
 const dialogues = {
     fellaDrawing: [
         {
-            name: 'FELLA',
-            nameCol: [175,122,255],
-            portrait: 'graphics/credits/portraits/fellaSlouchedFocused.png',
-
-            text: '...'
-        },
-        {
-            portrait: 'graphics/credits/portraits/fellaSlouchedTalkFocused.png',
-            text: 'Yo whats up',
-        },
-        {
             portrait: 'graphics/credits/portraits/fellaSlouched.png',
             noName: true,
             options: [
@@ -89,6 +78,7 @@ const dialogues = {
                         progressFunction()
                         progressFunction()
                         startDialogueSequence(dialogues.fellaSkills)
+                        getAchievement('SkillsUSA')
                         saveData.hasTalkedToFella = true
                     }
                 },
@@ -429,6 +419,7 @@ const dialogues = {
                         onclick: () => {
                             progressFunction()
                             startDialogueSequence(dialogues.plinkel.goober)
+                            getAchievement('GSOrigins')
                         }
                     },
                     {
@@ -1270,6 +1261,7 @@ const dialogues = {
             text: 'But there was nobody there.',
             onEnd: () => {
                 saveData.stats.list.egg++
+                player.talkedToMan = true
                 getAchievement('The_Egg')
             }
         },
@@ -1570,7 +1562,30 @@ const creditAreas = {
 
                 interactRange: 100,
                 interact: () => {
-                    startDialogueSequence(dialogues.fellaDrawing)
+                    startDialogueSequence([...(player.talkedToMan ? [
+                        {
+                            name: 'FELLA',
+                            nameCol: [175,122,255],
+                            portrait: 'graphics/characters/fellaPortraitLarge.png',
+
+                            text: 'What\'s wrong??'
+                        },
+                        {
+                            text: 'You look like you just saw a ghost...'
+                        }
+                    ] : [
+                        {
+                            name: 'FELLA',
+                            nameCol: [175,122,255],
+                            portrait: 'graphics/credits/portraits/fellaSlouchedFocused.png',
+
+                            text: '...'
+                        },
+                        {
+                            portrait: 'graphics/credits/portraits/fellaSlouchedTalkFocused.png',
+                            text: 'Yo whats up',
+                        },
+                    ]), ...dialogues.fellaDrawing])
                 }
             },
             { //Dottr
@@ -1647,7 +1662,7 @@ const creditAreas = {
                     }
 
                     const character = characters[saveData.selectedCharacter]
-                    if(player.musicButtonPressed === 3) {
+                    if(player.musicButtonPressed === 4) {
                         startDialogueSequence([{
                             name: character.name.toUpperCase(),
                             nameCol: character.color,
@@ -1741,6 +1756,7 @@ const creditAreas = {
                 pos: [256, 225],
 
                 interactRange: 25,
+                interactLabel: '[E]',
 
                 interact: () => {
                     if(saveData.stats.list.egg === 0) {

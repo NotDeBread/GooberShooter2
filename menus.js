@@ -2,7 +2,7 @@ const startSequence = [
     {
         text: [
             'A game by',
-            'DeBread'
+            'Fella'
         ],
         images: [
             'graphics/characters/fellaPortrait.png',
@@ -35,14 +35,12 @@ const funFacts = [
     'Many items are pulled straight out of the original Goober Shooter!',
     'Originally, the player could\'ve had \'shield\' on top of their health, but it caused too many issues so it was scrapped.',
     'You can press H in the sandbox to toggle the sandbox menu!',
-    'You can hold SHIFT+R in game to quickly restart!',
+    'You can hold ` in game to quickly restart!',
     'Press ctrl++ or ctrl+- to change the game scale!'
 ]
 
 const startScreenTimeouts = []
 function startTitle() {
-    tracks.menu.playbackRate = 0.75
-    tracks.menu.preservesPitch = false
     tracks.menu.play()
     for(let i = 0; i < startSequence.length + 1; i++) {
         if(i < startSequence.length) {
@@ -848,6 +846,21 @@ function openGameSettingsMenu(id) {
         doge('gameSettingsSelectedWeapon').innerText = characters[saveData.selectedCharacter].weapon.name
         doge('gameSettingsSelectedCharacterImg').src = `graphics/characters/${saveData.selectedCharacter}Portrait.png`
 
+        doge('gameSettingsSelectedMods').innerHTML = ''
+        if(saveData.selectedChallenges.length > 0) {
+            for(challenge of saveData.selectedChallenges) {
+                const data = challenges[challenge]
+    
+                const icon = document.createElement('img')
+                icon.src = `graphics/challenges/${challenge}.png`
+                doge('gameSettingsSelectedMods').append(icon)
+    
+                console.log(data)
+            }
+        } else {
+            doge('gameSettingsSelectedMods').innerHTML = ' None'
+        }
+
         // doge('gameSettingsSelectedChallenge').innerText = challenges[saveData.selectedChallenge].name
 
         // doge('gameSettingsSelectedChallenge').onmouseenter = () => {
@@ -855,9 +868,9 @@ function openGameSettingsMenu(id) {
         //     tooltip([buttonRect.left + doge('gameSettingsSelectedChallenge').offsetWidth / 2, buttonRect.top + doge('gameSettingsSelectedChallenge').offsetHeight + 12], challenges[saveData.selectedChallenge].name, [{text: 'CHALLENGE', col: '#661b2f'}], challenges[saveData.selectedChallenge].desc, undefined)
         // }
 
-        doge('gameSettingsSelectedChallenge').onmouseleave = () => {
-            doge('tooltip').style.opacity = '0'
-        }
+        // doge('gameSettingsSelectedChallenge').onmouseleave = () => {
+        //     doge('tooltip').style.opacity = '0'
+        // }
 
         //janky as hell
         const rect = doge('gameSettingsCharacterContainer').getBoundingClientRect()
@@ -1127,6 +1140,10 @@ const creditProfiles = {
             Website: 'https://edmundmcmillen.tumblr.com/'
         }
     },
+    jas: {
+        name: 'jas',
+        socials: {}
+    },
     isaac: {
         name: 'Edmund McMillen',
         socials: {
@@ -1288,6 +1305,7 @@ const characterCredits = {
     the_horse: 'debread',
     car: 'garn',
     isaac: 'edmund',
+    jasp: 'jas',
     erix: 'erix',
     walf: 'walf',
     jake: 'chalk',
@@ -1483,6 +1501,13 @@ const settingsHTML = `
                 <div class="settingsCheckboxInfo">
                     <span>Disable CSS backdrop filters</span>
                     <span>Disables the resource intensive backdrop-filter CSS property.</span>
+                </div>
+            </div>
+            <div class="settingsCheckboxContainer">
+                <div class="genericCheckbox" id="scb-disablePoisonFieldAnimations"></div>
+                <div class="settingsCheckboxInfo">
+                    <span>Disable poison field animations</span>
+                    <span>Disables the poison field creation animation.</span>
                 </div>
             </div>
             <div class="settingsCheckboxContainer">

@@ -116,11 +116,11 @@ const upgrades = [
         helmet: {
             name: 'Hard Hat',
             desc: `
-                <cg>+20</cg> Max HP
+                <cg>+10</cg> Max HP
             `,
 
             apply: () => {
-                modifyStat(['player','maxHealth'], '+=20')
+                modifyStat(['player','maxHealth'], '+=10')
             }
         },
         running_shoes: {
@@ -193,6 +193,7 @@ const upgrades = [
             desc: `
                 Multiplies a random base stat by <strong>1.15</strong>.
             `,
+            foodItem: true,
             
             apply: () => {
                 const stats = [
@@ -395,6 +396,7 @@ const upgrades = [
                 <cb>-10%</cb> Max HP
             `,
             priceMult: 0.8,
+            foodItem: true,
 
             apply: () => {
                 modifyStat(['player','size'], '*=0.9')
@@ -408,15 +410,16 @@ const upgrades = [
             desc: `
                 <cg>+40</cg> Max HP<br>
                 <cg>+1</cg> Contact damage<br>
-                <cb>+15</cb> Size <br>
+                <cb>+10</cb> Size <br>
                 <cb>-15%</cb> Speed <br>
             `,
             priceMult: 0.8,
+            foodItem: true,
 
             apply: () => {
                 modifyStat(['player','maxHealth'], '+=40')
                 modifyStat(['player','contactDamage'], '+=1')
-                modifyStat(['player','size'], '+=15')
+                modifyStat(['player','size'], '+=10')
                 modifyStat(['player','speed'], '*=0.85')
             }
         },
@@ -505,6 +508,7 @@ const upgrades = [
             `,
             priceMult: 0.75,
             unlockable: true,
+            foodItem: true,
 
             apply: () => {
                 if(player.stats.player.parryPoisonSize > 0) {
@@ -811,6 +815,7 @@ const upgrades = [
                 Multiplies two random base stats by <strong>1.1</strong><br>
                 Multiplies one random base stat by <strong>0.75</strong>
             `,
+            foodItem: true,
     
             apply: () => {
                 const stats = [
@@ -848,6 +853,7 @@ const upgrades = [
                 Multiplies a random cooldown stat by <cb>1.25</cb><br>
             `,
             unlockable: true,
+            foodItem: true,
     
             apply: () => {
                 const damageStats = [
@@ -874,6 +880,7 @@ const upgrades = [
                 Multiplies a random cooldown stat by <cg>0.75</cg><br>
                 Multiplies a random damage stat by <cb>0.75</cb><br>
             `,
+            foodItem: true,
     
             apply: () => {
                 const damageStats = [
@@ -956,7 +963,7 @@ const upgrades = [
             name: 'Black Hole',
             desc: `
                 Condenses half the total damage in your magazine into one projectile.<br>
-                <cb>-10%</cb> Reload speed<br>
+                <cb>+10%</cb> Reload speed<br>
                 <cb>-50%</cb> Projectile speed<br>
                 <cb>+50%</cb> Shot cooldown<br>
             `,
@@ -1057,6 +1064,7 @@ const upgrades = [
                 Multiplies a random base stat by <strong>0.2x</strong>
             `,
             priceMult: 1.2,
+            foodItem: true,
             
             apply: () => {
                 const stats = [
@@ -1098,7 +1106,7 @@ const upgrades = [
         golden_ammo: {
             name: 'Golden Ammo',
             desc: `
-                Hitting an enemy with a projectile gains a <cg>+2%</cg> chance to spawn a random coin
+                Hitting an enemy with a projectile gains a <cg>+2</cg>% chance to spawn a random coin
             `,
             priceMult: 1.5,
             unlockable: true,
@@ -1188,7 +1196,7 @@ const upgrades = [
         car_battery: {
             name: 'Car Battery',
             desc: `
-                Power items have a <cg>+2%</cg> chance to repeat its ability. 
+                Power items have a <cg>+2</cg>% chance to repeat its ability. 
             `,
             priceMult: 2,
     
@@ -1495,7 +1503,7 @@ const upgrades = [
             },
 
             requirement: () => {
-                return !player.stats.player.canCarrySecondaryPowerItem && Boolean(player.powerItem)
+                return !player.stats.player.canCarrySecondaryPowerItem && Boolean(player.powerItem) && player.shopWeights[1] > 0
             }
         },
         chicken_alfredo: {
@@ -1506,6 +1514,7 @@ const upgrades = [
                 <em style="color: grey;">only the best!</em>
             `,
             priceMult: 0.9,
+            foodItem: true,
 
             apply: () => {
                 modifyStat(['player','maxHealth'],'*=2')
@@ -2105,87 +2114,6 @@ const upgrades = [
     }
 ]
 
-const consumables = [
-    { //Common
-        medicine: {
-            name: 'Medicine',
-            desc: 'Heals +25HP',
-            use: () => {
-                player.damage(-25)
-            }
-        },
-        adrenaline: {
-            name: 'Adrenaline',
-            desc: 'Gives strength I for 15 seconds.',
-            use: () => {
-                modifyStat(['bullet','damage'], '*=1.5')
-                player.statusEffects.push({
-                    end: () => {
-                        modifyStat(['bullet','damage'], '/=2')
-                    },
-                    class: 'damage',
-                    duration: (1000 / e.gameUpdateInterval) * 15,
-                    maxDuration: (1000 / e.gameUpdateInterval) * 15
-                })
-            }
-        },
-        magezine: {
-            name: 'Magezine',
-            desc: 'Instantly reload ammo.',
-            use: () => {
-                player.stats.ammo.current = player.stats.ammo.max
-            }
-        },
-        blunt: {
-            name: 'Blunt',
-            desc: 'Halves enemy speed for 30 seconds.',
-            use: () => {
-                modifyStat(['enemy','speedMult'], '/=2')
-                player.statusEffects.push({
-                    end: () => {
-                        modifyStat(['enemy','speedMult'], '*=2')
-                        player.damage(10)
-                    },
-                    class: 'blunt',
-                    duration: (1000 / e.gameUpdateInterval) * 30,
-                    maxDuration: (1000 / e.gameUpdateInterval) * 30
-                })
-            }
-        },
-    },
-    { //Uncommon
-
-    },
-    { //Rare
-
-    }, 
-    { //Legendary
-        heroin: {
-            name: 'Heroin',
-            desc: `
-                <em style="color:grey;">For 5 seconds:</em><br>
-                <cg>x10</cg> Damage<br>
-                <cg>x2</cg> Speed<br>
-                After the 5 seconds, take <cb>75</cb> damage.
-            `,
-            use: () => {
-                modifyStat(['bullet','damage'], '*=10')
-                modifyStat(['player','speed'], '*=2')
-                player.statusEffects.push({
-                    end: () => {
-                        modifyStat(['bullet','damage'], '/=10')
-                        modifyStat(['player','speed'], '*=2')
-                        player.damage(75)
-                    },
-                    class: 'damage',
-                    duration: (1000 / e.gameUpdateInterval) * 5,
-                    maxDuration: (1000 / e.gameUpdateInterval) * 5
-                })
-            }
-        },
-    }
-]
-
 const powerItems = [
     {
         apple: {
@@ -2195,6 +2123,7 @@ const powerItems = [
                 <cg>+25</cg> HP
                 `,
             charge: 25,
+            foodItem: true,
 
             use: () => {
                 player.damage(-25)
@@ -2207,6 +2136,7 @@ const powerItems = [
                 Throws a tomato at your cursor, spawning a poison field that deals <cg>250%</cg> of your damage for 10 ticks.
                 `,
             charge: 25,
+            foodItem: true,
 
             use: () => {
                 const mater = materBase.cloneNode()
@@ -2242,17 +2172,7 @@ const powerItems = [
             charge: 50,
 
             use: () => {
-                modifyStat(['enemy','speedMult'], '/=2')
-                createParticles([...player.centerPos], 50, player.stats.player.size, [0, 250], 7500, 'ease-out', {backgroundColor: 'rgba(150,175,150,0.1)', filter: 'blur(10px)'})
-                player.statusEffects.push({
-                    end: () => {
-                        modifyStat(['enemy','speedMult'], '*=2')
-                        player.damage(10)
-                    },
-                    class: 'blunt',
-                    duration: (1000 / e.gameUpdateInterval) * 30,
-                    maxDuration: (1000 / e.gameUpdateInterval) * 30
-                })
+                player.applyStatusEffect('high',(1000/e.gameUpdateInterval)*30,'add')
             }
         },
         extra_mag: {
@@ -2297,17 +2217,19 @@ const powerItems = [
                 <cg>+5</cg> Contact damage
             `,
             charge: 75,
+            foodItem: true,
 
             use: () => {
-                modifyStat(['player','speed'], '+=5')
+                const gainValue = Math.min(player.stats.player.speed + 5,10)-player.stats.player.speed
+                modifyStat(['player','speed'], `+=${gainValue}`)
                 modifyStat(['player','contactDamage'], '+=5')
                 player.statusEffects.push({
                     end: () => {
-                        modifyStat(['player','speed'], '-=5')
+                        modifyStat(['player','speed'], `-=${gainValue}`)
                         modifyStat(['player','contactDamage'], '-=5')
 
                     },
-                    class: 'pepper',
+                    class: 'spicy',
                     duration: (1000 / e.gameUpdateInterval) * 10,
                     maxDuration: (1000 / e.gameUpdateInterval) * 10
                 })
@@ -2442,17 +2364,8 @@ const powerItems = [
                         div: 1.1
                     })
 
-                    modifyStat(['player','contactDamage'], '+=15')
-                    player.immune++
-                    player.statusEffects.push({
-                        end: () => {
-                            modifyStat(['player','contactDamage'], '-=15')
-                            player.immune--
-                        },
-                        class: 'dash',
-                        duration: (1000 / e.gameUpdateInterval) * 0.75,
-                        maxDuration: (1000 / e.gameUpdateInterval) * 0.75
-                    })
+                    player.applyStatusEffect('spiky',50,'set')
+                    player.applyStatusEffect('immunity',50,'set')
 
                     ball.destroy()
                 }
@@ -2682,17 +2595,8 @@ const powerItems = [
             use: () => {
                 const angle = Math.atan2(e.relCursorPos[1] - player.centerPos[1], e.relCursorPos[0] - player.centerPos[0])
 
-                modifyStat(['player','contactDamage'], '+=10')
-                player.immune = true
-                player.statusEffects.push({
-                    end: () => {
-                        modifyStat(['player','contactDamage'], '-=10')
-                        player.immune = false
-                    },
-                    class: 'dash',
-                    duration: (1000 / e.gameUpdateInterval) * 0.75,
-                    maxDuration: (1000 / e.gameUpdateInterval) * 0.75
-                })
+                player.applyStatusEffect('spiky',50,'set')
+                player.applyStatusEffect('immunity',50,'set')
 
                 player.dirVels.push({angle: angle, speed: 25, div: 1.1})
             }
@@ -2824,7 +2728,7 @@ const powerItems = [
                         for(let i = 0; i < 10; i++) {
                             const projData = {
                                 speedDiv: 1.1,
-                                speed: 10,
+                                speed: 8,
                                 damage: player.stats.bullet.damage,
                                 size: 0,
                                 range: 25,
@@ -3368,8 +3272,8 @@ const powerItems = [
                 } else {
                     randomEnemy = player.elem
                     pos = [...randomEnemy.data.centerPos]
+                    player.applyStatusEffect('staticallyCharged',50*60,'add')
                 }
-                
 
                 const superMagnets = doge('area').querySelectorAll('.supermagnet')
                 let damage
@@ -3467,6 +3371,9 @@ const powerItems = [
                             }
                             const proj = createProjectile(0,cursorPos,0,projData,[...elems.enemies, ...[player.elem]],player.elem)
                             proj.style.opacity = '0'
+                            if(isColliding(proj,player.elem)) {
+                                player.applyStatusEffect('headache',50*60*5,'add')
+                            }
                             createExplosion([...cursorPos],250,0,25,true,[[0,0],[0,0],[0,0],0])
 
                             DeBread.easeShake(doge('area'),20,10,0.25)
@@ -3517,26 +3424,26 @@ const powerItems = [
                 })
             },
         },
-        // d: {
-        //     name: 'eee',
-        //     desc: `
-        //         Uses <cp>50</cp> POWER<br>
-        //         Triggers the effect of a random, non-mythic <strong>Power Item</strong>.<br>
-        //         Randomizes <cp>POWER</cp> cost between 0 and 100 on use.
-        //         `,
-        //     charge: 50,
+        mysterious_goop: {
+            name: 'Mysterious Goop',
+            desc: `
+                Uses <cp>50</cp> POWER<br>
+                Triggers the effect of a random, non-mythic <strong>Power Item</strong>.<br>
+                Randomizes <cp>POWER</cp> cost between 0 and 100 on use.
+                `,
+            charge: 50,
 
-        //     use: () => {
-        //         player.powerItem.charge = DeBread.randomNum(0,100)
+            use: () => {
+                player.powerItem.charge = DeBread.randomNum(0,100)
                 
-        //         const randomList = powerItems[DeBread.randomNum(0,2)]
-        //         const randomKey = Object.keys(randomList)[DeBread.randomNum(0,Object.keys(randomList).length-1)]
+                const randomList = powerItems[DeBread.randomNum(0,2)]
+                const randomKey = Object.keys(randomList)[DeBread.randomNum(0,Object.keys(randomList).length-1)]
 
-        //         randomList[randomKey].use()
+                randomList[randomKey].use()
 
-        //         updateUI()
-        //     }
-        // },
+                updateUI()
+            }
+        },
         // black_knife: {
         //     name: 'Black Knife',
         //     desc: `
@@ -3755,9 +3662,10 @@ const powerItems = [
                 Uses <cp>100</cp> POWER<br>
                 Throws a pringles can towards your cursor, dealing <cg>25,000%</cg> of your damage on impact and pushes enemies away.<br>
                 <br>
-                <em style="color: grey;">Only real ones know that chaos I've caused with these.</em>
+                <em style="color: grey;">Only real ones know.</em>
             `,
             charge: 100,
+            foodItem: true,
 
             use: () => {
                 const bottle = document.createElement('div')
@@ -3827,6 +3735,7 @@ const powerItems = [
                 <em style="color: grey;">better than coke</em>
             `,
             charge: 50,
+            foodItem: true,
 
             use: () => {
                 const randomStats = [
@@ -4133,6 +4042,7 @@ const powerItems = [
                 Cannot be bought
             `,
             charge: 50,
+            foodItem: true,
 
             use: () => {
                 const randomStats = [
@@ -4459,7 +4369,6 @@ const rarities = [
 ]
 
 function openShop(upgradeList) {
-    updateShopTab()
     if(player.alive) {
         e.gameActive = false
         player.rerolls = player.stats.shop.rerolls
@@ -4521,6 +4430,7 @@ function openShop(upgradeList) {
 
         player.moneyBonusQueue = []
     }
+    updateShopTab()
 }
 
 function createShopItems(items) {
@@ -4545,7 +4455,6 @@ function createShopItems(items) {
             }
     
             let rarity = 0
-            const luck = player.stats.shop.luck
             if(itemType < 2) {
                 rarity = getWeightedChance([
                     (55 + player.stats.shop.luck) * player.shopWeightMults[0],
@@ -4853,7 +4762,18 @@ function createShopItems(items) {
                         count: 1,
                     })
                 }
+
+                if(item.foodItem) {
+                    saveData.stats.list.foodItemsBought++
+
+                    if(saveData.stats.list.foodItemsBought >= 10) {
+                        getAchievement('The_Feast')
+                    }
+                }
             }
+
+
+            player.itemsBoughtInCurrentShop++
 
             // if(
             //     !saveData.stats.itemsCollected.includes(randomItems[key].id) &&
@@ -4967,6 +4887,13 @@ function closeShop() {
         value: Math.min(Math.floor(player.money / 5), player.stats.player.interestCap),
         text: 'Interest'
     })
+
+    if(player.itemsBoughtInCurrentShop === 0) {
+        player.shopsSkipped++
+    } else {
+        player.shopsSkipped = 0
+    }
+    player.itemsBoughtInCurrentShop = 0
 
     doge('area').querySelectorAll('.portal').forEach(portal => {
         addStyles(portal, {

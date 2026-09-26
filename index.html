@@ -92,7 +92,7 @@
             <span id="menuTitle2">Shooter</span>
             <div id="menuTitleTwo">2</div>
             <div style="line-height: 1;">
-                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest24</a></span><br>
+                <span style="max-width: 100px !important;"><a style="font-size: 0.75em; opacity: 0.5;" href="https://github.com/NotDeBread/GooberShooter2" target="_blank">playtest25</a></span><br>
                 <a style="font-size: 0.75em; opacity: 0.5; cursor: pointer;" href="https://forms.gle/JDaQUZ1wR6GhAscZ8" target="_blank">Report a bug</a>
             </div>
         </div>
@@ -111,7 +111,7 @@
             <span>Fun fact!</span>
             <span id="menuFF">wowie this is some really cool text</span>
         </div>
-        <span style="position: absolute; top: 10px; right: 10px; width: 500px; text-align: right; color: yellow;">Some updates may alter the way save data is structured! If you encounter any problems after an update, it is most likely due to save data inconsistencies. Go into settings > account, then delete your data.</span>
+        <!-- <span style="position: absolute; top: 10px; right: 10px; width: 500px; text-align: right; color: yellow;">Some updates may alter the way save data is structured! If you encounter any problems after an update, it is most likely due to save data inconsistencies. Go into settings > account, then delete your data.</span> -->
     </div>
     <div id="menu-gameSettings" class="menu">
         <div class="submenuTitle">GAME SETTINGS</div>
@@ -131,7 +131,7 @@
                             <div>Survive waves of enemies as long as you can.</div>
                         </div>
                         <div class="gameSettingsGamemodeButton" id="gameSettingsGM1" onclick="selectGamemode(1)">
-                            Sprint<br>
+                            Sprint (Beta)<br>
                             <div>Last through as many waves as you can before time is up.</div>
                         </div>
                         <div class="gameSettingsGamemodeButton" id="gameSettingsGM2" onclick="selectGamemode(2)">
@@ -159,7 +159,9 @@
                 <div id="gameSettingsMenu-2" style="display: none;">
                     <span>Review</span><br>
                     <strong>Gamemode: </strong><span id="gameSettingsSelectedGamemode">???</span><br>
-                    <strong>Challenge: </strong><span id="gameSettingsSelectedChallenge">???</span><br>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <strong>Mods: </strong><div id="gameSettingsSelectedMods" style="display: flex; align-items: center;">???</div><br>
+                    </div>
                     <strong>Character: </strong>
                     <div id="gameSettingsCharacterContainer">
                         <div>
@@ -549,7 +551,7 @@
             </div>
         </div>
         <div id="gameRestartContainer">
-            <span>RESTARTING...</span>
+            <span id="gameRestartText">RESTARTING...</span>
             <div id="gameRestartBar">
                 <div id="gameInnerRestartBar"></div>
             </div>
@@ -695,7 +697,7 @@
                 <div>
                     <div style="display: flex; align-items: end; margin: 4px 0px; gap: 10px;">
                         <div style="width: 100px; display: flex; justify-content: space-between; align-items: end;">
-                            <span>Wave</span>
+                            <span id="gameWaveLabel">Wave</span>
                             <div id="gameWaveCounter">0</div>
                         </div>
                     </div>

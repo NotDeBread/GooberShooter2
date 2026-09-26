@@ -37,6 +37,7 @@ const defaultSaveData = {
         playerProjectileOpacity: 1,
         enemyProjectileOpacity: 1,
         disableAmenBreak: false,
+        disablePoisonFieldAnimations: false,
 
         musicVolume: 0.1,
         sfxVolume: 0.1,
@@ -99,6 +100,7 @@ const defaultSaveData = {
             Times_Died: 0,
             Times_Rerolled: 0,
             egg: 0,
+            foodItemsBought: 0,
         },
         collection: {
             items: [],
@@ -903,6 +905,37 @@ const achievements = {
             unlock('characters',characters.isaac,'isaac')
         }
     },
+    SkillsUSA: {
+        name: 'SkillsUSA',
+        desc: 'Talk to Fella about SkillsUSA.',
+
+        unlock: {
+            type: 'Character',
+            name: 'Glorp',
+            src: 'graphics/characters/glorpPortrait.png',
+            data: characters.glorp
+        },
+
+        run: () => {
+            unlock('characters',characters.glorp,'glorp')
+            unlock('characters',characters.tico,'tico')
+        }
+    },
+    The_Feast: {
+        name: 'The Feast',
+        desc: 'Buy 10 food related items.',
+
+        unlock: {
+            type: 'Character',
+            name: 'Jake',
+            src: 'graphics/characters/jakePortrait.png',
+            data: characters.jake
+        },
+
+        run: () => {
+            unlock('characters',characters.jake,'jake')
+        }
+    },
     Found_Me: {
         name: 'You found me',
         desc: 'Talk to Ashton in the credits room.',
@@ -976,6 +1009,21 @@ const achievements = {
 
         run: () => {
             unlock('characters',characters.luke,'luke')
+        }
+    },
+    GSOrigins: {
+        name: 'Goober Shooter: Origins',
+        desc: 'Talk to Ashton about Goobers.',
+
+        unlock: {
+            type: 'Character',
+            name: 'Nyan',
+            src: 'graphics/characters/nyanPortrait.png',
+            data: characters.nyan
+        },
+
+        run: () => {
+            unlock('characters',characters.nyan,'nyan')
         }
     },
     Knowledgeable: {
@@ -1193,6 +1241,11 @@ const achievements = {
         run: () => {
             unlock('powerItems',powerItems[3].the_d6,'the_d6')
         }
+    },
+    jasp_Perfection: {
+        name: 'jasp Perfection',
+        desc: 'Beat wave 100 using jasp.',
+        difficulty: 0,
     },
     erix_Perfection: {
         name: 'erix Perfection',

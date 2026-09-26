@@ -16,9 +16,9 @@
 - Add cosmetics and the ability for them to be unlocked
 - Hide enemy health bars in the hidden challenge
 - Optimize startGame function, gamemode management and challenge management
-- Remake coin textures
 - Remake explosions using the entity system
 - Do gears of war reload thingy for slip
+- Add most played character to stats
 
 ## Before next release
 - Add character announcements
@@ -26,6 +26,9 @@
 - Finish new explosive enemy textures
 - Luke skins
 - Fix walfling multishot
+
+## Small Stuff
+- Fix fire damage with i-frames
 
 # Required Songs (For people to want to make a soundtrack)
 ## Every track must be loopable (Besides the boss finish riff of course)

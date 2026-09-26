@@ -28,6 +28,9 @@ function createPlayer() {
         chargeDmgMult: 1,
 
         inPortal: false,
+        shopsSkipped: 0,
+        itemsBoughtInCurrentShop: 0,
+        
         immune: 0,
 
         health: 100,
@@ -56,6 +59,7 @@ function createPlayer() {
         characterWeapon: weaponPresets.gun,
 
         lastHitDate: 0,
+        lastHardDamageHitDate: 0,
 
         consumables: [],
         powerItem: undefined,
@@ -69,6 +73,8 @@ function createPlayer() {
         lastGrazeDate: 0,
 
         canUsePowerItem: true,
+
+        bossAreaSize: 0,
 
         tutorial: {
             stage: -1,
@@ -127,6 +133,7 @@ function createPlayer() {
 
         stats: {
             player: {
+                immune: false,
                 immunityTime: 5, //How long (in ticks) the player becomes immune after being hit.
                 speed: 5, //The max speed the player can move.
                 speedStep: 2.5, //The amount the player velocity changes every tick to reach the target speed value.
@@ -134,8 +141,11 @@ function createPlayer() {
 
                 maxHealth: 100, //Max player health.
                 healthRegen: 0,
-                armor: 0,
+                healthDecay: 0,
+                armor: 1,
                 pickupRange: 0, //How strong pickups are attracted towards the player.
+                cannotHeal: 0,
+                obscuredHealth: 0,
 
                 socksDamage: 0,
                 thirdEye: 0,
@@ -180,6 +190,10 @@ function createPlayer() {
                 canCarrySecondaryPowerItem: false,
 
                 maryContactDamage: 0,
+
+                leech: 0,
+
+                static: 0,
             },
 
             shop: {
@@ -300,6 +314,8 @@ function createPlayer() {
 
                 burst: 1,
                 burstInterval: 4,
+
+                slipReload: false,
             },
             enemy: {
                 levelIncrease: 0, //How many levels enemies are offset by.
@@ -323,12 +339,18 @@ function createPlayer() {
         elem: doge('player'),
 
         //Functions
-        damage: (baseAmount, light, origin, hardDamage = 0, ignoreImmunity) => {
+        damage: (baseAmount, light, origin, hardDamage = 0, ignoreImmunity, dontUpdateHitDate) => {
             if(player.alive && baseAmount) {
-                const amount = baseAmount / (1 + (player.stats.player.armor ?? 0))
+                let amount = baseAmount
+
+                if(player.stats.player.immune && baseAmount > 0) {
+                    amount = 0
+                }
 
                 if(amount > 0 && ((!player.immune && e.gameUpdates - player.lastHitDate >= player.stats.player.immunityTime && !player.stats.cheats.invincible) || ignoreImmunity)) { //Damage
-                    
+                    amount /= (player.stats.player.armor ?? 0)
+
+
                     if(player.health - amount < 1 && player.health > 1) { //Grace
                         player.health = 1
                     } else {
@@ -337,7 +359,12 @@ function createPlayer() {
                     
                     player.hardDamage += hardDamage
                     player.hardDamage = Math.max(Math.min(player.hardDamage, player.stats.player.maxHealth * 0.75),0)
-                    player.lastHitDate = e.gameUpdates
+                    if(hardDamage) {
+                        player.lastHardDamageHitDate = e.gameUpdates
+                    }
+                    if(!dontUpdateHitDate) {
+                        player.lastHitDate = e.gameUpdates
+                    }
                     
                     if(!light) {
                         player.perfectSet = false
@@ -382,22 +409,50 @@ function createPlayer() {
                         }
                     }
 
+                    if(player.health < player.stats.player.maxHealth && !light) {
+                        const popup = createPopupText('+'+DeBread.round(Math.abs(amount), 1), player.centerPos)
+                        popup.style.color = 'rgb(100,255,100)'
+                        popup.style.fontSize = '10px'
+                        doge('area').append(popup)
+    
+                        for(let i = 0; i < 10; i++) {
+                            createParticle(
+                                1,
+                                [...player.centerPos],
+                                DeBread.randomNum(3,12,10),
+                                1.3,
+                                DeBread.randomNum(0,Math.PI*2,10),
+                                5,
+                                1.15,
+                                25,
+                                {color: `rgb(100,255,100)`}
+                            )
+                        }
+
+                        for(statusEffect of player.statusEffects) {
+                            if(statusEffect.class === 'bleeding') {
+                                statusEffect.duration = 0
+                                break
+                            }
+                        }
+                    }
+
                     if(!idolAlive) {
                         player.health -= amount
                     }
-
-                    player.isBleeding = false
                 }
                 
                 player.health = Math.max(0,Math.min(player.health,player.stats.player.maxHealth - player.hardDamage))
                 
-                doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'
-                doge('hardDamageBar').style.width = player.hardDamage / player.stats.player.maxHealth * 100 + '%'
+                if(!player.stats.player.obscuredHealth) {
+                    doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'
+                    doge('hardDamageBar').style.width = player.hardDamage / player.stats.player.maxHealth * 100 + '%'
+                }
                 doge('healthBarNum').innerHTML = ''
                 const healthNum = document.createElement('div')
-                for(let i = 0; i < formatNumber(Math.ceil(player.health)).length; i++) {
+                for(let i = 0; i < (player.stats.player.obscuredHealth ? 3 : formatNumber(Math.ceil(player.health)).length); i++) {
                     const num = healthNum.cloneNode()
-                    num.innerText = formatNumber(Math.ceil(player.health))[i]
+                    num.innerText = player.stats.player.obscuredHealth ? '?' : formatNumber(Math.ceil(player.health))[i]
                     doge('healthBarNum').append(num)
                     
                     DeBread.easeShake(num, 10, Math.min(amount / 3, 25), 0.5)
@@ -414,112 +469,6 @@ function createPlayer() {
 
                 return amount
             }
-            // console.log(player.alive)
-            // if(!player.alive) return 0
-            // let idolAlive = false
-            // for(const enemy of elems.enemies) {
-            //     if(enemy.data.data.name === 'Idol' && enemy.data.active) {
-            //         idolAlive = true
-            //         break
-            //     }
-            // }
-
-            // const amount = baseAmount / (1 + (player.stats.player.armor ?? 0))
-
-            // const startAmount = player.health
-            // if(!player.immune && e.gameUpdates - (player.lastHitDate >= player.stats.player.immunityTime || ignoreImmunity) && !player.stats.cheats.invincible) {
-            //     if(player.health - amount < 1 && player.health > 1) {
-            //         player.health = 1
-            //     } else {
-            //         if(amount > 0) {
-            //             player.health -= amount
-            //         } else if(!idolAlive) {
-            //             player.health -= amount
-            //         }
-            //     }
-            // }
-
-            // player.hardDamage += hardDamage
-            // player.hardDamage = Math.max(Math.min(player.hardDamage, player.stats.player.maxHealth / 2),0)
-
-            // player.health = Math.max(Math.min(player.health, player.stats.player.maxHealth - player.hardDamage),0)
-            
-            // if(amount > 0 && !player.immune && e.gameUpdates - player.lastHitDate >= player.stats.player.immunityTime && !player.stats.cheats.invincible) {          
-            //     player.gameOverStats.damageTaken += -(player.health - startAmount)
-                
-            //     player.elem.style.animation = 'none'
-            //     setTimeout(() => {
-            //         player.elem.style.animation = 'playerHit 250ms ease-out 1 forwards'
-            //     }, e.gameUpdateInterval)
-                
-            //     if(!light) {
-            //         player.getPower(-(Math.min(amount / 2, 15)))
-            //         DeBread.playSound('audio/hit.mp3')
-                    
-            //         player.combo = Math.round(player.combo / 2)
-
-            //         doge('streakCount').innerText = 'x'+Math.floor(player.combo/100)
-            //         DeBread.easeShake(doge('streakCount'),10,5,0.25)
-
-            //         player.perfectWave = false
-            //         player.lastHitDate = e.gameUpdates
-
-            //         //Explosive Damage
-            //         if(DeBread.randomNum(1,100) < player.stats.player.explosiveHitChance) {
-            //             createExplosion([...player.centerPos],player.stats.player.size * 3, player.stats.bullet.damage * player.stats.player.explosiveHitDamage, 50, true)
-            //         }
-
-            //         player.perfectSet = false
-                    
-            //         if(saveData.selectedChallenges.includes('perfect') && doge('perfect') && player.timesHit === 0) {
-            //             DeBread.playSound('audio/perfectFail.mp3')
-            //             DeBread.easeShake(doge('perfect'),10,10,0.25)
-            //         }
-            //         player.timesHit++
-            //     }
-
-            // }
-
-            // doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'   
-            // doge('hardDamageBar').style.width = player.hardDamage / player.stats.player.maxHealth * 100 + '%'    
-
-            // //Health bar num
-            // doge('healthBarNum').innerHTML = ''
-            // const healthNum = document.createElement('div')
-            // for(let i = 0; i < formatNumber(Math.ceil(player.health)).length; i++) {
-            //     const num = healthNum.cloneNode()
-            //     num.innerText = formatNumber(Math.ceil(player.health))[i]
-            //     doge('healthBarNum').append(num)
-                
-            //     DeBread.easeShake(num, 10, Math.min(amount / 3, 25), 0.5)
-            // }
-            // DeBread.easeShake(doge('healthBarContainer'), 10, Math.min(amount / 6, 25), 0.5)
-
-            // if(amount < 0 && Math.abs(DeBread.round(amount, 1)) !== 0) {
-            //     if(!idolAlive && !light) {
-            //         const popup = createPopupText('+'+DeBread.round(Math.abs(amount), 1), player.centerPos)
-            //         popup.style.color = 'lime'
-            //         popup.style.fontSize = '15px'
-            //         doge('area').append(popup)
-    
-            //         if(amount <= -25) {
-            //             createParticles(player.centerPos, 10, 10, [25, 50], 500, 'ease-out', {backgroundColor: 'lime',zIndex: '5'})
-            //         }
-
-            //         player.isBleeding = false
-            //     }
-            // }
-
-            // if(player.health <= 0) player.kill()
-
-            // if(player.health <= player.stats.player.maxHealth * 0.25) {
-            //     doge('healthBarContainer').style.animation = 'healthBarAnim 1s ease-out infinite forwards'
-            // } else {
-            //     doge('healthBarContainer').style.animation = 'none'
-            // }
-
-            // updateArea()
-            // return amount
         },
 
         kill: () => {
@@ -601,81 +550,6 @@ function createPlayer() {
                     }
                 }, 2500);
 
-                // for(let i = 0; i < 50; i++) {
-                //     setTimeout(() => {
-                //         e.gameUpdateInterval += 25
-                //         doge('area').querySelectorAll('.enemy, .enemyProjectile').forEach(elem => {
-                //             elem.style.transition = `left linear ${e.gameUpdateInterval}ms, top linear ${e.gameUpdateInterval}ms`
-                //         })
-        
-                //         if(i === 49) {
-                //             e.gameActive = false
-                //             e.gameUpdateInterval = 20
-
-                //             player.gameOverStats.damageGiven = DeBread.round(player.gameOverStats.damageGiven)
-                //             player.gameOverStats.damageTaken = DeBread.round(player.gameOverStats.damageTaken)
-
-                //             doge('gameOverContainer').style.display = 'flex'
-
-                //             for(const key in player.gameOverStats) {
-                //                 doge(`go-${key}`).innerText = player.gameOverStats[key]
-                //             }
-
-                //             let displayedScore = 0
-                //             let displayedWave = 0
-                //             for(let i = 0; i < 100; i++) {
-                //                 setTimeout(() => {
-                //                     const scoreDifference = player.score - displayedScore
-                //                     displayedScore += scoreDifference * 0.1
-
-                //                     doge('go-score').innerText = DeBread.round(displayedScore).toString().padStart(10,0)
-
-                //                     const waveDifference = player.wave - displayedWave
-                //                     displayedWave += waveDifference * 0.1
-
-                //                     doge('go-wave').innerText = DeBread.round(displayedWave).toString()
-
-                //                     if(i === 99) {
-                //                         doge('go-score').innerText = DeBread.round(player.score).toString().padStart(10,0)
-                //                         doge('go-wave').innerText = DeBread.round(player.wave).toString()
-
-                //                         if(saveData.stats.list.Times_Died === 1) {
-                //                             openPrompt(
-                //                                 'Thanks for playtesting!',
-                //                                 'If you would like to stay up to date with Goober Shooter 2 news, join my Discord Server!<br>If you encountered any bugs, make sure to fill out the Bug Report form.',
-                //                                 [
-                //                                     {
-                //                                         text: 'Join Discord Server',
-                //                                         onclick: () => {
-                //                                             window.open('https://discord.gg/ecCBTRD2hN','_blank')
-                //                                         }
-                //                                     },
-                //                                     {
-                //                                         text: 'Report a bug',
-                //                                         onclick: () => {
-                //                                             window.open('https://forms.gle/JDaQUZ1wR6GhAscZ8','_blank')
-                //                                         }
-                //                                     },
-                //                                     {
-                //                                         text: 'Support me!',
-                //                                         onclick: () => {
-                //                                             window.open('https://buymeacoffee.com/debread','_blank')
-                //                                         }
-                //                                     },
-                //                                     {
-                //                                         text: 'Shut up',
-                //                                         onclick: closePrompt
-                //                                     }
-                //                                 ],
-                //                                 [450,225]
-                //                             )
-                //                         }
-                //                     }
-                //                 }, 25 * i);
-                //             }
-                //         }
-                //     }, i * 100);
-                // }
                 player.alive = false
                 saveData.stats.list.Times_Died++
             }
@@ -699,6 +573,10 @@ function createPlayer() {
                             getAchievement('Knuckle_Sandwich')
                         }
 
+                        if(enemy.data.alive) {
+                            enemy.onMeleed?.()
+                        }
+
                         player.damage(-player.stats.melee.heal)
 
                         getStyle(styles.punch)
@@ -713,11 +591,6 @@ function createPlayer() {
                                 speed: player.stats.melee.knockback,
                                 div: 1.25,
                             })
-                        }
-
-                        if(player.tutorial.stage === 6) {
-                            player.tutorial.goalValue++
-                            updateTutorialGoal()
                         }
                     }
                 })
@@ -858,6 +731,31 @@ function createPlayer() {
                 doge('powerContainer').style.animation = 'powerBarAnim 1s ease-out infinite forwards'
             } else {
                 doge('powerContainer').style.animation = 'none'
+            }
+
+            if(player.power === 100 && saveData.gameSettings.gamemode === 1) {
+                player.power = 0
+                updateUI()
+
+                let itemPicked = false
+                while(!itemPicked) {
+                    const randomKey = Object.keys(upgrades[4])[DeBread.randomNum(0,Object.keys(upgrades[4]).length-1)]
+                    const randomItem = upgrades[4][randomKey]
+
+                    let meetsRequirement = true
+                    if(randomItem.requirement) {
+                        meetsRequirement = randomItem.requirement()
+                    }
+
+                    if(randomItem.unlockable) {
+                        meetsRequirement = saveData.stats.unlocked.items.includes(randomKey)
+                    }
+
+                    if(meetsRequirement) {
+                        itemPicked = true
+                        createFloorItem([...player.centerPos], randomKey, randomItem)
+                    }
+                }
             }
         },
 
@@ -1052,6 +950,31 @@ function createPlayer() {
             }
         },
 
+        applyStatusEffect: (id, duration, mode = 'set') => {
+            let playerHas = false
+            for(statusEffect of player.statusEffects) {
+                if(statusEffect.class === id) {
+                    playerHas = statusEffect
+                    break
+                }
+            }
+
+            if(playerHas) {
+                if(mode === 'set') {
+                    playerHas.duration = duration
+                } else if(mode === 'add') {
+                    playerHas.duration += duration
+                }
+            } else {
+                statusEffects[id].apply()
+                player.statusEffects.push({
+                    duration: duration,
+                    end: statusEffects[id].remove,
+                    class: id,
+                })
+            }
+        },
+
         //Events
         leftClickEvents: [],
         shootRequirement: () => {return true},
@@ -1088,11 +1011,20 @@ function startGame() {
     if(saveData.gameSettings.gamemode === 1) {
         player.allowShop = false
         player.allowBosses = false
+        player.stats.enemy.itemChance = 100
         player.stats.misc.waveMoneyMult = 0
+        player.stats.misc.waveInterval = 250
+
+        player.time = 15000
+        doge('gameWaveLabel').innerText = ''
+    } else {
+        doge('gameWaveLabel').innerText = 'Wave'
     }
 
     cleanArea()
     sandBoxEnemy = undefined
+
+    doge('healthBarContainer').style.animation = 'none'
     
     doge('gameWaveCounter').innerText = '0'
     doge('gameStyleContainer').innerHTML = ''
@@ -1382,12 +1314,9 @@ function startGame() {
 function cleanArea() {
     doge('area').querySelectorAll('.enemy').forEach(enemy => {enemy.remove()})
     elems.enemies = []
-    doge('area').querySelectorAll('.pickup').forEach(pickup => {pickup.remove()})
     elems.pickups = []
     doge('area').querySelectorAll('.bullet').forEach(bullet => {bullet.remove()})
-    doge('area').querySelectorAll('.enemyProjectile').forEach(bullet => {bullet.remove()})
     doge('area').querySelectorAll('.portal').forEach(portal => {portal.remove()})
-    doge('area').querySelectorAll('.poisonField').forEach(field => {field.remove()})
     doge('area').querySelectorAll('.entity').forEach(entity => {entity.remove()})
 }
 
@@ -1524,6 +1453,7 @@ const weapons = {
                             )
                             const proj = createProjectile(0, [...walfling.pos], angle, player.stats.bullet, elems.enemies, player)
                             player.damage(player.stats.bullet.thornDamage, true)
+                            DeBread.playSound(`audio/enemyShoot${DeBread.randomNum(0,2)}.mp3`)
 
                             if(player.stats.bullet.shotParticles) {
                                 for(let i = 0; i < 5; i++) {
@@ -1549,6 +1479,32 @@ const weapons = {
         },
 
         r: () => {
+            if(player.stats.ammo.isReloading && player.stats.ammo.slipReload && doge('gameAmmoBar').querySelector('.ammoHitWindow')) {
+                if(
+                    doge('gameInnerAmmoBar').getBoundingClientRect().right > doge('gameAmmoBar').querySelector('.ammoHitWindow').getBoundingClientRect().left &&
+                    doge('gameInnerAmmoBar').getBoundingClientRect().right < doge('gameAmmoBar').querySelector('.ammoHitWindow').getBoundingClientRect().right
+                ) {
+                    player.stats.ammo.reloadDate = 0
+                    player.applyStatusEffect('strength',200,'add')
+
+                    doge('gameAmmoBar').style.animation = 'powerBarAnim 500ms ease-out infinite forwards'
+                    setTimeout(() => {
+                        doge('gameAmmoBar').style.animation = 'none'
+                    }, 500);
+                } else {
+                    modifyStat(['ammo','reloadSpeed'], '+=50')
+                    createTimeout(() => {
+                        modifyStat(['ammo','reloadSpeed'], '-=50')
+                    }, player.stats.ammo.reloadSpeed * (1 - (e.gameUpdates - player.stats.ammo.reloadDate) / player.stats.ammo.reloadSpeed))
+
+                    doge('gameAmmoBar').style.animation = 'healthBarAnim 500ms ease-out infinite forwards'
+                    setTimeout(() => {
+                        doge('gameAmmoBar').style.animation = 'none'
+                    }, 500);
+                }
+                doge('gameAmmoBar').querySelector('.ammoHitWindow').remove()
+            }
+
             function reload() {
                 player.stats.ammo.isReloading = true
                 player.stats.ammo.reloadDate = e.gameUpdates
@@ -1557,6 +1513,24 @@ const weapons = {
                     DeBread.playSound('audio/reload-full.mp3', 50 / player.stats.ammo.reloadSpeed, false)
                 } else {
                     DeBread.playSound('audio/reload-full.mp3')
+                }
+
+                if(player.stats.ammo.slipReload) {
+                    const hitWindow = document.createElement('div')
+                    hitWindow.classList.add('entity')
+                    hitWindow.classList.add('ammoHitWindow')
+                    addStyles(hitWindow, {
+                        position: 'absolute',
+                        height: '100%',
+                        width: `${Math.max(DeBread.randomNum(15,25) * 50 / player.stats.ammo.reloadSpeed,5)}px`,
+                        top: '0px',
+                        left: `${DeBread.randomNum(40,60)}%`,
+                        translate: '-50% 0',
+                        backgroundColor: 'yellow',
+                        outline: '2px solid black'
+                    })
+
+                    doge('gameAmmoBar').append(hitWindow)
                 }
             }
             if(!player.stats.ammo.isReloading && player.stats.ammo.current < player.stats.ammo.max) {
@@ -2063,23 +2037,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
                     //Apply fire
                     if(proj.firey) {
                         if(target === player.elem) {
-                            for(const statusEffect of player.statusEffects) {
-                                if(statusEffect.class === 'fire') {
-                                    statusEffect.duration = statusEffect.maxDuration
-                                }
-                            }
-                            if(!player.onFire) {                
-                                player.statusEffects.push({
-                                    duration: 100,
-                                    maxDuration: 100,
-                                    class: 'fire',
-                                    
-                                    end: () => {
-                                        player.onFire = false;
-                                    }
-                                })
-                                player.onFire = true
-                            }
+                            player.applyStatusEffect('fire',250,'add')
                         } else {
                             target.data.onFire = true
                         }
@@ -2343,7 +2301,6 @@ function createFloorItem(pos, itemKey, itemData) {
 
     for(const rarity in upgrades) {
         if(Object.keys(upgrades[rarity]).includes(itemKey)) {
-            console.log(rarity)
             if(rarity.toString() === '4') {
                 pickup.style.animation = 'mythicOutline 5s linear infinite '
             } else {
@@ -2375,14 +2332,145 @@ const area = {
     }
 }
 
+//Idk where to put this
+const statusEffects = {
+    strength: {
+        name: 'Strength',
+        desc: '<cg>+1</cg> projectile damage multiplier',
+
+        apply: () => {
+            modifyStat(['bullet','damageMult'],'+=1')
+        },
+
+        remove: () => {
+            modifyStat(['bullet','damageMult'],'-=1')
+        }
+    },
+    bleeding: {
+        name: 'Bleeding',
+        desc: 'Lose health over time. Heal to stop the effect.',
+
+        apply: () => {
+            modifyStat(['player','healthDecay'],'+=0.1')
+        },
+
+        remove: () => {
+            modifyStat(['player','healthDecay'],'-=0.1')
+        }
+    },
+    headache: {
+        name: 'Headache',
+        desc: 'Take <cb>50%</cb> more damage.',
+
+        apply: () => {
+            modifyStat(['player','armor'],'*=0.5')
+        },
+
+        remove: () => {
+            modifyStat(['player','armor'],'/=0.5')
+        }
+    },
+    leech: {
+        name: 'Leech',
+        desc: 'Take constant damage and hard damage.',
+
+        apply: () => {
+            modifyStat(['player','leech'],'+=1')
+        },
+
+        remove: () => {
+            modifyStat(['player','leech'],'-=1')
+        }
+    },
+    idol: {
+        name: 'Idol',
+        desc: 'Prevents healing.',
+
+        apply: () => {
+            modifyStat(['player','cannotHeal'],'+=1')
+        },
+
+        remove: () => {
+            modifyStat(['player','cannotHeal'],'-=1')
+        }
+    },
+    staticallyCharged: {
+        name: 'Statically Charged',
+        desc: 'Deal electricity damage to nearby enemies.',
+
+        apply: () => {
+            modifyStat(['player','static'],'+=3')
+        },
+        remove: () => {
+            modifyStat(['player','static'],'-=3')
+        }
+    },
+    high: {
+        name: 'High',
+        desc: 'Enemies are <cg>50%</cg> slower.<br>Take <cb>10</cb> damage when status effect ends.',
+
+        apply: () => {
+            modifyStat(['enemy','speedMult'], '/=2')
+        },
+        remove: () => {
+            modifyStat(['enemy','speedMult'], '*=2')
+            player.damage(10,true,undefined,0,true)
+        }
+    },
+    immunity: {
+        name: 'Immunity',
+        desc: 'All damage taken is negated.',
+
+        apply: () => {
+            modifyStat(['player','immune'], '=true')
+        },
+        remove: () => {
+            modifyStat(['player','immune'], '=false')
+        }
+    },
+    spiky: {
+        name: 'Spiky',
+        desc: '<cg>+10</cg> contact damage',
+
+        apply: () => {
+            modifyStat(['player','contactDamage'],'+=10')
+        },
+        remove: () => {
+            modifyStat(['player','contactDamage'],'-=10')
+        }
+    },
+    spicy: {
+        name: 'Spicy',
+        desc: '<cg>+5</cg> Contact damage<br><cg>+5</cg> Speed'
+    },
+    fire: {
+        name: 'Fire',
+        desc: 'Take constant damage.',
+
+        apply: () => {
+            player.onFire = true
+        },
+        remove: () => {
+            player.onFire = false
+        }
+    }
+}
+
 let lastConsumables = []
 function updateUI() {
     if(player.health <= 0) player.health = 0
     if(player.health >= player.stats.player.maxHealth) player.health = player.stats.player.maxHealth
 
-    doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'
-    doge('healthBarNum').innerHTML = formatNumber(Math.ceil(player.health))
-    doge('hardDamageBar').style.width = player.hardDamage / player.stats.player.maxHealth * 100 + '%'    
+    if(!player.stats.player.obscuredHealth) {
+        doge('healthBar').style.width = player.health / player.stats.player.maxHealth * 100 + '%'
+        doge('healthBarNum').innerHTML = formatNumber(Math.ceil(player.health))
+        doge('hardDamageBar').style.width = player.hardDamage / player.stats.player.maxHealth * 100 + '%'
+        doge('healthBar').style.backgroundImage = 'unset'
+    } else {
+        doge('healthBar').style.width = '100%'
+        doge('healthBarNum').innerText = '???'
+        doge('healthBar').style.backgroundImage = 'url(graphics/enemies/tutorialist/tutorialistBar.gif)'
+    }
 
     doge('powerBarNum').innerHTML = DeBread.round(player.power)
     doge('powerBar').style.width = player.power / player.stats.player.maxPower * 100+'%'
@@ -2439,12 +2527,14 @@ function updateUI() {
 } updateUI()
 
 function updateArea() {
-    doge('area').style.width = player.stats.misc.areaSize + 'px'
-    doge('area').style.height = player.stats.misc.areaSize + 'px'
-    doge('areaCanvasTop').width = player.stats.misc.areaSize
-    doge('areaCanvasTop').height = player.stats.misc.areaSize
-    doge('areaCanvasBottom').width = player.stats.misc.areaSize
-    doge('areaCanvasBottom').height = player.stats.misc.areaSize
+    doge('area').style.width = player.stats.misc.areaSize + (player.bossAreaSize ? 100 : 0) + 'px'
+    doge('area').style.height = player.stats.misc.areaSize + (player.bossAreaSize ? 100 : 0) + 'px'
+    if(parseInt(doge('areaCanvasTop').offsetWidth) !== player.stats.misc.areaSize) {
+        doge('areaCanvasTop').width = player.stats.misc.areaSize
+        doge('areaCanvasTop').height = player.stats.misc.areaSize
+        doge('areaCanvasBottom').width = player.stats.misc.areaSize
+        doge('areaCanvasBottom').height = player.stats.misc.areaSize
+    }
     
     if(player.health / player.stats.player.maxHealth <= 0.25) {
         doge('area').style.boxShadow = 'inset 0px 0px 25px red'
@@ -2612,6 +2702,8 @@ const updateInterval = DeBread.createInterval(() => {
                     player.stats.ammo.current = player.stats.ammo.max
                     DeBread.shake(doge('gameAmmo'), e.gameUpdateInterval, 6.7, 0, 100,)
                     DeBread.playSound('audio/reload-long-end.mp3')
+
+                    doge('gameAmmoBar').querySelector('.ammoHitWindow')?.remove()
                     
                     player.onReloadFinish?.()
 
@@ -2726,7 +2818,7 @@ const updateInterval = DeBread.createInterval(() => {
             //Pickups
             const pickups = elems.pickups
             pickups.forEach(pickup => {
-                pickup.tick()
+                // pickup.tick()
                 if(isColliding(player.elem, pickup)) {
                     if(pickup.data.requirement() && e.gameUpdates - pickup.data.dateSpawned > 20 && pickup.data.live) {
                         pickup.destroy()
@@ -2763,10 +2855,128 @@ const updateInterval = DeBread.createInterval(() => {
                 }
             }
 
+            //POWER REGEN
+            if(player.stats.player.powerRegen) {
+                player.getPower(player.stats.player.powerRegen)
+            }
+
             //SPRINT
             if(saveData.gameSettings.gamemode === 1) {
-                //Put timer stuff here
+                const timeBefore = formatTime(Math.floor((20/1000)*player.time))
+                if(elems.enemies.length > 0) {
+                    player.time--
+                }
+
+                doge('gameWaveCounter').innerText = formatTime(Math.floor((20/1000)*player.time))
+
+                if(timeBefore !== formatTime(Math.floor((20/1000)*player.time)) && 20/1000*player.time <= 5) {
+                    doge('gameWaveCounter').style.animation = 'none'
+                    requestAnimationFrame(() => {
+                        doge('gameWaveCounter').style.animation = 'wavePulse 1s ease-out 1 forwards'
+                    })
+                }
+
+                if(player.time <= 0) {
+                    player.kill()
+                }
             }
+
+            //Leech
+            if(player.stats.player.leech > 0) {
+                player.damage(player.health > 10 ? 0.1 : 1e-300,true,undefined,0.1,true,true)
+            }
+
+            //Static status effect
+            if(player.stats.player.static > 0 && e.gameUpdates % 5 === 0) {
+                const target = player.elem
+
+                let targetsHit = [target]
+                let currentTarget = target
+                
+                for(let i = 0; i < player.stats.player.static; i++) {
+                    let shortestTarget = {target: undefined, distance: Infinity, d: []}
+                    elems.enemies.forEach(otherTarget => {
+                        if(currentTarget !== otherTarget && !targetsHit.includes(otherTarget) && otherTarget.data.active) {
+                            const dx = currentTarget.data.pos[0] - otherTarget.data.pos[0]
+                            const dy = currentTarget.data.pos[1] - otherTarget.data.pos[1]
+                            
+                            const distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
+                            if(distance < shortestTarget.distance && distance <= player.stats.player.static * 10 + 100) {
+                                shortestTarget.target = otherTarget
+                                shortestTarget.distance = distance
+                                shortestTarget.d = [dx, dy]
+                            }
+                        }
+                    })
+                    
+                    if(shortestTarget.target === undefined) break
+                    
+                    const fromTarget = currentTarget
+                    currentTarget = shortestTarget.target
+                    const toTarget = currentTarget
+
+                    const damage = player.stats.bullet.damage / (i + 1)
+                    shortestTarget.target.data.damage(damage, false)
+
+                    const popup = createPopupText(formatNumber(DeBread.round(damage)), [shortestTarget.target.data.centerPos[0],shortestTarget.target.data.centerPos[1]])
+                    popup.style.color = 'aqua'
+                    popup.style.fontSize = Math.min(Math.max(damage / 5, 15), 50) + 'px'
+                    doge('area').append(popup)
+
+                    if(origin === player) {
+                        getStyle(styles.shocked)
+                    }
+                    
+                    const targetsAngle = Math.atan2(fromTarget.data.centerPos[1] - toTarget.data.centerPos[1], fromTarget.data.centerPos[0] - toTarget.data.centerPos[0])
+                    const targetsDist = Math.sqrt(
+                        Math.pow(fromTarget.data.centerPos[0] - toTarget.data.centerPos[0],2) + 
+                        Math.pow(fromTarget.data.centerPos[1] - toTarget.data.centerPos[1],2)
+                    )
+
+                    const chain = document.createElement('div')
+                    addStyles(chain, {
+                        width: targetsDist+'px',
+                        height: '10px',
+                        translate: '-50% -50%',
+                        position: 'absolute',
+                        left: (fromTarget.data.centerPos[0]+toTarget.data.centerPos[0])/2+'px',
+                        top: (fromTarget.data.centerPos[1]+toTarget.data.centerPos[1])/2+'px',
+                        rotate: targetsAngle+'rad',
+                        backgroundImage: 'url(graphics/electricityChain.gif)',
+                        backgroundSize: 'contain',
+                        filter: 'drop-shadow(0px 0px 5px rgba(0,255,255,0.5))',
+                        animation: 'electricityChain 250ms ease-out 1 forwards',
+                        zIndex: 5,
+                    })
+                    setTimeout(() => {
+                        chain.remove()
+                    }, 250);
+                    doge('area').append(chain)
+
+                    targetsHit.push(shortestTarget.target)
+                }
+            }
+
+            //Health decay
+            if(player.stats.player.healthDecay) {
+                player.damage(player.stats.player.healthDecay, true, undefined, 0, true, true)
+
+                if(e.gameUpdates % 4 === 0)
+                createParticle(
+                    0,
+                    [DeBread.randomNum(player.pos[0], player.pos[0] + player.stats.player.size),DeBread.randomNum(player.pos[1], player.pos[1] + player.stats.player.size)],
+                    1,
+                    0.95,
+                    Math.PI / 2,
+                    5,
+                    1.1,
+                    25,
+                    {
+                        color: 'red'
+                    }
+                )
+            }
+
         } //END OF PLAYER ALIVE TICKS
 
         //Timeouts
@@ -2820,14 +3030,14 @@ const updateInterval = DeBread.createInterval(() => {
         }
     
         //Remove hard damage and apply regen
-        if(e.gameUpdates - player.lastHitDate >= 250) {
+        if(e.gameUpdates - player.lastHardDamageHitDate >= 250) {
             if(player.hardDamage > 0) {
                 player.hardDamage -= 0.25
                 updateUI()
             }
     
             if(player.health < player.stats.player.maxHealth) {
-                player.damage(-player.stats.player.healthRegen,true)
+                player.damage(-player.stats.player.healthRegen, true, undefined, 0, true, true)
             }
         }
     
@@ -2875,6 +3085,7 @@ const updateInterval = DeBread.createInterval(() => {
         doge('statusEffectContainer').innerHTML = ''
         for(const key in player.statusEffects) {
             const statusEffect = player.statusEffects[key]
+            const statusEffectData = statusEffects[statusEffect.class]
             statusEffect.duration--
     
             if(statusEffect.duration <= 0) {
@@ -2885,38 +3096,44 @@ const updateInterval = DeBread.createInterval(() => {
             const statusEffectIcon = document.createElement('div')
             statusEffectIcon.classList.add('statusEffect')
             statusEffectIcon.innerHTML = `
-                <div class="statsEffectOverlay" style="height:${100 - statusEffect.duration / statusEffect.maxDuration * 100}%"></div>
                 <img src="graphics/statusEffects/${statusEffect.class}.png">
             `
     
             doge('statusEffectContainer').append(statusEffectIcon)
+
+            statusEffectIcon.onmouseenter = () => {
+                if(statusEffect.duration > 1) {
+                    iconRect = statusEffectIcon.getBoundingClientRect()
+    
+                    tooltip(
+                        [iconRect.right,iconRect.bottom+25],
+                        statusEffectData.name,
+                        [],
+                        `${statusEffectData.desc}<br><div style="text-align: right;">${formatTime(Math.ceil(statusEffect.duration/50))}</div>`
+                    )
+                } else {
+                    doge('tooltip').style.opacity = '0'
+                }
+            }
+
+            statusEffectIcon.onmouseleave = () => {
+                doge('tooltip').style.opacity = '0'
+            }
         }
     
         //Fire
+        let playerTouchingFire = false
         document.querySelectorAll('.fire').forEach(fire => {
             if(isColliding(fire, player.elem)) {
-                for(const statusEffect of player.statusEffects) {
-                    if(statusEffect.class === 'fire') {
-                        statusEffect.duration = statusEffect.maxDuration
-                    }
-                }
-                if(!player.onFire) {                
-                    player.statusEffects.push({
-                        duration: 100,
-                        maxDuration: 100,
-                        class: 'fire',
-                        
-                        end: () => {
-                            player.onFire = false;
-                        }
-                    })
-                    player.onFire = true
-                }
+                playerTouchingFire = true
             }
         })
+        if(playerTouchingFire) {
+            player.applyStatusEffect('fire',5,'add')
+        }
     
         if(player.onFire) {
-            player.damage(0.1*player.stats.player.fireDamageMult, true)
+            player.damage(0.1*player.stats.player.fireDamageMult, true, undefined, 0, true)
             createParticles(
                 [...player.centerPos],
                 2,
@@ -2934,35 +3151,8 @@ const updateInterval = DeBread.createInterval(() => {
             doge('playerFire').style.opacity = '0'
             player.crispiness = 0        
         }
-
-        //Bleeding damage
-        if(player.isBleeding) {
-            player.damage(0.05, true, undefined, 0, true)
-
-            if(e.gameUpdates % 4 === 0)
-            createParticle(
-                0,
-                [DeBread.randomNum(player.pos[0], player.pos[0] + player.stats.player.size),DeBread.randomNum(player.pos[1], player.pos[1] + player.stats.player.size)],
-                1,
-                0.95,
-                Math.PI / 2,
-                5,
-                1.1,
-                25,
-                {
-                    color: 'red'
-                }
-            )
-        }
     
         //Special enemies
-        let leechAlive = false
-        for(const enemy of elems.enemies) {
-            if(['Leech'].includes(enemy.data.data.name) && enemy.data.active) {
-                leechAlive = true
-                break
-            }
-        }
     
         let idolAlive = false
         for(const enemy of elems.enemies) {
@@ -2972,14 +3162,10 @@ const updateInterval = DeBread.createInterval(() => {
             }
         }
     
-        if(idolAlive) {
+        if(player.stats.player.cannotHeal) {
             doge('healthBarContainer').style.filter = 'grayscale(1)'
         } else {
             doge('healthBarContainer').style.filter = ''
-        }
-    
-        if(leechAlive && e.gameUpdates % 5 === 0) {
-            player.damage(player.health > 10 ? 1 : 1e-300, true, undefined, 1)
         }
     
         //Portal
@@ -3099,10 +3285,6 @@ const updateInterval = DeBread.createInterval(() => {
             createNotification('Tip!','You can parry by pressing <strong>F</strong>! Give it a try!', undefined, 5000)
         }
     
-        if(player.stats.player.powerRegen) {
-            player.getPower(player.stats.player.powerRegen)
-        }
-    
         for(let i = elems.enemies.length - 1; i >= 0; i--) {
             if(!elems.enemies[i].data.alive) {
                 elems.enemies.splice(elems.enemies.indexOf(elems.enemies[i]),1)
@@ -3111,9 +3293,10 @@ const updateInterval = DeBread.createInterval(() => {
     
         //Restart
         const lastRestartProgress = player.restartProgress
-        if(e.keysDown.includes('r') && e.keysDown.includes('shift') && e.gameUpdates >= 20 && player.alive) {
+        if(e.keysDown.includes('`') && e.gameUpdates >= 20 && player.alive) {
             player.restartProgress++
             doge('gameInnerRestartBar').style.width = player.restartProgress / 50 * 100 + '%'
+            doge('gameRestartText').innerText = `RESTARTING${'.'.repeat(5 - Math.floor(player.restartProgress/10))}`
     
             if(player.restartProgress >= 50) {
                 startGame()
@@ -3565,8 +3748,11 @@ function createPoisonField(pos, size, dmg, ticks, tickRate, targets, color = [25
         backgroundColor: `rgb(${color[0]},${color[1]},${color[2]}, 0.1)`,
         outline: `1px solid rgb(${color[0]},${color[1]},${color[2]})`,
         transition: 'transform ease-in 500ms',
-        animation: 'poisonFieldIn 500ms cubic-bezier(0,1,.5,1) 1 forwards'
     })
+
+    if(!saveData.settings.disablePoisonFieldAnimations) {
+        field.style.animation = 'poisonFieldIn 500ms cubic-bezier(0,1,.5,1) 1 forwards'
+    }
 
     field.tick = () => {
         if(field.active) {
@@ -3613,10 +3799,12 @@ function createPoisonField(pos, size, dmg, ticks, tickRate, targets, color = [25
 
     field.destroy = () => {
         field.active = false
-        field.style.animation = ''
-        requestAnimationFrame(() => {
-            field.style.animation = 'poisonFieldOut 500ms ease-in 1 forwards'
-        })
+        if(!saveData.settings.disablePoisonFieldAnimations) {
+            field.style.animation = ''
+            requestAnimationFrame(() => {
+                field.style.animation = 'poisonFieldOut 500ms ease-in 1 forwards'
+            })
+        }
         setTimeout(() => {
             field.remove()
         }, 500);
@@ -3653,6 +3841,7 @@ function examplePickup() {
 function createPickup(pos, data) {
     const pickup = pickupBase.cloneNode()
     pickup.classList.add('pickup')
+    pickup.classList.add('entity')
     pickup.data = {
         data: data,
         color: data.col ?? 'white',
@@ -4126,8 +4315,10 @@ function openPauseMenu(id) {
                 doge('gamePauseTitle').style.bottom = parseInt(doge(`pauseMenu-${id}`).getAttribute('menuHeight')) + 50 + 'px'
 
                 if(id === 'main') {
-                    if(saveData.gameSettings.gamemode < 2) {
+                    if(saveData.gameSettings.gamemode === 0) {
                         doge('gamePauseTitle').innerText = `PAUSED - WAVE ${player.wave}`
+                    } else if(saveData.gameSettings.gamemode === 1) {
+                        doge('gamePauseTitle').innerText = `PAUSED - SPRINT`
                     } else if(saveData.gameSettings.gamemode === 2) {
                         doge('gamePauseTitle').innerText = `PAUSED - SANDBOX`
                     } else if(saveData.gameSettings.gamemode === 3) {
@@ -4741,72 +4932,16 @@ function spawnPortal() {
             })
         }
 
+        if(player.shopsSkipped) {
+            player.moneyBonusQueue.push({
+                text: `Shop${player.shopsSkipped === 1 ? '' : 's'} skipped x${player.shopsSkipped}`,
+                value: player.shopsSkipped * 25
+            })
+        }
+
         setTimeout(() => {
             portalEffect.remove()
         }, 1000);
-    }
-}
-
-//Special shop stuff
-const chests = {
-    wooden: {
-        name: 'Wooden Chest',
-        weight: 50,
-        requirement: () => {return true},
-
-        loot: [
-            {
-                name: 'Pocket change',
-                desc: '<cp>+$10</cp>',
-                weight: 20,
-
-                run: () => {
-                    player.getMoney(10)
-                }
-            },
-            {
-                name: 'Key',
-                desc: 'Used to unlock special chests',
-                weight: 10,
-
-                run: () => {
-                    player.keys++
-                }
-            },
-        ]
-    },
-    silver: {
-        name: 'Silver Chest',
-        weight: 20,
-        requirement: () => {return true},
-
-        loot: [
-            {
-                name: 'Wallet',
-                desc: '<cp>+$30</cp>',
-                weight: 20,
-
-                run: () => {
-                    player.getMoney(30)
-                }
-            },
-            {
-                name: 'Key',
-                desc: 'Used to unlock special chests',
-                weight: 20,
-
-                run: () => {
-                    player.keys++
-                }
-            },
-        ]
-    }
-}
-
-function getChest() {
-    let weightTotal = 0
-    for(const key in chests) {
-        weightTotal += chests[key].weight
     }
 }
 
@@ -4819,6 +4954,11 @@ const tutorialEnemies = {
         speed: 0,
         mounted: true,
         hideLevel: true,
+
+        onDeath: () => {
+            player.tutorial.goalValue++
+            updateTutorialGoal()
+        }
     },
     dummy1: {
         color: [255, 218, 169],
@@ -4827,6 +4967,15 @@ const tutorialEnemies = {
         health: Infinity,
         speed: 0,
         mounted: true,
+
+        onMeleed: () => {
+            if(player.tutorial.goalValue < 3) {
+                player.tutorial.goalValue++
+                updateTutorialGoal()
+            }
+
+            console.log(player.tutorial.goalValue)
+        }
     },
     dummy2: {
         color: [255, 218, 169],
@@ -4918,7 +5067,7 @@ const tutorial = [
         goalTarget: 3,
         run: () => {
             elems.enemies.forEach(enemy => {enemy.data.kill()})
-            spawnEnemy([400, doge('area').offsetHeight / 2 - 25], tutorialEnemies.dummy2, 0, 25)
+            spawnEnemy([400, doge('area').offsetHeight / 2 - 25], tutorialEnemies.dummy2, 0, 0)
         }
     },
     {

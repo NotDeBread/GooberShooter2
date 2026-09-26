@@ -69,29 +69,31 @@ const weaponPresets = {
                 return maryAlive
             }
 
-            player.onWaveIncrease = () => {
+            player.onWaveIncrease.push(() => {
                 doge('area').querySelectorAll('.mary').forEach(mary => {
                     mary.damage(-player.stats.player.maxHealth/10)
                 })
-            }
+            })
 
             upgrades[5].mary.apply()
         }
     },
     odstPistol: {
         name: 'ODST Pistol',
-        desc: 'halo',
+        desc: 'Reloading creates a hit window on your ammo counter. Press R at the right time to skip the reload and deal extra damage.',
         ammoChar: '|',
         textureSize: [12,8],
         pros: [
             'Max ammo',
-            'Accuracy'
+            'Accuracy',
+            'Timed reload bonus'
         ],
         cons: [],
 
         apply: () => {
             modifyStat(['ammo','max'],'=12')
             modifyStat(['bullet','accuracy'],'=2')
+            modifyStat(['ammo','slipReload'],'=true')
         }
     },
     shotgun: {
@@ -228,6 +230,22 @@ const weaponPresets = {
         cons: [
             'Accuracy'
         ]
+    },
+    fih: {
+        name: 'fih',
+        desc: 'fih is calling.',
+        textureSize: [14,10],
+        ammoChar: '|',
+        bulletTexture: true,
+
+        pros: [
+            'Projectile size'
+        ],
+        cons: [],
+
+        apply: () => {
+            modifyStat(['bullet','size'],'=20')
+        }
     },
     piss: {
         name: 'Piss',
@@ -916,7 +934,8 @@ const characters = {
             {text: 'GS1',col: '#e0a24a'}
         ],
         
-        weapon: weaponPresets.gun
+        weapon: weaponPresets.gun,
+        unlockable: true,
     },
     jaden: {
         name: 'Jaden',
@@ -1115,6 +1134,17 @@ const characters = {
             player.powerItem = powerItems[3].the_d6
         },
     },
+    jasp: {
+        name: 'jasp',
+        color: [107, 54, 52],
+
+        tagList: [
+            {text:':-3c',col:'#6534be'},
+            {text:'GS2',col:'#775db9'},
+        ],
+
+        weapon: weaponPresets.fih,
+    },
     erix: {
         name: 'erix',
         desc: 'use this one if you wanna be really swag',
@@ -1217,6 +1247,7 @@ const characters = {
             player.powerItem = powerItems[1].pepper
         },
 
+        unlockable: true,
         weapon: weaponPresets.spicy_gun
     },
     lore: {
@@ -1728,6 +1759,7 @@ const characters = {
             {text: 'SUSA 2026', col: '#59a7ff'}
         ],
 
+        unlockable: true,
         weapon: weaponPresets.gun
     },
     tico: {
@@ -1741,6 +1773,7 @@ const characters = {
             {text: 'SUSA 2026', col: '#59a7ff'}
         ],
 
+        unlockable: true,
         weapon: weaponPresets.gun
     },
     friend: {

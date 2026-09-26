@@ -326,6 +326,10 @@ const enemies = {
 
         beamWidth: 15,
 
+        tick: () => {
+            player.applyStatusEffect('leech',2,'set')
+        },
+
         onDeath: enemy => {
             createExplosion([...enemy.data.centerPos],100,0,-50,false,[[131,104],[43,29],[65,87]])
         }
@@ -341,6 +345,10 @@ const enemies = {
         credits: 20,
 
         beamWidth: 15,
+
+        tick: () => {
+            player.applyStatusEffect('idol',2,'set')
+        },
 
         onDeath: enemy => {
             createExplosion([...enemy.data.centerPos],100,0,50,false,[[161,119],[255,205],[255,255]])
@@ -1127,6 +1135,32 @@ const enemies = {
             if(allCharactersBeaten) {
                 getAchievement('Character_Completionist')
             }
+
+            player.stats.player.obscuredHealth = Math.max(player.stats.player.obscuredHealth-1,0)
+            updateUI()
+
+            let itemPicked = false
+            while(!itemPicked) {
+                const randomKey = Object.keys(upgrades[4])[DeBread.randomNum(0,Object.keys(upgrades[4]).length-1)]
+                const randomItem = upgrades[4][randomKey]
+
+                let meetsRequirement = true
+                if(randomItem.requirement) {
+                    meetsRequirement = randomItem.requirement()
+                }
+
+                if(randomItem.unlockable) {
+                    meetsRequirement = saveData.stats.unlocked.items.includes(randomKey)
+                }
+
+                if(meetsRequirement) {
+                    itemPicked = true
+                    createFloorItem([...enemy.data.centerPos], randomKey, randomItem)
+                }
+            }
+
+            player.bossAreaSize = Math.max(player.bossAreaSize - 1,0)
+            updateArea()
         }
     }
 }
@@ -2730,6 +2764,8 @@ const bosses = {
 
         onSpawn: boss => {
             boss.isAnimating = false
+            player.bossAreaSize++
+            updateArea()
         },
 
         tick: boss => {
@@ -2806,6 +2842,8 @@ const bosses = {
                 if(beforePhase !== currentPhase) {
                     if(currentPhase === 2) {
                         const texture = boss.querySelector('.enemyTextureContainer').querySelector('img')
+                        player.stats.player.obscuredHealth++
+                        updateUI()
                         // texture.src = 'graphics/enemies/sashaPrepare.png'
 
                         boss.data.timeouts.push(createTimeout(() => {
@@ -3382,6 +3420,8 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
         enemy.appendChild(poisonField)
     }
 
+    enemy.onMeleed = data.onMeleed,
+
     enemy.tick = () => {
         if(!e.gameActive) return
         if(e.gameUpdates - enemyData.spawnDate >= spawnTime && !enemyData.active) {
@@ -3846,13 +3886,6 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                 )
             }
             
-            if(player.tutorial.stage === 3) {
-                player.tutorial.goalValue++
-                updateTutorialGoal()
-            }
-            
-            
-            
             if(!data.noKillBonus) {
                 if(origin) {
                     origin.kills++
@@ -4171,12 +4204,13 @@ function progressWave(portal) {
             spawnWave(player.wave)
             player.lastWaveDate = e.gameUpdates
         
-            doge('gameWaveCounter').innerText = player.wave
-        
-            doge('gameWaveCounter').style.animation = 'none'
-            requestAnimationFrame(() => {
-                doge('gameWaveCounter').style.animation = 'wavePulse 1s ease-out 1 forwards'
-            })
+            if(saveData.gameSettings.gamemode !== 1) {
+                doge('gameWaveCounter').innerText = player.wave
+                doge('gameWaveCounter').style.animation = 'none'
+                requestAnimationFrame(() => {
+                    doge('gameWaveCounter').style.animation = 'wavePulse 1s ease-out 1 forwards'
+                })
+            }
     
             if(player.wave % 5 === 0) {
                 player.lastWaveDate = 0
