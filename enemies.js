@@ -1136,6 +1136,10 @@ const enemies = {
                 getAchievement('Character_Completionist')
             }
 
+            if(saveData.selectedCharacter === 'debread' && saveData.selectedChallenges.includes('spooky') && saveData.selectedChallenges.length === 1) {
+                getAchievement('Spooky')   
+            }
+
             player.stats.player.obscuredHealth = Math.max(player.stats.player.obscuredHealth-1,0)
             updateUI()
 
@@ -3440,7 +3444,11 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                     
                     const overlap = (enemyData.size - distance) / 10
                     enemyData.pos[0] -= Math.cos(angle) * (enemyData.speed * player.stats.enemy.speedMult * enemyData.speedMult + overlap)
-                    enemyData.pos[1] -= Math.sin(angle) * (enemyData.speed * player.stats.enemy.speedMult * enemyData.speedMult + overlap)                    
+                    enemyData.pos[1] -= Math.sin(angle) * (enemyData.speed * player.stats.enemy.speedMult * enemyData.speedMult + overlap)
+                    
+                    if(otherEnemy.data.onFire) {
+                        enemy.data.onFire = true
+                    }
                 }
             })
     
@@ -3470,7 +3478,8 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
                     data.onPlayerCollision(enemy)
                 }
             } else if(enemyData.target) {
-                const angle = Math.atan2(enemyData.target.centerPos[1] - enemyData.centerPos[1], enemyData.target.centerPos[0] - enemyData.centerPos[0])
+                let angle = Math.atan2(enemyData.target.centerPos[1] - enemyData.centerPos[1], enemyData.target.centerPos[0] - enemyData.centerPos[0])
+                if(player.scary) angle += Math.PI
                 enemyData.pos[0] += Math.cos(angle) * enemyData.speed * player.stats.enemy.speedMult * enemyData.speedMult
                 enemyData.pos[1] += Math.sin(angle) * enemyData.speed * player.stats.enemy.speedMult * enemyData.speedMult
             }
@@ -3873,6 +3882,55 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
             if(DeBread.randomNum(0,100,5) <= player.stats.enemy.itemChance % 100) {
                 dropFloorItem()
             }
+
+            for(let i = 0; i < Math.floor(player.stats.enemy.candyChance / 100); i++) {
+                spawnCandy([...enemy.data.centerPos])
+            }
+
+            if(DeBread.randomNum(0,100,5) <= player.stats.enemy.candyChance % 100) {
+                spawnCandy([...enemy.data.centerPos])
+            }
+
+            if(player.stats.player.enableWisps) {
+                const damage = Math.max(data.meleeDamage ?? 0, data.projectile?.damage ?? 0, data.explosive?.damage ?? 0)
+                const proj = createProjectile(
+                    1,
+                    [...enemy.data.centerPos],
+                    DeBread.randomNum(0,Math.PI*2,5),
+                    {
+                        damage: damage,
+                        speed: 0.01,
+                        speedDiv: 0.95,
+                        maxSpeed: 5,
+                        magnetStrength: 1,
+                        size: data.size / 2,
+                        range: 250,
+                        noParticles: true,
+                        noTextureOverlays: true,
+                        explosionSize: data.projectile?.explosionSize ?? (data.explosive ? data.explosive.size : 0),
+
+                        tick: proj => {
+                            createParticle(
+                                1,
+                                [...proj.pos],
+                                2,
+                                1.1,
+                                DeBread.randomNum(0,Math.PI*2,5),
+                                data.size / 4,
+                                1.1,
+                                50,
+                                {
+                                    color: `rgb(${data.color})`
+                                }
+                            )
+                        }
+                    },
+                    elems.enemies,
+                    player
+                )
+
+                proj.style.backgroundColor = `rgb(${data.color})`
+            }
             
             enemy.remove()
             
@@ -3983,8 +4041,8 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
         enemyData.isRadiated = true
 
         enemy.querySelector('.enemyLevel').style.animation = 'rainbowGlow 1s linear infinite forwards'
-        enemy.querySelector('.enemyLevel').innerText++
-        enemyData.maxHealth *= 1.1
+        enemy.querySelector('.enemyLevel').innerText = parseInt(enemy.querySelector('.enemyLevel').innerText) + 5 
+        enemyData.maxHealth *= 1.25
         enemyData.speedMult *= 1.1
         enemyData.health = enemyData.maxHealth
 
@@ -4004,7 +4062,7 @@ function spawnEnemy(pos, data, levelBase, spawnTime = 30, extraData = {}) {
             )
         }
 
-        level++
+        level += 5
     }
 
     elems.enemies.push(enemy)

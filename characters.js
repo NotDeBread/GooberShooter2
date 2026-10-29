@@ -22,6 +22,34 @@ const weaponPresets = {
 
         apply: () => {}
     },
+    breads_sword: {
+        name: 'Breads Sword',
+        desc: 'Use the souls of the dead to fight for you.',
+        ammoChar: '|',
+        textureSize: [19,8],
+        bulletTexture: true,
+        pros: [
+            'Soul spawning',
+            'Contact damage',
+            'Infinite ammo',
+            'Autofire',
+            'Firey ammo'
+        ],
+        cons: [
+            'Shot cooldown'
+        ],
+
+        apply: () => {
+            modifyStat(['ammo','max'],'=Infinity')
+            modifyStat(['ammo','autoFire'],'=true')
+            modifyStat(['bullet','shotCooldown'],'=15')
+            modifyStat(['bullet','size'],'=14')
+            modifyStat(['bullet','shotParticleColor'],'=[129, 121, 253]')
+            modifyStat(['player','weaponContactDamage'],'=1')
+            modifyStat(['player','weaponContactDamageColor'],'=[[50,200],[100,100],[255,255]]')
+            modifyStat(['bullet','parryParticleColor'],'=[[50,200],[100,100],[255,255]]')
+        }
+    },
     luke: {
         name: 'Fists',
         desc: `
@@ -764,14 +792,32 @@ const characters = {
             {
                 name: 'Cliff',
                 src: 'cliff',
-            }
+            },
         ]
+    },
+    undead_bread: {
+        name: 'Undead Bread',
+        desc: 'Some guy but EVIL',
+        color: [129, 121, 253],
+
+        tagList: [
+            {text: 'Undead Fox',col:'#8179fd'},
+            {text: 'GS2',col: '#775db9'}
+        ],
+
+        weapon: weaponPresets.breads_sword,
+        unlockable: true,
+
+        applyStats: () => {
+            modifyStat(['player','enableWisps'],'=true')
+        }
     },
     fella: {
         name: 'Fella',
         desc: 'Some guy but real',
         info: `Starts with the \'Poker Chip\' Power Item.<br>${powerItems[1].poker_chip.desc}`,
         color: [84, 84, 84],
+        unlockable: true,
 
         tagList: [
             {text: 'Raccoon',col:'#775db9'},
@@ -905,7 +951,8 @@ const characters = {
         applyStats: () => {
             modifyStat(['melee','size'],'=50')
             modifyStat(['melee','damage'],'=50')
-            modifyStat(['player','maxWeaponDistance'],'=25')
+            modifyStat(['player','maxWeaponDistance'],'=25') 
+            player.powerItem = powerItems[2].marys_epipen
         },
         
         weapon: weaponPresets.luke
@@ -1136,6 +1183,7 @@ const characters = {
     },
     jasp: {
         name: 'jasp',
+        desc: 'what are we…some kind of goober shooter…',
         color: [107, 54, 52],
 
         tagList: [
@@ -1296,7 +1344,9 @@ const characters = {
             {text: 'GS2',col: '#775db9'}
         ],
 
-        weapon: weaponPresets.meatCleaver
+        weapon: weaponPresets.meatCleaver,
+
+        unlockable: true,
     },
     krazy: {
         name: 'Krazy',
@@ -1516,6 +1566,7 @@ const characters = {
         name: 'udev',
         info: 'All possible player stats are randomly multiplied between 0.1x and 10x at run start.',
         color: [0, 255, 0],
+        unlockable: true,
 
         tagList: [
             {text:'Guy',col:'#009600'},
@@ -1811,6 +1862,14 @@ const characters = {
             {text:'???',col:'#050634'},
             {text:'GS2',col:'#775db9'}
         ],
+
+        applyStats: () => {
+            player.powerItem = powerItems[3].mysterious_goop
+        },
+
+        info: `
+            Starts with the \'Mysterious Goop\' Power Item.<br>${powerItems[3].mysterious_goop.desc}
+        `,
 
         weapon: weaponPresets.omnirifle
     }

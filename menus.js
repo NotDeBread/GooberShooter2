@@ -552,7 +552,7 @@ function renderCharacterSelect(page = 1) {
     for(const key in characters) {
         charactersUnlocked++
         if(characters[key].unlockable) {
-            if(!saveData.stats.unlocked.characters.includes(key)) {
+            if(!saveData.stats.unlocked.characters.includes(key) && !saveData.settings.devMode) {
                 charactersUnlocked--
             }
         }
@@ -745,6 +745,7 @@ function updateCharacterCustomization() {
     updateCharacterCustomizationCharacter()
 }
 
+//rip old cosmetic system
 function changeCCCosmeticLayer(layer) {
     currentCosmeticLayer = layer
 
@@ -778,7 +779,7 @@ function changeCSPage(mod) {
     for(const key in characters) {
         charactersUnlocked++
         if(characters[key].unlockable) {
-            if(!saveData.stats.unlocked.characters.includes(key)) {
+            if(!saveData.stats.unlocked.characters.includes(key) && !saveData.settings.devMode) {
                 charactersUnlocked--
             }
         }
@@ -854,8 +855,6 @@ function openGameSettingsMenu(id) {
                 const icon = document.createElement('img')
                 icon.src = `graphics/challenges/${challenge}.png`
                 doge('gameSettingsSelectedMods').append(icon)
-    
-                console.log(data)
             }
         } else {
             doge('gameSettingsSelectedMods').innerHTML = ' None'
@@ -1254,12 +1253,6 @@ const creditProfiles = {
             Twitter: 'https://twitter.com/Sirchipsicle'
         }
     },
-    // belle: {
-    //     name: 'SquishyFishyBelle',
-    //     socials: {
-    //         Website: 'https://squishyfishybelle.carrd.co/',
-    //     }
-    // },
     frommief: {
         name: 'frommief',
         socials: {}
@@ -1290,6 +1283,7 @@ const creditProfiles = {
 
 const characterCredits = {
     debread: 'debread',
+    undead_bread: 'debread',
     fella: 'debread',
     plonk: 'plinkel',
     ashton: 'plinkel',
@@ -1492,7 +1486,7 @@ const settingsHTML = `
             <div class="settingsCheckboxContainer">
                 <div class="genericCheckbox" id="scb-reduceExplosionEffects"></div>
                 <div class="settingsCheckboxInfo">
-                    <span>Reduce explosion effects.</span>
+                    <span>Reduce explosion effects</span>
                     <span>Stops explosion shockwaves from being created.</span>
                 </div>
             </div>
@@ -1514,12 +1508,12 @@ const settingsHTML = `
                 <div class="genericCheckbox" id="scb-particles"></div>
                 <div class="settingsCheckboxInfo">
                     <span>Particles</span>
-                    <span>Enhances graphics using particles.</span>
+                    <span>Enhances graphics using canvas drawn particles.</span>
                 </div>
             </div>
             <div class="settingsRangeContainer" id="particlesRangeContainer">
                 <div>
-                    <span style="font-weight: 700;">Particle Limit: </span>
+                    <span style="font-weight: 700;">Particle limit: </span>
                     <span id="sr-particleLimit-label">???</span>
                 </div>
                 <div class="coolLine"></div>
@@ -1724,6 +1718,7 @@ const collectionHTML = `
         <button onclick="renderCollectionItems(upgrades, saveData.stats.collection.items, 'upgrades')">Items</button>
         <button onclick="renderCollectionItems(powerItems, saveData.stats.collection.powerItems, 'powerItems')">Power Items</button>
         <button onclick="renderCollectionItems(elixirs, saveData.stats.collection.elixirs, 'elixirs')">Elixirs</button>
+        <button onclick="renderCollectionCharacters()">Characters</button>
     </div>
     <div id="collectionList">
 
@@ -1813,15 +1808,20 @@ function renderCollectionItems(targetList, collectedList, texturePath) {
                     }
     
                     tooltip(
-                        [itemRect.left + div.offsetWidth / 2, itemRect.bottom],
+                        [itemRect.left + div.offsetWidth / 2, itemRect.bottom + 10],
                         itemName,
                         [],
                         itemDesc + `<br><br>Bought ${formatNumber(timesBought)} times`
                     )
+
                 }
-    
+                
                 div.onmouseleave = () => {
                     doge('tooltip').style.opacity = '0'
+                }
+
+                if(!isBought) {
+                    div.style.opacity = '0.25'
                 }
             } else {
                 div.querySelector('img').src = 'graphics/icons/unknown.png'
@@ -1834,6 +1834,79 @@ function renderCollectionItems(targetList, collectedList, texturePath) {
 
     doge('collectionProgressBarText').innerText = `${itemsUnlocked}/${totalItems} (${DeBread.round(itemsUnlocked/totalItems*100,1)}%)`
     doge('innerCollectionProgressBar').style.width = itemsUnlocked/totalItems*100 + '%'
+
+    doge('collectionList').scrollTop = 0
+}
+
+function renderCollectionCharacters() {
+    doge('collectionList').innerHTML = ''
+    let charactersUnlocked = 0
+    let characterNum = 0
+    for(const key in characters) {
+        const character = characters[key]
+        const div = document.createElement('div')
+        addStyles(div, {
+            border: '2px solid grey',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '50px',
+            height: '50px',
+            scale: '0',
+            animation: `shopItemIn 500ms cubic-bezier(0,1,.5,1) 1 ${characterNum*15}ms forwards`
+        })
+
+        div.innerHTML = `<img src="graphics/characters/${key}Portrait.png" style="width: 32px;">`
+
+        let characterUnlocked = false
+        if(character.unlockable) {
+            if(saveData.stats.unlocked.characters.includes(key)) {
+                characterUnlocked = true
+            }
+        } else {
+            characterUnlocked = true
+        }
+
+        if(characterUnlocked || saveData.settings.devMode) {
+            div.onmouseenter = () => {
+                const itemRect = div.getBoundingClientRect()
+
+                tooltip(
+                    [itemRect.left + div.offsetWidth / 2, itemRect.bottom+10],
+                    character.name,
+                    [],
+                    `
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>${character.desc ?? ''}</span>
+                            <img src="graphics/characters/${key}PortraitLarge.png" style="translate: 5px 5px;">
+                        </div>    
+                    `
+                )
+            }
+
+            div.onmouseleave = () => {
+                doge('tooltip').style.opacity = '0'
+            }
+
+            if(!characterUnlocked) {
+                div.style.opacity = '0.25'
+            } else {
+                charactersUnlocked++
+            }
+        } else {
+            div.querySelector('img').src = 'graphics/icons/unknown.png'
+            div.querySelector('img').style.filter = 'brightness(50%)'
+        }
+
+        doge('collectionList').append(div)
+
+        characterNum++
+    }
+
+    doge('collectionProgressBarText').innerText = `${charactersUnlocked}/${Object.keys(characters).length} (${DeBread.round(charactersUnlocked/Object.keys(characters).length*100,1)}%)`
+    doge('innerCollectionProgressBar').style.width = charactersUnlocked/Object.keys(characters).length*100 + '%'
+
+    doge('collectionList').scrollTop = 0
 }
 
 function openAchievements() {
@@ -1952,6 +2025,10 @@ function openStats() {
                     <div class="statStat">
                         <span>Items bought:</span>
                         <span>${formatNumber(upgradesBought)}</span>
+                    </div>
+                    <div class="statStat">
+                        <span>Candies picked up:</span>
+                        <span>${formatNumber(saveData.stats.list.candiesPickedUp)}</span>
                     </div>
                 </div>
                 <div class="statSection">

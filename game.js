@@ -124,6 +124,7 @@ function createPlayer() {
             'bullet-critChance',
             'bullet-speed',
             'bullet-range',
+            'bullet-shotCooldown',
             'ammo-reloadSpeed',
             'melee-damage',
             'melee-cooldown',
@@ -177,6 +178,7 @@ function createPlayer() {
                 explosiveHeal: 0, //How much HP the player heals when getting hit by an explosion.
 
                 weaponContactDamage: 0, //How much damage every tick the players weapon deals to enemies that are colliding with it.
+                weaponContactDamageColor: [[255,255],[0,255],[0,0]],
                 maxWeaponDistance: 50,
                 
                 fireTouch: false,
@@ -194,6 +196,8 @@ function createPlayer() {
                 leech: 0,
 
                 static: 0,
+
+                enableWisps: false,
             },
 
             shop: {
@@ -269,6 +273,7 @@ function createPlayer() {
                 slow: 0,
 
                 coinChance: 0, //The percent chance of the bullet spawning a coin when hitting en enemy
+                candyChance: 0,
 
                 radiationSize: 0,
 
@@ -281,6 +286,8 @@ function createPlayer() {
                 shotParticleColor: [255,255,255],
                 lockRot: false,
                 silentShot: false,
+
+                parryParticleColor: [[255,255],[0,255],[0,0]]
             },
             melee: {
                 damage: 25, //How much damage is dealt to enemies within the players melee hitbox.
@@ -322,6 +329,7 @@ function createPlayer() {
                 speedMult: 1, //How much enemy speed is multiplied by. This also effects shot and melee cooldowns.
                 moneyMult: 1, //How much the amount of money an enemy drops is multiplied by.
                 itemChance: 0, //The chance that an item drops from enemies after they are killed.
+                candyChance: 0, //The chance that a candy drops from enemies after they are killed.
             },
             misc: {
                 areaSize: 500,
@@ -370,6 +378,7 @@ function createPlayer() {
                         player.perfectSet = false
                         
                         player.combo = Math.round(player.combo / 2)
+                        player.getPower(-(Math.min(amount / 2, 15)))
                         
                         doge('streakCount').innerText = 'x'+Math.floor(player.combo/100)
                         DeBread.easeShake(doge('streakCount'),10,5,0.25)
@@ -498,6 +507,10 @@ function createPlayer() {
 
                 modifyStat(['player','size'],'=0')
                 DeBread.easeShake(doge('area'), 25, 2, 0.05)
+
+                if(saveData.selectedCharacter === 'debread') {
+                    getAchievement('Rebrand')
+                }
         
                 setTimeout(() => {
                     doge('innerGameOverStuffContainer').innerHTML = ''
@@ -617,13 +630,14 @@ function createPlayer() {
                             getStyle(styles.parry)
                         }
 
+                        
                         projectile.angle = Math.atan2(projectile.pos[1] - e.relCursorPos[1], projectile.pos[0] - e.relCursorPos[0])
                         projectile.speed += 10
                         projectile.data.explosionSize = 100
                         projectile.damage += player.stats.melee.damage
                         projectile.targetList = elems.enemies
                         projectile.isParried = true
-
+                        
                         if(player.stats.player.parryHoming) {
                             if(projectile.data.magnetStrength) {
                                 projectile.data.magnetStrength += player.stats.player.parryHoming
@@ -631,8 +645,9 @@ function createPlayer() {
                                 projectile.data.magnetStrength = player.stats.player.parryHoming
                             }
                         }
-
+                        
                         projectileHit = true
+                        projectile.onParry(projectile)
 
                         const parryEffect = document.createElement('div')
                         addStyles(parryEffect, {
@@ -707,11 +722,7 @@ function createPlayer() {
             updateUI()
 
             if(player.powerItem) {
-                if(player.power >= player.powerItem.charge) {
-                    doge('powerItem').style.filter = 'grayscale(0)'
-                } else {
-                    doge('powerItem').style.filter = 'grayscale(1)'
-                }
+                doge('powerItem').style.filter = player.power >= player.powerItem.charge ? 'grayscale(0)' : 'grayscale(1)'
     
                 if(!ignoreAnimation) {
                     if(prevAmount >= player.powerItem.charge && player.power < player.powerItem.charge) {
@@ -915,7 +926,7 @@ function createPlayer() {
                         5,
                         1.1,
                         25,
-                        {color: `rgb(255, ${DeBread.randomNum(0, 255)}, 0, 0.25)`}
+                        {color: `rgb(${DeBread.randomNum(player.stats.player.weaponContactDamageColor[0][0], player.stats.player.weaponContactDamageColor[0][1])}, ${DeBread.randomNum(player.stats.player.weaponContactDamageColor[1][0], player.stats.player.weaponContactDamageColor[1][1])}, ${DeBread.randomNum(player.stats.player.weaponContactDamageColor[2][0], player.stats.player.weaponContactDamageColor[2][1])}, 0.25)`}
                     )
                 }
 
@@ -1599,7 +1610,9 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
     proj.bounces = data.bounces ?? 0
     proj.splits = extraData.splits ?? 0
     proj.drillTicks = data.drillTicks ?? 0
+    proj.range = data.range ?? Infinity
     proj.isParried = false
+    proj.onParry = data.onParry ?? (() => {})
 
     //Add additional chance drill ticks
     for(let i = 0; i < Math.floor(data.drillChance / 100); i++) {
@@ -1636,16 +1649,18 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
     })
 
     //Add bullet overlays
-    if(data.electricChainLength > 0) {
-        const overlay = overlayBase.cloneNode()
-        overlay.src = 'graphics/electricBullet.gif'
-        proj.append(overlay)
-    }
-
-    if(data.magnetStrength > 0) {
-        const overlay = overlayBase.cloneNode()
-        overlay.src = 'graphics/magneticBullet.png'
-        proj.append(overlay)
+    if(!data.noTextureOverlays) {
+        if(data.electricChainLength > 0) {
+            const overlay = overlayBase.cloneNode()
+            overlay.src = 'graphics/electricBullet.gif'
+            proj.append(overlay)
+        }
+    
+        if(data.magnetStrength > 0) {
+            const overlay = overlayBase.cloneNode()
+            overlay.src = 'graphics/magneticBullet.png'
+            proj.append(overlay)
+        }
     }
 
     if(data.explosionSize > 0) {
@@ -1831,12 +1846,12 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
         proj.speed = Math.min(proj.speed, data.maxSpeed ?? Infinity)
 
         //Range
-        if(e.gameUpdates - proj.dateSpawned >= data.range) {
+        if(e.gameUpdates - proj.dateSpawned >= proj.range) {
             proj.destroy()
         }
         
         //Projectile particles
-        if(style !== 2) {
+        if(style !== 2 && !data.noParticles) {
             //Parry particles
             if(proj.isParried) {
                 createParticle(
@@ -1849,7 +1864,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
                     1.1,
                     50,
                     {
-                        color: `rgb(255, ${DeBread.randomNum(0, 255)}, 0)`
+                        color: `rgb(${DeBread.randomNum(player.stats.bullet.parryParticleColor[0][0],player.stats.bullet.parryParticleColor[0][1])}, ${DeBread.randomNum(player.stats.bullet.parryParticleColor[1][0],player.stats.bullet.parryParticleColor[1][1])}, ${DeBread.randomNum(player.stats.bullet.parryParticleColor[2][0],player.stats.bullet.parryParticleColor[2][1])})`
                     }
                 )
                 // createParticles(
@@ -1970,6 +1985,11 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
                         proj.damage *= 1.5
                     }
                     const damage = target.data.damage(proj.damage, false, proj)
+                    proj.timesHitEnemy = (proj.timesHitEnemy ?? 0) + 1
+
+                    if(proj.timesHitEnemy >= 10 && origin === player) {
+                        getAchievement('Leave_Them_Alone')
+                    }
 
                     if(damage) {
                         const popup = createPopupText(formatNumber(DeBread.round(damage)), [...proj.pos])
@@ -2068,6 +2088,17 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
                         }
                         if(DeBread.randomNum(1,100) <= pData.coinChance - Math.floor(pData.coinChance / 100) * 100) {
                             getCoin()
+                        }
+                    }
+
+                    //Candy
+                    if(player.stats.bullet.candyChance > 0) {
+                        //Spawn additional coins for a coinChance above 100%
+                        for(let i = 0; i < Math.floor(player.stats.bullet.candyChance / 100); i++) {
+                            spawnCandy([...proj.pos])
+                        }
+                        if(DeBread.randomNum(1,100) <= player.stats.bullet.candyChance - Math.floor(player.stats.bullet.candyChance / 100) * 100) {
+                            spawnCandy([...proj.pos])
                         }
                     }
     
@@ -2225,6 +2256,8 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
                 }
             })
         }
+
+        data.tick?.(proj)
     }
 
     proj.destroy = () => {
@@ -2286,7 +2319,7 @@ function createProjectile(style, pos, angle, data, targetList, origin, extraData
 
 function createFloorItem(pos, itemKey, itemData) {
     const pickup = createPickup(pos, {
-        size: [36,36],
+        size: [32,32],
         texture: `upgrades/${itemKey}`,
         textureExtension: 'png',
         despawnTime: 250,
@@ -2310,6 +2343,160 @@ function createFloorItem(pos, itemKey, itemData) {
             break
         }
     }
+}
+
+function spawnCandy(pos, key) {
+    //CANDIES
+    const candyTypes = [
+        { //Green candy: Health,
+            name: 'Health',
+            apply: () => {
+                player.damage(-10)
+            },
+            requirement: () => {return player.health < player.stats.player.maxHealth},
+            weight: 1.1,
+        },
+        { //Red candy: Strength
+            name: 'Red',
+            apply: () => {
+                player.applyStatusEffect('strength',200,'add')  
+            },
+            weight: 1,
+        },
+        { //Light blue candy: Melee damage
+            name: 'Blue',
+            apply: () => {
+                player.applyStatusEffect('buff',200,'add')  
+            },
+            weight: 1,
+        },
+        { //Grey candy: Reload
+            name: 'Ammo',
+            apply: () => {
+                player.stats.ammo.current = player.stats.ammo.max
+                DeBread.playSound('audio/reload-long-end.mp3')
+                updateUI()
+            },
+            weight: 1,
+            requirement: () => {return player.stats.ammo.current < player.stats.ammo.max}
+        },
+        { //Orange candy: Scary
+            name: 'Scary',
+            apply: () => {
+                player.applyStatusEffect('scary',100,'add')  
+            },
+            weight: 0.25,
+        },
+        { //Yellow candy: static damage
+            name: 'Electric',
+            apply: () => {
+                player.applyStatusEffect('staticallyCharged',300,'add')  
+            },
+            weight: 0.75
+        },
+        // { //Black candy: bomb
+        //     name: 'Bomb',
+        //     apply: (pickupData) => {
+        //         createExplosion([...pickupData.data.pos],75,player.stats.bullet.damage,10,true)  
+        //     },
+        //     weight: 0.5,
+        // },
+        { //Pink candy: Projectile
+            name: 'Projectile',
+            apply: () => {
+                let enemyAngle = DeBread.randomNum(0,Math.PI*2,10)
+                if(elems.enemies.length > 0) {
+                    let closestEnemy = {elem: undefined, dist: Infinity}
+            
+                    elems.enemies.forEach(enemy => {
+                        const enemyDist = Math.sqrt(Math.pow(player.centerPos[0] - enemy.data.centerPos[0],2) + Math.pow(player.centerPos[1] - enemy.data.centerPos[1],2))
+                        if(enemyDist < closestEnemy.dist) {
+                            closestEnemy.elem = enemy
+                            closestEnemy.dist = enemyDist
+                        }
+                    })
+                    enemyAngle = Math.atan2(player.centerPos[1] - closestEnemy.elem.data.centerPos[1], player.centerPos[0] - closestEnemy.elem.data.centerPos[0])
+                }
+    
+                const bulletPos = [...player.centerPos]
+    
+                createProjectile(0, bulletPos, enemyAngle, player.stats.bullet, elems.enemies, player)
+            },
+            weight: 1,
+        },
+        { //Golden candy: Money
+            name: 'Golden',
+            apply: () => {
+                player.getMoney(DeBread.randomNum(25,100))
+            },
+            weight: 0.25,
+        },
+        { //Rainbow candy: Stat up 
+            name: 'Rainbow',
+            weight: 0.2,
+            apply: () => {
+                const randomStats = [
+                    ['player','speed','+=0.1'],
+                    ['player','maxHealth','+=10'],
+                    ['player','maxPower','+=1'],
+                    ['player','grazeSize','+=0.1'],
+                    ['player','parryHeal','+=1'],
+                    ['shop','luck','+=0.5'],
+                    ['shop','rerolls','+=1'],
+                    ['bullet','damage','+=1'],
+                    ['bullet','shotCooldown','*=0.95'],
+                    ['bullet','range','+=5'],
+                    ['bullet','critChance','+=5'],
+                    ['bullet','critDamageMult','+=0.1'],
+                    ['bullet','drillChance','+=1'],
+                    ['bullet','bounces','+=1'],
+                    ['melee','damage','+=2'],
+                    ['melee','cooldown','*=0.95'],
+                    ['melee','knockback','+=1'],
+                    ['melee','heal','+=1'],
+                    ['ammo','max','+=1'],
+                    ['ammo','reloadSpeed','*=0.95'],
+                ]
+
+                const randomStat = randomStats[DeBread.randomNum(0,randomStats.length-1)]
+                modifyStat([randomStat[0],randomStat[1]], randomStat[2])
+            }
+        },
+    ]
+
+    const weights = []
+    for(const candy of candyTypes) {
+        weights.push(candy.weight)
+    }
+
+    const randomCandyIndex = key ?? getWeightedChance(weights)
+    const randomCandy = candyTypes[randomCandyIndex]
+
+    const pickup = createPickup(pos, {
+        size: [16,16],
+        texture: `candy${randomCandy.name}`,
+        textureExtension: 'png',
+        despawnTime: 500,
+        speed: 2,
+        onTouch: (pickup) =>  {
+            randomCandy.apply(pickup)
+
+            if(saveData.gameSettings.gamemode === 0) {
+                if(saveData.selectedChallenges.length > 0) {
+                    if(saveData.selectedChallenges.length === 1 && saveData.selectedChallenges.includes('spooky')) {
+                        saveData.stats.list.candiesPickedUp++
+                    }
+                } else {
+                    saveData.stats.list.candiesPickedUp++
+                }
+    
+                if(saveData.stats.list.candiesPickedUp >= 1000) {
+                    getAchievement('Large')
+                }
+            }
+        },
+        requirement: randomCandy.requirement ?? (() => {return true})
+    })
 }
 
 const area = {
@@ -2344,6 +2531,18 @@ const statusEffects = {
 
         remove: () => {
             modifyStat(['bullet','damageMult'],'-=1')
+        }
+    },
+    buff: {
+        name: 'Buff',
+        desc: '<cg>+1</cg> melee damage multiplier',
+
+        apply: () => {
+            modifyStat(['melee','damageMult'],'+=1')
+        },
+
+        remove: () => {
+            modifyStat(['melee','damageMult'],'-=1')
         }
     },
     bleeding: {
@@ -2453,7 +2652,18 @@ const statusEffects = {
         remove: () => {
             player.onFire = false
         }
-    }
+    },
+    scary: {
+        name: 'Scary',
+        desc: 'Enemies run away from the player.',
+
+        apply: () => {
+            player.scary = true
+        },
+        remove: () => {
+            player.scary = false
+        }
+    },
 }
 
 let lastConsumables = []
@@ -2505,6 +2715,7 @@ function updateUI() {
         if(player.stats.ammo.max === Infinity) {
             doge('gameAmmoLinesCurrent').innerText = player.characterWeapon.ammoChar
             doge('gameAmmoLinesMax').innerText = ''
+            doge('gameAmmoCount').innerText = '∞'
         } else {
             doge('gameAmmoLinesCurrent').innerText = player.characterWeapon.ammoChar.repeat(Math.min(player.stats.ammo.current, 50))
             doge('gameAmmoLinesMax').innerText = player.characterWeapon.ammoChar.repeat(Math.min(player.stats.ammo.max, 50) - Math.min(player.stats.ammo.current, 50))
@@ -2616,9 +2827,39 @@ const updateInterval = DeBread.createInterval(() => {
             if(Math.abs(player.vel[0]) > 0 || Math.abs(player.vel[1]) > 0) {
                 if(e.gameUpdates - player.lastDustParticle > 2) {
                     if(player.stats.player.fireTouch) {
-                        createParticles([DeBread.randomNum(player.pos[0], player.pos[0] + player.elem.offsetWidth),DeBread.randomNum(player.pos[1], player.pos[1] + player.elem.offsetHeight)], 1, 10, [0,10],750,'ease-out',{backgroundColor: `rgb(255, ${DeBread.randomNum(0, 255)}, 0, 0.5)`})
+                        createParticle(
+                            1,
+                            [
+                                DeBread.randomNum(player.pos[0], player.pos[0] + player.elem.offsetWidth),
+                                DeBread.randomNum(player.pos[1], player.pos[1] + player.elem.offsetHeight)
+                            ],
+                            1,
+                            1.1,
+                            DeBread.randomNum(0,Math.PI*2,10),
+                            10,
+                            1.1,
+                            25,
+                            {
+                                color: `rgb(255, ${DeBread.randomNum(0, 255)}, 0, 0.5)`
+                            }
+                        )
                     } else {
-                        createParticles([DeBread.randomNum(player.pos[0], player.pos[0] + player.elem.offsetWidth),DeBread.randomNum(player.pos[1], player.pos[1] + player.elem.offsetHeight)], 1, 10, [0,10],750,'ease-out',{backgroundColor: 'rgb(100,100,100,0.25)'})
+                        createParticle(
+                            1,
+                            [
+                                DeBread.randomNum(player.pos[0], player.pos[0] + player.elem.offsetWidth),
+                                DeBread.randomNum(player.pos[1], player.pos[1] + player.elem.offsetHeight)
+                            ],
+                            1,
+                            1.1,
+                            DeBread.randomNum(0,Math.PI*2,10),
+                            10,
+                            1.1,
+                            25,
+                            {
+                                color: 'rgb(100,100,100,0.25)'
+                            }
+                        )
                     }
                     player.lastDustParticle = e.gameUpdates
                 }
@@ -3082,42 +3323,45 @@ const updateInterval = DeBread.createInterval(() => {
         updateParticles()
     
         //Status Effects
-        doge('statusEffectContainer').innerHTML = ''
-        for(const key in player.statusEffects) {
-            const statusEffect = player.statusEffects[key]
-            const statusEffectData = statusEffects[statusEffect.class]
-            statusEffect.duration--
-    
-            if(statusEffect.duration <= 0) {
-                statusEffect.end()
-                player.statusEffects.splice(key, 1)
-            }
-    
-            const statusEffectIcon = document.createElement('div')
-            statusEffectIcon.classList.add('statusEffect')
-            statusEffectIcon.innerHTML = `
-                <img src="graphics/statusEffects/${statusEffect.class}.png">
-            `
-    
-            doge('statusEffectContainer').append(statusEffectIcon)
+        if(!player.inPortal) {
+            doge('statusEffectContainer').innerHTML = ''
 
-            statusEffectIcon.onmouseenter = () => {
-                if(statusEffect.duration > 1) {
-                    iconRect = statusEffectIcon.getBoundingClientRect()
+            for(const key in player.statusEffects) {
+                const statusEffect = player.statusEffects[key]
+                const statusEffectData = statusEffects[statusEffect.class]
+                statusEffect.duration--
+        
+                if(statusEffect.duration <= 0) {
+                    statusEffect.end()
+                    player.statusEffects.splice(key, 1)
+                }
+        
+                const statusEffectIcon = document.createElement('div')
+                statusEffectIcon.classList.add('statusEffect')
+                statusEffectIcon.innerHTML = `
+                    <img src="graphics/statusEffects/${statusEffect.class}.png">
+                `
+        
+                doge('statusEffectContainer').append(statusEffectIcon)
     
-                    tooltip(
-                        [iconRect.right,iconRect.bottom+25],
-                        statusEffectData.name,
-                        [],
-                        `${statusEffectData.desc}<br><div style="text-align: right;">${formatTime(Math.ceil(statusEffect.duration/50))}</div>`
-                    )
-                } else {
+                statusEffectIcon.onmouseenter = () => {
+                    if(statusEffect.duration > 1) {
+                        iconRect = statusEffectIcon.getBoundingClientRect()
+        
+                        tooltip(
+                            [iconRect.right,iconRect.bottom+25],
+                            statusEffectData.name,
+                            [],
+                            `${statusEffectData.desc}<br><div style="text-align: right;">${formatTime(Math.ceil(statusEffect.duration/50))}</div>`
+                        )
+                    } else {
+                        doge('tooltip').style.opacity = '0'
+                    }
+                }
+    
+                statusEffectIcon.onmouseleave = () => {
                     doge('tooltip').style.opacity = '0'
                 }
-            }
-
-            statusEffectIcon.onmouseleave = () => {
-                doge('tooltip').style.opacity = '0'
             }
         }
     
@@ -3951,7 +4195,7 @@ function createPickup(pos, data) {
             
             if(!ignorePickup) {
                 DeBread.playSound(`audio/${pickup.data.sfx}`, DeBread.randomNum(0.95,1.05,10))
-                pickup.data.onTouch()
+                pickup.data.onTouch(pickup)
                 createParticles([...pickup.data.pos], 3, 8, [5,10], 250, 'ease-out', {backgroundColor: 'white'})
             }
     
@@ -4973,8 +5217,6 @@ const tutorialEnemies = {
                 player.tutorial.goalValue++
                 updateTutorialGoal()
             }
-
-            console.log(player.tutorial.goalValue)
         }
     },
     dummy2: {

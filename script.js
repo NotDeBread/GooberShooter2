@@ -101,6 +101,7 @@ const defaultSaveData = {
             Times_Rerolled: 0,
             egg: 0,
             foodItemsBought: 0,
+            candiesPickedUp: 0,
         },
         collection: {
             items: [],
@@ -707,6 +708,18 @@ const challenges = {
             modifyStat(['enemy','levelIncrease'],'=-Infinity')
         }
     },
+    spooky: {
+        name: 'Spooky!',
+        desc: `
+            Enemies can drop <cc>Candies</cc> that give the player special status effects.
+            <br>
+            <em style="color: grey;">Halloween 2026</em>
+        `,
+
+        apply: () => {
+            modifyStat(['enemy','candyChance'],'=125')
+        }
+    }
 }
 
 //Achievement Difficulties
@@ -747,7 +760,7 @@ const achievements = {
     },
     Cooked: {
         name: 'Cooked',
-        desc: 'Deal over 100 damage at once with a single bullet',
+        desc: 'Deal over 100 damage at once with a single projectile.',
         difficulty: 0,
         unlockType: 'Item',
 
@@ -810,6 +823,22 @@ const achievements = {
 
         run: () => {
             unlock('items',upgrades[3].golden_ammo,'golden_ammo')
+        }
+    },
+    Rebrand: {
+        name: 'The rebrand is real',
+        desc: 'Die while playing as Bread.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Character',
+            name: 'Fella',
+            src: 'graphics/characters/fellaPortrait.png',
+            data: characters.fella
+        },
+
+        run: () => {
+            unlock('characters',characters.fella,'fella')
         }
     },
     Speed_Demon: {
@@ -890,6 +919,23 @@ const achievements = {
             unlock('characters',characters.the_horse,'the_horse')
         }
     },
+    Good_Game: {
+        name: 'It\'s a good game trust me',
+        desc: 'Cause an error',
+        ignoreChallenges: true,
+        ignoreGamemode: true,
+
+        unlock: {
+            type: 'Character',
+            name: 'udev',
+            src: 'graphics/characters/udevPortrait.png',
+            data: characters.udev
+        },
+
+        run: () => {
+            unlock('characters',characters.udev,'udev')
+        }
+    },
     Reroll_Addict: {
         name: 'Reroll Addict',
         desc: 'Reroll the shop 500 times.',
@@ -934,6 +980,21 @@ const achievements = {
 
         run: () => {
             unlock('characters',characters.jake,'jake')
+        }
+    },
+    Leave_Them_Alone: {
+        name: 'Leave Them Alone',
+        desc: 'Hit enemies 10 times with the same projectile.',
+    
+        unlock: {
+            type: 'Character',
+            name: 'Crow',
+            src: 'graphics/characters/crowPortrait.png',
+            data: characters.crow
+        },
+
+        run: () => {
+            unlock('characters',characters.crow,'crow')
         }
     },
     Found_Me: {
@@ -1031,6 +1092,40 @@ const achievements = {
         desc: 'Complete the tutorial quickly.',
         difficulty: 0,
     },
+    Spooky: {
+        name: 'Ah! So spooky!',
+        desc: 'Beat The Tutorialist while using the Spooky mod and playing as Bread.',
+
+        unlock: {
+            type: 'Character',
+            name: 'Undead Bread',
+            src: 'graphics/characters/undead_breadPortrait.png',
+            data: characters.undead_bread
+        },
+
+        run: () => {
+            unlock('characters',characters.undead_bread,'undead_bread')
+        },
+
+        ignoreChallenges: true
+    },
+    Large: {
+        name: 'Large and in charge',
+        desc: 'Pick up 1,000 candies. <br><em style="color: grey;">Spooky mod allowed</em>',
+
+        unlock: {
+            type: 'Power Item',
+            name: 'Candy Bucket',
+            src: 'graphics/powerItems/candy_bucket.png',
+            data: powerItems[4].candy_bucket
+        },
+
+        run: () => {
+            unlock('powerItems',powerItems[4].candy_bucket,'candy_bucket')
+        },
+
+        ignoreChallenges: true
+    },
     The_Egg: {
         name: 'The Egg',
         desc: 'Obtain the egg from the man behind the tree.',
@@ -1097,6 +1192,22 @@ const achievements = {
 
         run: () => {
             unlock('items',upgrades[4].the_tophat,'the_tophat')
+        }
+    },
+    undead_bread_Perfection: {
+        name: 'Undead Bread Perfection',
+        desc: 'Beat wave 100 using Undead Bread.',
+        difficulty: 0,
+
+        unlock: {
+            type: 'Item',
+            name: 'Spooky Ammo',
+            src: 'graphics/upgrades/spooky_ammo.png',
+            data: upgrades[3].spooky_ammo
+        },
+
+        run: () => {
+            unlock('items',upgrades[3].spooky_ammo,'spooky_ammo')
         }
     },
     fella_Perfection: {
@@ -1470,21 +1581,11 @@ const achievements = {
 
 function getAchievement(key, run) {
     const achievement = achievements[key]
-    if(!saveData.achievements.includes(key) && Object.keys(achievements).includes(key) && (![1,2,3].includes(saveData.gameSettings.gamemode) || achievement.ignoreGamemode) && saveData.selectedChallenges.length === 0) {
+    if(!saveData.achievements.includes(key) && Object.keys(achievements).includes(key) && (![1,2,3].includes(saveData.gameSettings.gamemode) || achievement.ignoreGamemode) && (saveData.selectedChallenges.length === 0 || achievement.ignoreChallenges)) {
         saveData.achievements.push(key)
         run?.()
 
         createAchNoti(achievement, key)
-
-        // if(achievement.unlock) {
-        //     mainMenuEventQueue.push(() => {
-        //         let unlockString = `<strong>${achievement.unlock.name}</strong> can now appear in the shop.`
-        //         if(achievement.unlock.type === 'Character') {
-        //             unlockString = `You can now play as <strong>${achievement.unlock.name}</strong>`
-        //         }
-        //         createNotification(`${achievement.unlock.type} Unlocked!`,unlockString,achievement.unlock.src)
-        //     })
-        // }
 
         if(achievement.run) achievement.run()
         save()
@@ -1799,4 +1900,6 @@ window.onerror = ev => {
             createNotification('Error copied to clipboard!',ev,undefined,2500)
         }
     )
+
+    getAchievement('Good_Game')
 }

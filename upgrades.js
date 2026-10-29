@@ -106,7 +106,7 @@ const upgrades = [
             `,
 
             apply: () => {
-                player.health += 25
+                player.damage(-25)
             },
 
             requirement: () => {
@@ -279,7 +279,7 @@ const upgrades = [
             priceMult: 0.75,
 
             apply: () => {
-                player.health = player.stats.player.maxHealth
+                player.damage(-player.stats.player.maxHealth)
             },
 
             requirement: () => {
@@ -1144,6 +1144,19 @@ const upgrades = [
                 modifyStat(['bullet','sharpChance'], '+=5')
             }
         },
+        spooky_ammo: {
+            name: 'Spooky Ammo',
+            desc: `
+                Bullets gain a <cg>+3</cg>% chance to spawn a random <cc>Candy</cc> when hitting an enemy.
+            `,
+            priceMult: 1.25,
+
+            apply: () => {
+                modifyStat(['bullet','candyChance'],'+=3')
+            },
+
+            unlockable: true,
+        },
         multishot: {
             name: 'Multi-shot',
             desc: `
@@ -1236,17 +1249,22 @@ const upgrades = [
 
             apply: () => {
                 modifyStat(['shop','rerollPrice'], '*=0.25')
+                if(player.rerolls === 0) {
+                    doge('rerollPrice').innerText = `${saveData.selectedCharacter === 'walf' ? '' : '$'}`+formatNumber(Math.ceil(player.stats.shop.rerollPrice))+`${saveData.selectedCharacter === 'walf' ? '🧇' : ''}`
+                }
             }
         },
         lucky_charm: {
             name: 'Lucky Charm',
             desc: `
-                <div class="tooltipTag" style="background-color: rgb(75,75,75); display: inline;">COMMON</div> items appear <cg>+10%</cg> less
+                <div class="tooltipTag" style="background-color: rgb(75,75,75); display: inline;">COMMON</div> items appear <cg>+10%</cg> less<br>
+                <cg>+1</cg> Luck
             `,
             priceMult: 1.5,
     
             apply: () => {
                 player.shopWeightMults[0] *= 0.9
+                modifyStat(['shop','luck'],'+=1')
             }
         },
         money_trough: {
@@ -1518,7 +1536,7 @@ const upgrades = [
 
             apply: () => {
                 modifyStat(['player','maxHealth'],'*=2')
-                player.health = player.stats.player.maxHealth
+                player.damage(-player.stats.player.maxHealth)
             }
         },
         debread_sale: {
@@ -3372,7 +3390,7 @@ const powerItems = [
                             const proj = createProjectile(0,cursorPos,0,projData,[...elems.enemies, ...[player.elem]],player.elem)
                             proj.style.opacity = '0'
                             if(isColliding(proj,player.elem)) {
-                                player.applyStatusEffect('headache',50*60*5,'add')
+                                player.applyStatusEffect('headache',50*60,'add')
                             }
                             createExplosion([...cursorPos],250,0,25,true,[[0,0],[0,0],[0,0],0])
 
@@ -3747,7 +3765,6 @@ const powerItems = [
                     ['shop','luck','+=0.5'],
                     ['shop','rerolls','+=1'],
                     ['bullet','damage','+=1'],
-                    ['bullet','size','+=1'],
                     ['bullet','shotCooldown','*=0.95'],
                     ['bullet','range','+=5'],
                     ['bullet','critChance','+=5'],
@@ -3920,6 +3937,20 @@ const powerItems = [
                 }
 
                 doge('area').append(sword)
+            }
+        },
+        candy_bucket: {
+            name: 'Candy Bucket',
+            desc: `
+                Uses <cp>5</cp> POWER<br>
+                Spawns a random <cc>Candy</cc>
+            `,
+            charge: 5,
+            priceMult: 2,
+            unlockable: true,
+
+            use: () => {
+                spawnCandy([...player.centerPos])
             }
         },
         r_key: {

@@ -487,7 +487,7 @@ function updateParticles() {
     }
 }
 
-//I did NOT anything below, i am too tired rn and i just want to get ts over with
+//I did NOT write anything below, i am too tired rn and i just want to get ts over with
 function roman(num) {
     if(num === 0) {
         return '0'

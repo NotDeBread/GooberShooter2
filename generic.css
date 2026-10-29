@@ -58,6 +58,11 @@ cs {
     font-weight: 700;
 }
 
+cc {
+    color: rgb(255,100,255);
+    font-weight: 700;
+}
+
 help {
     width: 10px;
     height: 10px;
